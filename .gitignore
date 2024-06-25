@@ -12,4 +12,4 @@ _deps
 
 # CMake build
 system/build/*
-system/.vscode/*
+system/.vscode
