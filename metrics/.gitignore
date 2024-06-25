@@ -11,7 +11,4 @@ CTestTestfile.cmake
 _deps
 
 # CMake build
-build
-
-# VScode
-.vscode
+build/*
