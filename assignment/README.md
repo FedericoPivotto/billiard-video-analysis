@@ -25,7 +25,7 @@ Semplificazioni possibili:
 Test della robustezza del nostro sitema usa il dataset con annotazioni: https://drive.google.com/drive/folders/1dzNrhDpc2DXRqmQgbO5l2WMjzfhMdxVn?usp=sharing
 
 La cartella di ciascun video nela dataset ha:
- - masks: maschera di segmentazione del campo di gioco escluso tutto il resto (esterno del campo di gioco, persone e palline) per il primo e ultimo frame; per la loro costruzione si associa alle categorie il seguenti colori RGB nella nostra segmentazione (0: (128,128,128) 1: (255, 255, 255) 2: (0,0,0) 3: (0,0,255) 4: (255,0,0,) 5: (0,255,0)), il cui risultato andra poi convertito in scala di grigi (aka grayscale)
+ - masks: maschera di segmentazione in grayscale (scala di grigio) del campo di gioco escluso tutto il resto (esterno del campo di gioco, persone e palline) per il primo e ultimo frame; per la loro costruzione si associa alle categorie il seguenti colori RGB nella nostra segmentazione (0: (128,128,128) 1: (255, 255, 255) 2: (0,0,0) 3: (0,0,255) 4: (255,0,0,) 5: (0,255,0)), il cui risultato andra poi convertito in scala di grigi (aka grayscale)
  - frames: primo e ultime frame del video (easy)
  - bounding_boxes: c'è un file di testo per il primo e ultimo frame del video; ciascun file di testo contiene una riga per pallina in cui sono riportati 5 parametri [x, y, width, height, ball category ID], dove (x,y) è la posizione dell'angolo in alto a sinistra della bounding box della pallina (il sistema degli assi ha origine nell'angolo in alto a sinistra dell'immagine, con asse x orizzontale da sinsitra a destra e asse y verticale dall'alto al basso); height è l'altezza della boundign box; width è la larghezza della boundign box; e l'ID identifica la categoria palla (solid o stripe); in questi file di testo ci sono solo categorie di palline (1, 2, 3, 4)
 
@@ -36,7 +36,28 @@ Calcolare metriche per valutare il nostro sistema:
  - Per localizzazione palle, utilizzare mean Average Precision (mAP) calcolata alla IoU threshold 0.5: qui dobbiamo utilizzare i file di testo nella cartella bounding_boxes (https://learnopencv.com/mean-average-precision-map-object-detection-model-evaluation-metric/)
  - Per segmentare palle e campo di gioco dobbiamo calcolare la mean Intersection over Union (mIoU) metric che è la media della IoU calcolata per ogni classe (0:background, 1:white "cue ball", 2:black "8-ball", 3:balls solid colors, 4:balls stripes, 5:playing field) (https://towardsdatascience.com/metrics-to-evaluate-your-semantic-segmentation-model-6bcb99639aa2)
 
+Vanno testati solo il primo frame e l'ultimo frame del video, confrondando la "ground truth" (maschere e file di testo) con i risultati del nostro sistema di computer vision.
+
 # Eight Ball
 15 balls (1-7 solid color, 8 solid black, 9-15 stripes).
 
 Il gioco finisce quando tutte le palline (solid o stripes) sono finite in buca, e la 8 per ultima.
+
+# Project delivery
+Progetto in C++, solo con la libreria di OpenCV, vietato usare deep learning (invece è consentito usare machine learning).
+
+Il progetto deve includere:
+ - Tutto il codice C++, con scritto l'autore principale in ciascun file sorgente come commento in prima riga (alla fine da ridistribuire tra noi tre in modo equo, come anche le ore di lavoro)
+ - File per compilazione con CMake
+ - Fare report (no limiti pagine) in cui si descrive gli approcci che abbiamo usato per fare le varie cose, e riportare confronto risultati su tutti i video del dataset con i risultati del nostro sistema (riportando immagini risultati)
+ - Video del nostro sistema (da costruire concatenando i frame che vengono generari, easy) per ciascun video presente nel dataset
+ - Fornire un confronto dei risultati sia sulla base dei dati effettivi (machere e file di testo) ma anche considerazioni personali (fatte a occhio)
+
+Nel dettaglio, per il confronto bisogna mettere nel report:
+ - Localizzazione e segmentazione: riportare immagini (quella a colori con bounding boxes e quella con la segmentazione a colori) per il primo e ultimo frame, con relative metriche (mAP, mIoU) calcolate rispetto alla "ground truth"
+ - Visualizzazione 2D e traiettorie palle: solo l'immagine della mappa 2D sul frame finale del video, avente posizione palle e loro traiettorie da inizio video
+
+Nel report va anche messo, chi ha avuto quale idea in merito a:
+- Implementazione di certi pezzi di codice
+- Quali test sono stati eseguiti per le varie robe
+- Metodologia secondo cui le metriche di performance sono state prese
