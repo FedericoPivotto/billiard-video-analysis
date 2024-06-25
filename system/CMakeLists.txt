@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Project name
-project(task)
+project(main)
 
 # Load OpenCV package
 find_package(OpenCV REQUIRED)
@@ -18,7 +18,7 @@ add_library(library
 
 # Main executable
 add_executable(${PROJECT_NAME}
-    src/task.cpp
+    src/main.cpp
 )
 
 # Link libraries and main executable
