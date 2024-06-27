@@ -37,6 +37,63 @@ target_link_libraries(system
     system_library
 )
 
+## Federico system module build
+
+# Federico system utils library
+add_library(system_object_detection
+    system/include/object_detection.h
+    system/src/object_detection.cpp
+)
+
+# Federico system executable
+add_executable(federico
+    system/src/federico.cpp
+)
+
+# Link libraries and system executable
+target_link_libraries(federico
+    ${OpenCV_LIBS}
+    system_object_detection
+)
+
+## Fabrizio system module build
+
+# Fabrizio system utils library
+add_library(system_edge_detection
+    system/include/edge_detection.h
+    system/src/edge_detection.cpp
+)
+
+# Fabrizio system executable
+add_executable(fabrizio
+    system/src/fabrizio.cpp
+)
+
+# Link libraries and system executable
+target_link_libraries(fabrizio
+    ${OpenCV_LIBS}
+    system_edge_detection
+)
+
+## Leonardo system module build
+
+# Leonardo system utils library
+add_library(system_segmentation
+    system/include/segmentation.h
+    system/src/segmentation.cpp
+)
+
+# Leonardo system executable
+add_executable(leonardo
+    system/src/leonardo.cpp
+)
+
+# Link libraries and system executable
+target_link_libraries(leonardo
+    ${OpenCV_LIBS}
+    system_segmentation
+)
+
 ## Metrics module build
 
 # Metrics utils library
