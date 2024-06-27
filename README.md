@@ -22,13 +22,13 @@ The information extracted from this process will be used in the Step 3.
 2. Identify each ball using Viola and Jones approach
 3. For each bounding box, save the identified portion of the image
 4. For each portion:
-    1. Make the background black
-    2. Identify the ball class:
-        - 1: White ball - white is the predominant color
-        - 2: Black ball - black is the predominant color
-        - 3: Solid ball - color, except white and black, is the predominant color
-        - 4: Stripe ball - both white and color are predominant colors 
-    3. Append a row ```[x, y, width, height, ball category ID]``` to the frame text file
+   1. Make the background black
+   2. Identify the ball class:
+      - 1: White ball - white is the predominant color
+      - 2: Black ball - black is the predominant color
+      - 3: Solid ball - color, except white and black, is the predominant color
+      - 4: Stripe ball - both white and color are predominant colors 
+   3. Append a row ```[x, y, width, height, ball category ID]``` to the frame text file
 5. Close the frame text file
 6. Open the filled frame text file, create a copy of the current frame and superimpose on it all the identified bounding boxes
 
@@ -55,8 +55,8 @@ This step consist in two main sub-steps: first, divide the playing field only in
 **Procedure**:
 1. Open the frame text file
 2. For each bounding box (row):
-    1. Identify its center and ray
-    2. Color the circle identified according to class
+   1. Identify its center and ray
+   2. Color the circle identified according to class
 3. Color table pixels within the table borders except those with ball class colors assigned in the previous step
 4. Save output image
 
