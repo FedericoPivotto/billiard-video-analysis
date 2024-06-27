@@ -14,11 +14,11 @@ This step consists in identifying the bounding boxes of all the billiard balls d
 
 The information extracted from this process will be used in the Step 3.
 
-**Input**: frame of the video.
+**Input**: video frame.
 
-**Output**: frame text file (as frame_number_bbox.txt), object detection frame without the table borders.
+**Output**: frame text file (as frame_number_bbox.txt), object detection for the first video frame without the table borders.
 
-**Procedure for each frame**:
+**Procedure the first frame**:
 1. Create in a proper directory a text file for the current frame
 2. Identify each ball using Viola and Jones approach
 3. For each bounding box, save the identified portion of the image
@@ -31,18 +31,20 @@ The information extracted from this process will be used in the Step 3.
       - 4: Stripe ball - both white and color are predominant colors 
    3. Append a row ```[x, y, width, height, ball category ID]``` to the frame text file
 5. Close the frame text file
-6. Open the filled frame text file, create a copy of the current frame and superimpose on it all the identified bounding boxes
+
+**For the first video frame**:
+1. Open the filled frame text file for first frame, copy the first frame and superimpose on it all the identified bounding boxes
 
 ## 2 - Border identification
 This step consists in detecting the table borders.
 
 The information extracted from this process will be used in the Step 3 and Step 4.
 
-**Input**: object detection frame without the table borders.
+**Input**: object detection for the first video frame without the table borders.
 
 **Output**: frame text file (as frame_number_bbox.txt), .
 
-**Procedure for each frame**:
+**Procedure for the first frame**:
 1. Apply to the original frame the Canny Edge Detector
 2. For each table edge, properly tune and apply the Linear Hough Transform
 3. Identify the four table corners as intersection of the four edges
@@ -51,7 +53,7 @@ The information extracted from this process will be used in the Step 3 and Step 
 ## 3 - Segmentation of playing field
 This step consist in two main sub-steps: first, divide the playing field only into 2 types of regions (ball and non-ball, i.e. playing field), second, assign to each pixel of the segmented playing field the relative class (i.e. the relative color) by means of the output of Step 1 (i.e. ball bounding boxes + relative class).
 
-**Input**: frame text file (as frame_number_bbox.txt).
+**Input**: frame text file (as frame_number_bbox.txt) of the first and last video frame.
 
 **Output**: segmented frame (table and balls) with table borders
 
