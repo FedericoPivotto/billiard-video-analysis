@@ -1,44 +1,32 @@
-// Setup CMake: mkdir build && cd build && cmake ..
-// Compile with CMake: cd build && make
-
-// Compile: g++ task.cpp -o task -I/usr/local/include/opencv4 -lopencv_highgui -lopencv_core -lopencv_imgcodecs
-// Execute: ./task
-
-#include <iostream>
-#include <opencv2/highgui.hpp>
-
 // user-defined libraries
-#include <library.h>
 
-// error constants
-#define INVALID_ARGUMENTS_ERROR -1
-#define IMAGE_READ_ERROR -2
+// video_captures: video utilities
+#include <video_utils.h>
 
 int main(int argc, char** argv) {
-    // safety check on argc
-	if(argc < 2) {
-		std::cout << "Warning: An image filename shall be provided." << std::endl;
-		exit(INVALID_ARGUMENTS_ERROR);
-	}
+    // get videos paths
+    std::vector<cv::String> video_paths;
+    get_video_paths(video_paths);
 
-    // load image
-    std::string img_filename(argv[1]);
-    cv::Mat img = cv::imread(img_filename);
+    // get video captures
+    std::vector<cv::VideoCapture> captures;
+    get_video_captures(video_paths, captures);
+    
+    // for each video read frames
+    for(cv::VideoCapture capture : captures) {
+        // read video frames
+        std::vector<cv::Mat> video_frames;
+        read_video_frames(capture, video_frames);
+        
+        // TODO: object detection (Federico)
+        // TODO: edge detection (Fabrizio)
+        // TODO: segmentation (Leonardo)
+        // TODO: 2D top-view minimap
+        // TODO: trajectory tracking
 
-    // safety check on image
-	if(img.data == NULL) {
-		std::cout << "Error: The image cannot be read." << std::endl;
-		exit(IMAGE_READ_ERROR);
-	}
-
-	// show image
-    cv::namedWindow("Image");
-    cv::imshow("Image", img);
-    cv::waitKey(0);
-
-    // library function call
-    int out = function_name();
-    std::cout << "function_name(): " << out << std::endl;
+        // show video frames
+        show_video_frames(video_frames);
+    }
 
     return 0;
 }

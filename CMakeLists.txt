@@ -20,10 +20,10 @@ include_directories(
 
 ## System module build
 
-# System utils library
-add_library(system_library
-    system/include/library.h
-    system/src/library.cpp
+# System utils video_capture
+add_library(system_video_utils
+    system/include/video_utils.h
+    system/src/video_utils.cpp
 )
 
 # System executable
@@ -34,7 +34,7 @@ add_executable(system
 # Link libraries and system executable
 target_link_libraries(system
     ${OpenCV_LIBS}
-    system_library
+    system_video_utils
 )
 
 ## Federico system module build
