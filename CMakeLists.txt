@@ -73,6 +73,7 @@ add_executable(fabrizio
 target_link_libraries(fabrizio
     ${OpenCV_LIBS}
     system_edge_detection
+    system_video_utils  
 )
 
 ## Leonardo system module build
