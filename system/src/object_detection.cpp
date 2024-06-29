@@ -6,11 +6,18 @@ od::Ball::Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int 
 }
 
 std::pair<unsigned int, unsigned int> od::Ball::center() const {
+    // compute ball center coordinates
     return {x + width / 2, y + height / 2};
 }
 
 unsigned int od::Ball::radius() const {
+    // compute ball radius
     return width < height ? width / 2 : height / 2;
+}
+
+std::ostream& od::operator<<(std::ostream& os, const Ball& ball) {
+    // ball information string
+    return os << ball.x << " " << ball.y << " " << ball.width << " " << ball.height << " " << ball.ball_class;
 }
 
 void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
@@ -23,8 +30,4 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // - 4:stripe ball - both white and color are predominant colors
 
     // TODO: set ball class
-}
-
-std::ostream& od::operator<<(std::ostream& os, const Ball& ball) {
-    return os << ball.x << " " << ball.y << " " << ball.width << " " << ball.height << " " << ball.ball_class;
 }
