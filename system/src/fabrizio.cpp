@@ -67,20 +67,29 @@ int main(int argc, char** argv) {
 
         // TODO: edge detection (Fabrizio)
         // Ideas: bilateral filter, histogram equalization, tv_bergman filter
+
+        // first frame extraction
         Mat first_frame = video_frames[0];
-        cvtColor(video_frames[0], first_frame, COLOR_BGR2GRAY);
+        //cvtColor(video_frames[0], first_frame, COLOR_BGR2GRAY);
 
         if (first_frame.empty()) {
             cout << "Could not open or find the image!" << endl;
             return -1;
         }
 
+        // frame pre-processing
+        Mat preprocess_first_frame;
+        //GaussianBlur(first_frame, first_frame, Size(5,5), 2, 0);
+        //cvtColor(preprocess_first_frame, preprocess_first_frame, COLOR_BGR2GRAY);
+        bilateralFilter(first_frame, preprocess_first_frame, 9, 100.0, 75.0);
+        //equalizeHist(first_frame, first_frame);
+
         /* Show image */
         namedWindow("Show street");
-        imshow("Show street", first_frame);
+        imshow("Show street", preprocess_first_frame);
 
         /* Display canny */
-        display_canny(first_frame);
+        display_canny(preprocess_first_frame);
 
         waitKey(0);
 
