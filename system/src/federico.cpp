@@ -1,8 +1,5 @@
 #include <iostream>
 
-// fstream: std::ofstream
-#include <fstream>
-
 // user-defined libraries
 
 // video_captures: video utilities
@@ -14,17 +11,10 @@
 // object detection library
 #include <object_detection.h>
 
-void object_detection(const std::vector<cv::Mat>& video_frames, int nframe, const std::string bboxes_video_path) {
+void object_detection(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path) {
     // create frame bboxes text file
-    std::string bboxes_file_path = bboxes_video_path + "/frame_";
-    if(nframe == 0)
-        bboxes_file_path += "first";
-    else if (nframe == video_frames.size()-1)
-        bboxes_file_path += "last";
-    else
-        bboxes_file_path += std::to_string(nframe + 1);
-    bboxes_file_path += ".txt";
-    std::ofstream bboxes_file(bboxes_file_path);
+    std::string bboxes_frame_file;
+    fsu::create_bboxes_frame_file(video_frames, nframe, bboxes_video_path, bboxes_frame_file);
 
     // identify each ball using Viola and Jones approach
 
