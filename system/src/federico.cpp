@@ -11,25 +11,39 @@
 // object detection library
 #include <object_detection.h>
 
-void object_detection(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path) {
+void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path) {
     // create frame bboxes text file
-    std::string bboxes_frame_file;
-    fsu::create_bboxes_frame_file(video_frames, nframe, bboxes_video_path, bboxes_frame_file);
+    std::string bboxes_frame_file_path;
+    fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
 
-    // identify each ball using Viola and Jones approach
+    // open frame bboxes text file
+    std::ofstream bboxes_frame_file(bboxes_frame_file_path);
+    
+    // vector of bounding boxes
+    std::vector<od::Ball> ball_bboxes;
 
-    // for each bounding box, save the identified portion of the image
+    // TODO: detect ball bounding boxes using Viola and Jones approach
+    // TODO: update ball vector with bounding box x, y, width, height
 
-    // for each portion:
-    // 1. make the background black
-    // 2. identify the ball class:
-    //  - 1:white ball - white is the predominant color
-    //  - 2:black ball - black is the predominant color
-    //  - 3:solid ball - color, except white and black, is the predominant color
-    //  - 4:stripe ball - both white and color are predominant colors
-    // 3. append a row [x, y, width, height, ball category ID] to the frame text file
+    // scan each ball bounding box
+    for(od::Ball ball_bbox : ball_bboxes) {
+        // TODO: ball class detection
+        od::detect_ball_class(ball_bbox, video_frames[n_frame]);
 
-    // close the frame text file
+        // write ball bounding box in frame bboxes text file
+        fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
+
+        // TODO: remove this code
+        // LOOK: @Leonardo this is an example for reading a bboxes frame text file giving its path
+        // read ball bounding box from frame bboxes text file
+        /* std::vector<od::Ball> ball_bboxes_read;
+        fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes_read);
+        for(od::Ball ball : ball_bboxes_read)
+            std::cout << "Ball: " << ball << std::endl;*/
+    }
+
+    // close frame bboxes text file
+    bboxes_frame_file.close();
 }
 
 int main(int argc, char** argv) {
@@ -42,7 +56,6 @@ int main(int argc, char** argv) {
     vu::get_video_captures(video_paths, captures);
     
     // for each video read frames
-    // for(cv::VideoCapture capture : captures) {
     for(int i = 0; i < captures.size(); ++i) {
         // read video frames
         std::vector<cv::Mat> video_frames;

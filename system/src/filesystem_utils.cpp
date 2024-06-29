@@ -5,8 +5,8 @@
 // filesystem: std::filesystem::exists(), std::filesystem::create_directory()
 #include <filesystem>
 
-// fstream: std::ofstream
-#include <fstream>
+// string: std::getline()
+#include <string>
 
 void fsu::create_video_result_dir(const std::string video_path, std::vector<std::string>& video_result_subdirs) {
     // create result directory if not exists
@@ -29,18 +29,46 @@ void fsu::create_video_result_dir(const std::string video_path, std::vector<std:
     std::filesystem::create_directory(video_result_subdir);
 }
 
-void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file) {
+void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
     // create frame bboxes text file
-    bboxes_frame_file = bboxes_video_path + "/frame_";
+    bboxes_frame_file_path = bboxes_video_path + "/frame_";
     if(nframe == 0)
-        bboxes_frame_file += "first";
+        bboxes_frame_file_path += "first";
     else if (nframe == video_frames.size()-1)
-        bboxes_frame_file += "last";
+        bboxes_frame_file_path += "last";
     else
-        bboxes_frame_file += std::to_string(nframe + 1);
-    bboxes_frame_file += ".txt";
-    std::ofstream bboxes_file(bboxes_frame_file);
+        bboxes_frame_file_path += std::to_string(nframe + 1);
+    bboxes_frame_file_path += ".txt";
+    std::ofstream bboxes_frame_file(bboxes_frame_file_path);
 
     // close frame bboxes text file
-    bboxes_file.close();
+    bboxes_frame_file.close();
+}
+
+void fsu::write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball) {
+    // write ball bounding box
+    bboxes_frame_file << ball.x << " " << ball.y << " " << ball.width << " " << ball.height << " " << ball.ball_class << std::endl;
+}
+
+void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
+    // open frame bboxes text file
+    std::ifstream bboxes_frame_file(bboxes_frame_file_path);
+
+    // read frame bboxes text file lines
+    std::string line;
+    while(std::getline(bboxes_frame_file, line)) {
+        // stream for line parsing
+        std::istringstream iss(line);
+        unsigned int x, y, width, height, ball_class;
+
+        // skip and proceed to next line if error
+        if (! (iss >> x >> y >> width >> height >> ball_class))
+            continue;
+
+        // create and add ball to vector
+        balls.push_back(od::Ball(x, y, width, height, ball_class));
+    }
+
+    // close frame bboxes text file
+    bboxes_frame_file.close();
 }
