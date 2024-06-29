@@ -4,7 +4,6 @@
 
 // iostream: std::cerr
 #include <iostream>
-
 // filesystem: glob()
 #include <opencv2/core/utils/filesystem.hpp>
 
