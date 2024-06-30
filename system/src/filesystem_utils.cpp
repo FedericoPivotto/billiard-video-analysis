@@ -47,7 +47,7 @@ void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, con
 
 void fsu::write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball) {
     // write ball bounding box
-    bboxes_frame_file << ball.x << " " << ball.y << " " << ball.width << " " << ball.height << " " << ball.ball_class << std::endl;
+    bboxes_frame_file << ball << std::endl;
 }
 
 void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
