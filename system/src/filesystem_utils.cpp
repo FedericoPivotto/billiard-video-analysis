@@ -31,6 +31,15 @@ void fsu::create_video_result_dir(const std::string video_path, std::vector<std:
 
 void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
     // create frame bboxes text file
+    fsu::get_bboxes_frame_file_path(video_frames, nframe, bboxes_video_path, bboxes_frame_file_path);
+    std::ofstream bboxes_frame_file(bboxes_frame_file_path);
+
+    // close frame bboxes text file
+    bboxes_frame_file.close();
+}
+
+void fsu::get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
+    // create frame bboxes text file
     bboxes_frame_file_path = bboxes_video_path + "/frame_";
     if(nframe == 0)
         bboxes_frame_file_path += "first";
@@ -38,11 +47,7 @@ void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, con
         bboxes_frame_file_path += "last";
     else
         bboxes_frame_file_path += std::to_string(nframe + 1);
-    bboxes_frame_file_path += ".txt";
-    std::ofstream bboxes_frame_file(bboxes_frame_file_path);
-
-    // close frame bboxes text file
-    bboxes_frame_file.close();
+    bboxes_frame_file_path += "_bbox.txt";
 }
 
 void fsu::write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball) {

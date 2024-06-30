@@ -3,6 +3,9 @@
 // video_captures: video utilities
 #include <video_utils.h>
 
+// filesystem_utils: filesystem utilities
+#include <filesystem_utils.h>
+
 int main(int argc, char** argv) {
     // get videos paths
     std::vector<cv::String> video_paths;
@@ -13,10 +16,14 @@ int main(int argc, char** argv) {
     vu::get_video_captures(video_paths, captures);
     
     // for each video read frames
-    for(cv::VideoCapture capture : captures) {
+    for(int i = 0; i < captures.size(); ++i) {
         // read video frames
         std::vector<cv::Mat> video_frames;
-        vu::read_video_frames(capture, video_frames);
+        vu::read_video_frames(captures[i], video_frames);
+
+        // create video result directory
+        std::vector<std::string> video_result_subdirs;
+        fsu::create_video_result_dir(video_paths[i], video_result_subdirs);
         
         // TODO: object detection (Federico)
         // TODO: edge detection (Fabrizio)

@@ -32,14 +32,6 @@ void object_detection(const std::vector<cv::Mat>& video_frames, const int n_fram
 
         // write ball bounding box in frame bboxes text file
         fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
-
-        // TODO: remove this code
-        // LOOK: @Leonardo this is an example for reading a bboxes frame text file giving its path
-        // read ball bounding box from frame bboxes text file
-        /* std::vector<od::Ball> ball_bboxes_read;
-        fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes_read);
-        for(od::Ball ball : ball_bboxes_read)
-            std::cout << "Ball: " << ball << std::endl;*/
     }
 
     // close frame bboxes text file
@@ -66,12 +58,10 @@ int main(int argc, char** argv) {
         fsu::create_video_result_dir(video_paths[i], video_result_subdirs);
         
         // TODO: object detection (Federico)
-
-        // first video frame object detection
+        // first and last video frame object detection
         object_detection(video_frames, 0, video_result_subdirs[0]);
-        // last video frame object detection
         object_detection(video_frames, video_frames.size()-1, video_result_subdirs[0]);
-
+        
         // TODO: edge detection (Fabrizio)
         // TODO: segmentation (Leonardo)
         // TODO: 2D top-view minimap
