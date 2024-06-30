@@ -20,10 +20,16 @@ include_directories(
 
 ## System module build
 
-# System utils video_capture
+# System utils video_utils
 add_library(system_video_utils
     system/include/video_utils.h
     system/src/video_utils.cpp
+)
+
+# System utils filesystem_utils
+add_library(system_filesystem_utils
+    system/include/filesystem_utils.h
+    system/src/filesystem_utils.cpp
 )
 
 # System executable
@@ -35,6 +41,7 @@ add_executable(system
 target_link_libraries(system
     ${OpenCV_LIBS}
     system_video_utils
+    system_filesystem_utils
 )
 
 ## Federico system module build
@@ -53,6 +60,8 @@ add_executable(federico
 # Link libraries and system executable
 target_link_libraries(federico
     ${OpenCV_LIBS}
+    system_video_utils
+    system_filesystem_utils
     system_object_detection
 )
 

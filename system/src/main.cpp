@@ -6,17 +6,17 @@
 int main(int argc, char** argv) {
     // get videos paths
     std::vector<cv::String> video_paths;
-    get_video_paths(video_paths);
+    vu::get_video_paths(video_paths);
 
     // get video captures
     std::vector<cv::VideoCapture> captures;
-    get_video_captures(video_paths, captures);
+    vu::get_video_captures(video_paths, captures);
     
     // for each video read frames
     for(cv::VideoCapture capture : captures) {
         // read video frames
         std::vector<cv::Mat> video_frames;
-        read_video_frames(capture, video_frames);
+        vu::read_video_frames(capture, video_frames);
         
         // TODO: object detection (Federico)
         // TODO: edge detection (Fabrizio)
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
         // TODO: trajectory tracking
 
         // show video frames
-        show_video_frames(video_frames);
+        vu::show_video_frames(video_frames);
     }
 
     return 0;

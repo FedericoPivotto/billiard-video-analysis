@@ -7,17 +7,20 @@
 #include <opencv2/highgui.hpp>
 // videoio: cv::VideoCapture
 #include <opencv2/videoio.hpp>
-// error constants
-#define VIDEO_READ_ERROR -1
 
-// get function declarations
-void get_video_paths(std::vector<cv::String>& video_paths);
-void get_video_captures(const std::vector<cv::String> video_paths, std::vector<cv::VideoCapture>& captures);
+namespace vu {
+    // error constants
+    const int VIDEO_READ_ERROR = -1;
 
-// read function declarations
-void read_video_frames(cv::VideoCapture capture, std::vector<cv::Mat>& video_frames);
+    // get function declarations
+    void get_video_paths(std::vector<cv::String>& video_paths);
+    void get_video_captures(const std::vector<cv::String> video_paths, std::vector<cv::VideoCapture>& captures);
 
-// show function declarations
-void show_video_frames(const std::vector<cv::Mat> video_frames);
+    // read function declarations
+    void read_video_frames(cv::VideoCapture capture, std::vector<cv::Mat>& video_frames);
+
+    // show function declarations
+    void show_video_frames(const std::vector<cv::Mat> video_frames);
+}
 
 #endif // VIDEO_UTILS_H
