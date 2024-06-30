@@ -15,10 +15,10 @@ namespace od {
             // ball bounding box
             unsigned int x, y, width, height, ball_class;
 
-            // ball constructor
+            // constructor
             Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class);
 
-            // ball function declaration
+            // function declarations
             std::pair<unsigned int, unsigned int> center() const;
             unsigned int radius() const;
     
@@ -26,7 +26,7 @@ namespace od {
             friend std::ostream& operator<<(std::ostream& os, const Ball& ball);
     };
 
-    // Definition of the operator<< function outside the class
+    // definition of the operator<< function outside the class
     std::ostream& operator<<(std::ostream& os, const Ball& ball);
 
     // detect function declarations
