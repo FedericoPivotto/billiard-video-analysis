@@ -32,6 +32,46 @@ using namespace std;
 
 int lowTh, highTh;
 
+/* Hough transform */
+void hough(Mat& hough_image, Mat canny_image){
+    vector<Vec2f> lines;
+    HoughLines(canny_image, lines, 1, CV_PI / 180, 115, 0, 0);
+    for( size_t i = 0; i < lines.size(); i++ ){
+        float rho = lines[i][0], theta = lines[i][1];
+        Point pt1, pt2;
+        double a = cos(theta), b = sin(theta);
+        double x0 = a*rho, y0 = b*rho;
+        pt1.x = cvRound(x0 + 1000*(-b));
+        pt1.y = cvRound(y0 + 1000*(a));
+        pt2.x = cvRound(x0 - 1000*(-b));
+        pt2.y = cvRound(y0 - 1000*(a));
+        line(hough_image, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
+    }
+}
+
+/* Harris corners */
+void harris(Mat& harris_image, Mat canny_image){
+    cornerHarris(canny_image, harris_image, 9, 3, 0.1);
+}
+
+/* Contour detection */
+void contoursDraw(Mat& cont_image, Mat canny_image){
+    vector<vector<Point>> contours;
+    vector<Vec4i> hierarchy;
+
+    vector<vector<Point>> tableContours;
+    for (const auto& contour : contours) {
+        double area = contourArea(contour);
+        if (area > 1000) {  // Adjust the threshold based on your needs
+            tableContours.push_back(contour);
+        }
+    }
+
+    findContours(canny_image, tableContours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+    drawContours(cont_image, tableContours, -1, Scalar(0, 255, 0), 2);
+}
+
 /* Callback low threshold */
 void callBackLow(int lTh, void* userdata){
     Mat dst;
@@ -39,7 +79,15 @@ void callBackLow(int lTh, void* userdata){
     
     lowTh = lTh;
     Canny(image, dst, lTh, highTh);
-    imshow("Show street", dst);
+
+    /* Hough transform */
+    Mat hough_image = image.clone();
+    hough(hough_image, dst);
+
+    //Mat cont_image = image.clone();
+    //contoursDraw(cont_image, dst);
+
+    imshow("Show street", hough_image);
 }
 
 /* Callback high threshold */
@@ -49,7 +97,15 @@ void callBackHigh(int hTh, void* userdata){
 
     highTh = hTh;
     Canny(image, dst, lowTh, hTh);
-    imshow("Show street", dst);
+    
+    /* Hough transform */
+    Mat hough_image = image.clone();
+    hough(hough_image, dst);
+
+    //Mat cont_image = image.clone();
+    //contoursDraw(cont_image, dst);
+
+    imshow("Show street", hough_image);
 }
 
 /* Display canny image */
