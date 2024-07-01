@@ -1,5 +1,11 @@
 // user-defined libraries
 
+//AGGIUNTE QUESTE 4 LIBRERIE NON SO SE SIA GIUSTO
+#include <iostream>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+
 // video_captures: video utilities
 #include <video_utils.h>
 
@@ -23,6 +29,26 @@ void segmentation(const std::vector<cv::Mat>& video_frames, const int n_frame, c
     // scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
         // TODO: color balls according to class
+        if (ball_bbox.ball_class == 1)
+        {
+            cv::Scalar color(255, 255, 255);
+            cv::circle( video_frames, ball_bbox.center, ball_bbox.radius, color, CV_FILLED );
+        }
+        else if (ball_bbox.ball_class == 2)
+        {
+            cv::Scalar color(0, 0, 0);
+            cv::circle( video_frames, ball_bbox.center, ball_bbox.radius, color, CV_FILLED );
+        }
+        else if (ball_bbox.ball_class == 3)
+        {
+            cv::Scalar color(255, 0, 0);
+            cv::circle( video_frames, ball_bbox.center, ball_bbox.radius, color, CV_FILLED );
+        }
+        else
+        {
+            cv::Scalar color(0, 0, 255);
+            cv::circle( video_frames, ball_bbox.center, ball_bbox.radius, color, CV_FILLED );
+        }
     }
 }
 
@@ -57,6 +83,7 @@ int main(int argc, char** argv) {
             segmentation(video_frames, 0, bboxes_test_dir);
             segmentation(video_frames, video_frames.size()-1, bboxes_test_dir);
         }
+        vu::show_video_frames(video_frames);
 
         // TODO: instruction replacing that above when segmentation is fine
         // segmentation(video_frames, 0, video_result_subdirs[0]);
