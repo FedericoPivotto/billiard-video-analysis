@@ -54,6 +54,30 @@ void harris(Mat& harris_image, Mat canny_image){
     cornerHarris(canny_image, harris_image, 9, 3, 0.1);
 }
 
+void mouseCallBack(int event, int x, int y, int flags, void* userdata){
+    Mat image;
+    if(event == EVENT_LBUTTONDOWN){
+        Mat* imgPointer = (Mat*)userdata;
+        image = *imgPointer;
+        int meanB = 0;
+        int meanG = 0;
+        int meanR = 0;
+        for(int i = x - 4; i <= x + 4; i++){
+            for(int j = y - 4; j <= y + 4; j++){
+                if((i <= image.cols - 1 && j <= image.rows -1) && (i >= 0 && j >= 0)){
+                    meanB += (int)image.at<Vec3b>(j,i)[0];
+                    meanG += (int)image.at<Vec3b>(j,i)[1];
+                    meanR += (int)image.at<Vec3b>(j,i)[2];
+                }
+            }
+        }
+        cout<<"H: "<<(meanB / 81)<<endl;
+        cout<<"S: "<<(meanG / 81)<<endl;
+        cout<<"V: "<<(meanR / 81)<<endl;
+    }
+}
+
+
 /* Contour detection */
 void contoursDraw(Mat& cont_image, Mat canny_image){
     vector<vector<Point>> contours;
@@ -84,6 +108,7 @@ void callBackLow(int lTh, void* userdata){
     Mat hough_image = image.clone();
     hough(hough_image, dst);
 
+    /* Contour image */
     //Mat cont_image = image.clone();
     //contoursDraw(cont_image, dst);
 
@@ -102,6 +127,7 @@ void callBackHigh(int hTh, void* userdata){
     Mat hough_image = image.clone();
     hough(hough_image, dst);
 
+    /* Contour image */
     //Mat cont_image = image.clone();
     //contoursDraw(cont_image, dst);
 
@@ -154,12 +180,38 @@ int main(int argc, char** argv) {
         bilateralFilter(first_frame, preprocess_first_frame, 9, 100.0, 75.0);
         //equalizeHist(first_frame, first_frame);
 
+        ///* Show image */
+        //namedWindow("Show street");
+        //imshow("Show street", preprocess_first_frame);
+//
+        ///* Display canny */
+        //display_canny(preprocess_first_frame);
+
+        /* HSV VALUE */
+        /* Show image */
+        Mat hsvImage = preprocess_first_frame.clone();
+        //namedWindow("Show Robocup");
+        cvtColor(preprocess_first_frame, hsvImage, COLOR_BGR2HSV);
+        //imshow("Show Robocup", hsvImage);
+
+        /* Mouse callback */
+        //setMouseCallback("Show Robocup", mouseCallBack, (void*)&hsvImage);
+
+        cv::Scalar lowerHSV(60, 150, 110); // Lower bound of HSV values
+        cv::Scalar upperHSV(120, 255, 230); // Upper bound of HSV values
+
+        // Create a mask using the defined HSV range
+        cv::Mat mask;
+        cv::inRange(hsvImage, lowerHSV, upperHSV, mask);
+        //imshow("Show segment", mask);
+
+        
         /* Show image */
         namedWindow("Show street");
-        imshow("Show street", preprocess_first_frame);
+        imshow("Show street", mask);
 
         /* Display canny */
-        display_canny(preprocess_first_frame);
+        display_canny(mask);
 
         waitKey(0);
 
