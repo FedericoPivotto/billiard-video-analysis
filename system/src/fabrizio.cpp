@@ -106,6 +106,7 @@ void callBackLow(int lTh, void* userdata){
 
     /* Hough transform */
     Mat hough_image = image.clone();
+    cvtColor(hough_image, hough_image, COLOR_GRAY2BGR);
     hough(hough_image, dst);
 
     /* Contour image */
@@ -125,6 +126,7 @@ void callBackHigh(int hTh, void* userdata){
     
     /* Hough transform */
     Mat hough_image = image.clone();
+    cvtColor(hough_image, hough_image, COLOR_GRAY2BGR);
     hough(hough_image, dst);
 
     /* Contour image */
