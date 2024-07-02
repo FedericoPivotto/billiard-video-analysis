@@ -35,7 +35,7 @@ int lowTh, highTh;
 /* Hough transform */
 void hough(Mat& hough_image, Mat canny_image){
     vector<Vec2f> lines;
-    HoughLines(canny_image, lines, 1, CV_PI / 180, 115, 0, 0);
+    HoughLines(canny_image, lines, 1, CV_PI / 180, 95, 0, 0);
     for( size_t i = 0; i < lines.size(); i++ ){
         float rho = lines[i][0], theta = lines[i][1];
         Point pt1, pt2;
@@ -47,6 +47,29 @@ void hough(Mat& hough_image, Mat canny_image){
         pt2.y = cvRound(y0 - 1000*(a));
         line(hough_image, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
     }
+}
+
+void suppressLines(vector<Vec2f>& lines){
+    vector<vector<Vec2f>> line_groups, good_lines;
+
+    for(int i = 0; i < lines.size() - 1; i++ ){
+        /* Rho and theta of considered line i */
+        float rho_i = lines[i][0], theta_i = lines[i][1];
+
+        vector<Vec2f> current_group;
+        current_group.push_back(lines[i]);
+
+        for(int j = 1; i < lines.size(); j++ ){
+            /* Rho and theta of line j */
+            float rho_j = lines[j][0], theta_j = lines[j][1];
+            if( abs(rho_i - rho_j) <= 100 && abs(theta_i - theta_j) <= 0.35 ){
+                current_group.push_back(lines[j]);
+            }
+        }
+
+        line_groups.push_back(current_group);
+    }
+
 }
 
 /* Harris corners */
@@ -205,6 +228,10 @@ int main(int argc, char** argv) {
         // Create a mask using the defined HSV range
         cv::Mat mask;
         cv::inRange(hsvImage, lowerHSV, upperHSV, mask);
+
+        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(21, 21));
+        cv::dilate(mask, mask, kernel);
+        cv::erode(mask, mask, kernel);
         //imshow("Show segment", mask);
 
         
