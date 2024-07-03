@@ -25,9 +25,17 @@ void object_detection(const std::vector<cv::Mat>& video_frames, const int n_fram
     // vector of bounding boxes
     std::vector<od::Ball> ball_bboxes;
 
-    // grayscale frame
-    cv::Mat frame(video_frames[n_frame].clone()), frame_gs; // without details
-    cv::cvtColor(frame, frame_gs, cv::COLOR_BGR2GRAY);
+    // video frame clone
+    cv::Mat frame(video_frames[n_frame].clone());
+
+    // bgr to hsv
+    cv::Mat frame_hsv;
+    cv::cvtColor(frame, frame_hsv, cv::COLOR_BGR2HSV);
+
+    // hsv to grayscale
+    cv::Mat hsv_channels[3];
+    cv::split(frame_hsv, hsv_channels);
+    cv::Mat frame_gs = hsv_channels[2];
 
     // frame preprocess
     cv::GaussianBlur(frame_gs, frame_gs, cv::Size(5, 5), 2, 2);
