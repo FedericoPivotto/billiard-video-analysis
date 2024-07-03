@@ -32,12 +32,56 @@ using namespace std;
 
 int lowTh, highTh;
 
+void negativeLines(vector<Vec2f>& lines){
+    for(int i = 0; i < lines.size() - 1; i++ ){
+        if(lines[i][0] < 0){
+            lines[i][0] *= -1.0;
+            lines[i][1] -= CV_PI;
+        }
+    }
+}
+
+void findBorders(const vector<Vec2f> lines, vector<Vec2f>& borders){
+    vector<bool> visited(lines.size(), false);
+
+    if(lines.size() < 4){
+        cerr << "Not enough lines to find a border"<< endl;
+        return;
+    }
+
+    for(int i = 0; i < lines.size(); i++ ){
+        /* Rho and theta of considered line i */
+        float rho_i = lines[i][0], theta_i = lines[i][1];
+
+        if(!visited[i] && borders.size() < 4){
+
+            borders.push_back(lines[i]);
+
+            for(int j = i + 1; j < lines.size(); j++ ){
+                /* Rho and theta of line j */
+                float rho_j = lines[j][0], theta_j = lines[j][1];
+
+                if( (abs(rho_i - rho_j) <= 100 && abs(theta_i - theta_j) <= (CV_PI / 36)) && !visited[j] ){
+                    visited[j] = true;    
+                }
+            }
+        } else if( borders.size() == 4 ){
+            return;
+        }
+    }
+
+}
+
 /* Hough transform */
 void hough(Mat& hough_image, Mat canny_image){
     vector<Vec2f> lines;
+    vector<Vec2f> borders;
     HoughLines(canny_image, lines, 1, CV_PI / 180, 95, 0, 0);
-    for( size_t i = 0; i < lines.size(); i++ ){
-        float rho = lines[i][0], theta = lines[i][1];
+    negativeLines(lines);
+    findBorders(lines, borders);
+
+    for( size_t i = 0; i < borders.size(); i++ ){
+        float rho = borders[i][0], theta = borders[i][1];
         Point pt1, pt2;
         double a = cos(theta), b = sin(theta);
         double x0 = a*rho, y0 = b*rho;
@@ -45,31 +89,9 @@ void hough(Mat& hough_image, Mat canny_image){
         pt1.y = cvRound(y0 + 1000*(a));
         pt2.x = cvRound(x0 - 1000*(-b));
         pt2.y = cvRound(y0 - 1000*(a));
+
         line(hough_image, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
     }
-}
-
-void suppressLines(vector<Vec2f>& lines){
-    vector<vector<Vec2f>> line_groups, good_lines;
-
-    for(int i = 0; i < lines.size() - 1; i++ ){
-        /* Rho and theta of considered line i */
-        float rho_i = lines[i][0], theta_i = lines[i][1];
-
-        vector<Vec2f> current_group;
-        current_group.push_back(lines[i]);
-
-        for(int j = 1; i < lines.size(); j++ ){
-            /* Rho and theta of line j */
-            float rho_j = lines[j][0], theta_j = lines[j][1];
-            if( abs(rho_i - rho_j) <= 100 && abs(theta_i - theta_j) <= 0.35 ){
-                current_group.push_back(lines[j]);
-            }
-        }
-
-        line_groups.push_back(current_group);
-    }
-
 }
 
 /* Harris corners */
