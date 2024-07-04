@@ -199,7 +199,7 @@ void createMapView(const Mat& image, Mat& map_view, const vector<Point2f>& corne
     vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(400, 250), Point2f(0, 250)};
 
     // Get perspective transform matrix
-    Mat map_perspective = getPerspectiveTransform(corners, dst);
+    Mat map_perspective = findHomography(corners, dst);
 
     // Generate map view
     warpPerspective(image, map_view, map_perspective, Size(400, 250));
@@ -267,13 +267,13 @@ int main(int argc, char** argv) {
         imshow("Billiard video frame", first_frame);
 
         //// Compute map view of the billiard table
-        //Mat map_view;
-        //sortCorners(corners);
-        //createMapView(first_frame, map_view, corners);
-//
-        //// Show map view
-        //namedWindow("Billiard map view");
-        //imshow("Billiard map view", map_view);
+        Mat map_view;
+        sortCorners(corners);
+        createMapView(first_frame, map_view, corners);
+
+        // Show map view
+        namedWindow("Billiard map view");
+        imshow("Billiard map view", map_view);
 
         waitKey(0);
 
