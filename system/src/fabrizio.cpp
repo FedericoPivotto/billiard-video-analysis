@@ -30,8 +30,7 @@
 using namespace cv;
 using namespace std;
 
-int lowTh, highTh;
-
+/* Manage candidate lines with negative rho to make them comparable */
 void negativeLines(vector<Vec2f>& lines){
     for(int i = 0; i < lines.size() - 1; i++ ){
         if(lines[i][0] < 0){
@@ -41,26 +40,28 @@ void negativeLines(vector<Vec2f>& lines){
     }
 }
 
+/* Find the possible four borders among the candidate lines */
 void findBorders(const vector<Vec2f> lines, vector<Vec2f>& borders){
+    
+    // List of already visited candidates (similar to already selected borders)
     vector<bool> visited(lines.size(), false);
 
+    // Check number of candidates
     if(lines.size() < 4){
         cerr << "Not enough lines to find a border"<< endl;
         return;
     }
 
+    // Find borders (by means of rho and theta comparisons)
     for(int i = 0; i < lines.size(); i++ ){
-        /* Rho and theta of considered line i */
         float rho_i = lines[i][0], theta_i = lines[i][1];
-
+        
         if(!visited[i] && borders.size() < 4){
-
             borders.push_back(lines[i]);
-
+            
             for(int j = i + 1; j < lines.size(); j++ ){
-                /* Rho and theta of line j */
                 float rho_j = lines[j][0], theta_j = lines[j][1];
-
+                
                 if( (abs(rho_i - rho_j) <= 100 && abs(theta_i - theta_j) <= (CV_PI / 36)) && !visited[j] ){
                     visited[j] = true;    
                 }
@@ -72,119 +73,103 @@ void findBorders(const vector<Vec2f> lines, vector<Vec2f>& borders){
 
 }
 
-/* Hough transform */
-void hough(Mat& hough_image, Mat canny_image){
+/* Find the borders of the billiard table */
+void findLines(const Mat& edge_map, vector<Vec2f>& borders){
+
+    // Find line candidates and select the four borders
     vector<Vec2f> lines;
-    vector<Vec2f> borders;
-    HoughLines(canny_image, lines, 1, CV_PI / 180, 95, 0, 0);
+    HoughLines(edge_map, lines, 1, CV_PI / 180, 95, 0, 0);
     negativeLines(lines);
     findBorders(lines, borders);
+}
 
-    for( size_t i = 0; i < borders.size(); i++ ){
-        float rho = borders[i][0], theta = borders[i][1];
-        Point pt1, pt2;
-        double a = cos(theta), b = sin(theta);
-        double x0 = a*rho, y0 = b*rho;
-        pt1.x = cvRound(x0 + 1000*(-b));
-        pt1.y = cvRound(y0 + 1000*(a));
-        pt2.x = cvRound(x0 - 1000*(-b));
-        pt2.y = cvRound(y0 - 1000*(a));
+/* Find the intersection of two lines */
+void bordersIntersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
 
-        line(hough_image, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
+    // Compute line intersection by solving a linear system of two equations
+    // The two equations are considered with the following notation:
+    // a*x + b*y + c = 0
+    // d*x + e*y + f = 0
+    double rho_first = first_line[0], theta_first = first_line[1];
+    double rho_second = second_line[0], theta_second = second_line[1];
+
+    double a = cos(theta_first), b = sin(theta_first);
+    double d = cos(theta_second), e = sin(theta_second);
+    double c = rho_first * (-1.0), f = rho_second * (-1.0);
+
+    // Check lines parallelism, if so return
+    double det = d*b - e*a;
+    if(abs(det) < 1e-1){
+        corner.x = -1.0;
+        corner.y = -1.0;
+        return;
     }
+
+    // Compute intersection
+    corner.x = (e*c - b*f) / det;
+    corner.y = (a*f - d*c) / det;
 }
 
-/* Harris corners */
-void harris(Mat& harris_image, Mat canny_image){
-    cornerHarris(canny_image, harris_image, 9, 3, 0.1);
-}
+/* Find the corners of the table borders */
+void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
-void mouseCallBack(int event, int x, int y, int flags, void* userdata){
-    Mat image;
-    if(event == EVENT_LBUTTONDOWN){
-        Mat* imgPointer = (Mat*)userdata;
-        image = *imgPointer;
-        int meanB = 0;
-        int meanG = 0;
-        int meanR = 0;
-        for(int i = x - 4; i <= x + 4; i++){
-            for(int j = y - 4; j <= y + 4; j++){
-                if((i <= image.cols - 1 && j <= image.rows -1) && (i >= 0 && j >= 0)){
-                    meanB += (int)image.at<Vec3b>(j,i)[0];
-                    meanG += (int)image.at<Vec3b>(j,i)[1];
-                    meanR += (int)image.at<Vec3b>(j,i)[2];
-                }
+    // Compute the borders by finding lines intersections
+    for( size_t i = 0; i < borders.size(); i++ ){
+        for( size_t j = i + 1; j < borders.size(); j++ ){
+            // Check if there are all four corners
+            if(corners.size() == 4){
+                return;
+            }
+
+            // Find corner candidate
+            Point2f corner;
+            bordersIntersection(borders[i], borders[j], corner);
+
+            // Check corner feasibility
+            if((corner.x != -1.0 && corner.y != -1.0) && (corner.x >= 0 && corner.y >= 0)){
+                corners.push_back(corner);
             }
         }
-        cout<<"H: "<<(meanB / 81)<<endl;
-        cout<<"S: "<<(meanG / 81)<<endl;
-        cout<<"V: "<<(meanR / 81)<<endl;
     }
 }
 
+/* Draw the borders on the current frame */
+void drawBorders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
+    double distance_th = 5.0;
 
-/* Contour detection */
-void contoursDraw(Mat& cont_image, Mat canny_image){
-    vector<vector<Point>> contours;
-    vector<Vec4i> hierarchy;
+    // Draw the borders
+    for( size_t i = 0; i < borders.size(); i++ ){
+        float rho = borders[i][0], theta = borders[i][1];
+        double a = cos(theta), b = sin(theta);
 
-    vector<vector<Point>> tableContours;
-    for (const auto& contour : contours) {
-        double area = contourArea(contour);
-        if (area > 1000) {  // Adjust the threshold based on your needs
-            tableContours.push_back(contour);
+        // Collect corners belonging to the current border
+        vector<Point2f> matched_corners;
+
+        // Check what corners belong to the current border
+        for( size_t j = 0; j < corners.size(); j++ ){
+            if(fabs(corners[j].x * a + corners[j].y * b - rho) <= distance_th){
+                matched_corners.push_back(corners[j]);
+            }
+        }
+
+        // Check if correct number of corners
+        if(matched_corners.size() == 2){
+            line(image, matched_corners[0], matched_corners[1], Scalar(0,0,255), 3, LINE_AA);
         }
     }
-
-    findContours(canny_image, tableContours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-    drawContours(cont_image, tableContours, -1, Scalar(0, 255, 0), 2);
 }
 
-/* Callback low threshold */
-void callBackLow(int lTh, void* userdata){
-    Mat dst;
-    Mat image = *(static_cast<Mat*>(userdata));
-    
-    lowTh = lTh;
-    Canny(image, dst, lTh, highTh);
 
-    /* Hough transform */
-    Mat hough_image = image.clone();
-    cvtColor(hough_image, hough_image, COLOR_GRAY2BGR);
-    hough(hough_image, dst);
+/* Generate mask by ranged HSV color segmentation */
+void hsvMask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
 
-    /* Contour image */
-    //Mat cont_image = image.clone();
-    //contoursDraw(cont_image, dst);
+    // Color segmentation
+    inRange(hsv_frame, lower_hsv, upper_hsv, mask);
 
-    imshow("Show street", hough_image);
-}
-
-/* Callback high threshold */
-void callBackHigh(int hTh, void* userdata){
-    Mat dst;
-    Mat image = *(static_cast<Mat*>(userdata));
-
-    highTh = hTh;
-    Canny(image, dst, lowTh, hTh);
-    
-    /* Hough transform */
-    Mat hough_image = image.clone();
-    cvtColor(hough_image, hough_image, COLOR_GRAY2BGR);
-    hough(hough_image, dst);
-
-    /* Contour image */
-    //Mat cont_image = image.clone();
-    //contoursDraw(cont_image, dst);
-
-    imshow("Show street", hough_image);
-}
-
-/* Display canny image */
-void display_canny(Mat& src){
-    createTrackbar("Low threshold", "Show street", NULL, 1000, callBackLow, &src);
-    createTrackbar("High Threshold", "Show street", NULL, 1000, callBackHigh, &src);
+    // Dilate and erosion set operations on mask 
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(21, 21));
+    dilate(mask, mask, kernel);
+    erode(mask, mask, kernel);
 }
 
 int main(int argc, char** argv) {
@@ -209,60 +194,42 @@ int main(int argc, char** argv) {
         // TODO: object detection (Federico)
 
         // TODO: edge detection (Fabrizio)
-        // Ideas: bilateral filter, histogram equalization, tv_bergman filter
 
-        // first frame extraction
+        // First frame extraction
         Mat first_frame = video_frames[0];
-        //cvtColor(video_frames[0], first_frame, COLOR_BGR2GRAY);
 
         if (first_frame.empty()) {
-            cout << "Could not open or find the image!" << endl;
+            cout << "Could not open the frame!" << endl;
             return -1;
         }
 
-        // frame pre-processing
-        Mat preprocess_first_frame;
-        //GaussianBlur(first_frame, first_frame, Size(5,5), 2, 0);
-        //cvtColor(preprocess_first_frame, preprocess_first_frame, COLOR_BGR2GRAY);
-        bilateralFilter(first_frame, preprocess_first_frame, 9, 100.0, 75.0);
-        //equalizeHist(first_frame, first_frame);
+        // Frame pre-processing
+        Mat preprocessed_first_frame;
+        bilateralFilter(first_frame, preprocessed_first_frame, 9, 100.0, 75.0);
+        cvtColor(preprocessed_first_frame, preprocessed_first_frame, COLOR_BGR2HSV);
 
-        ///* Show image */
-        //namedWindow("Show street");
-        //imshow("Show street", preprocess_first_frame);
-//
-        ///* Display canny */
-        //display_canny(preprocess_first_frame);
+        // Mask generation by ranged HSV color segmentation
+        Mat mask;
+        Scalar lower_hsv(60, 150, 110);
+        Scalar upper_hsv(120, 255, 230); 
+        hsvMask(preprocessed_first_frame, mask, lower_hsv, upper_hsv);
+  
+        // Compute edge map by canny edge detection
+        Mat edge_map;
+        double upper_th = 100.0;
+        double lower_th = 10.0;
+        Canny(mask, edge_map, lower_th, upper_th);
 
-        /* HSV VALUE */
-        /* Show image */
-        Mat hsvImage = preprocess_first_frame.clone();
-        //namedWindow("Show Robocup");
-        cvtColor(preprocess_first_frame, hsvImage, COLOR_BGR2HSV);
-        //imshow("Show Robocup", hsvImage);
+        // Line detection using hough lines
+        vector<Vec2f> borders;
+        vector<Point2f> corners;
+        findLines(edge_map, borders);
+        findCorners(borders, corners);
+        drawBorders(first_frame, borders, corners);
 
-        /* Mouse callback */
-        //setMouseCallback("Show Robocup", mouseCallBack, (void*)&hsvImage);
-
-        cv::Scalar lowerHSV(60, 150, 110); // Lower bound of HSV values
-        cv::Scalar upperHSV(120, 255, 230); // Upper bound of HSV values
-
-        // Create a mask using the defined HSV range
-        cv::Mat mask;
-        cv::inRange(hsvImage, lowerHSV, upperHSV, mask);
-
-        cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(21, 21));
-        cv::dilate(mask, mask, kernel);
-        cv::erode(mask, mask, kernel);
-        //imshow("Show segment", mask);
-
-        
-        /* Show image */
-        namedWindow("Show street");
-        imshow("Show street", mask);
-
-        /* Display canny */
-        display_canny(mask);
+        // Show frame with borders
+        namedWindow("Billiard video frame");
+        imshow("Billiard video frame", first_frame);
 
         waitKey(0);
 
