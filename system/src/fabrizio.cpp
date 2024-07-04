@@ -110,7 +110,7 @@ void bordersIntersection(const Vec2f& first_line, const Vec2f& second_line, Poin
     corner.y = (a*f - d*c) / det;
 }
 
-/* Find the corners of the table borders */
+/* Find the corners of the borders */
 void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
     // Compute the borders by finding lines intersections
@@ -159,7 +159,6 @@ void drawBorders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>
     }
 }
 
-
 /* Generate mask by ranged HSV color segmentation */
 void hsvMask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
 
@@ -171,6 +170,42 @@ void hsvMask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv
     dilate(mask, mask, kernel);
     erode(mask, mask, kernel);
 }
+
+/* Sort corners in top-left, top-right, bottom-right, bottom-left */
+void sortCorners(vector<Point2f>& corners){
+        // Sort by y coordinate
+        for( size_t i = 0; i < corners.size(); i++ ){
+            for( size_t j = i + 1; j < corners.size(); j++ ){
+                if(corners[i].y > corners[j].y){
+                    swap(corners[i], corners[j]);
+                }
+            }
+        }
+
+        // Sort by x coordinate
+        if(corners[0].x >= corners[1].x){
+            swap(corners[0], corners[1]);
+        }
+        if(corners[2].x <= corners[3].x){
+            swap(corners[2], corners[3]);
+        }
+}
+
+
+/* Generate map view of the area inside the borders */
+void createMapView(const Mat& image, Mat& map_view, const vector<Point2f>& corners){
+    //vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(0, 250), Point2f(400, 250)};
+    //vector<Point2f> dst = {Point2f(400, 250), Point2f(0, 250), Point2f(400, 0), Point2f(0, 0)};
+    vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(400, 250), Point2f(0, 250)};
+
+    // Get perspective transform matrix
+    Mat map_perspective = getPerspectiveTransform(corners, dst);
+
+    // Generate map view
+    warpPerspective(image, map_view, map_perspective, Size(400, 250));
+    //resize(map_view, map_view, Size(), 0.5, 0.5);
+}
+
 
 int main(int argc, char** argv) {
     // get videos paths
@@ -214,7 +249,7 @@ int main(int argc, char** argv) {
         Scalar upper_hsv(120, 255, 230); 
         hsvMask(preprocessed_first_frame, mask, lower_hsv, upper_hsv);
   
-        // Compute edge map by canny edge detection
+        // Compute edge map of the mask by canny edge detection
         Mat edge_map;
         double upper_th = 100.0;
         double lower_th = 10.0;
@@ -230,6 +265,15 @@ int main(int argc, char** argv) {
         // Show frame with borders
         namedWindow("Billiard video frame");
         imshow("Billiard video frame", first_frame);
+
+        //// Compute map view of the billiard table
+        //Mat map_view;
+        //sortCorners(corners);
+        //createMapView(first_frame, map_view, corners);
+//
+        //// Show map view
+        //namedWindow("Billiard map view");
+        //imshow("Billiard map view", map_view);
 
         waitKey(0);
 
