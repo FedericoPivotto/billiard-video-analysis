@@ -198,7 +198,6 @@ void createMapView(const Mat& image, Mat& map_view, const vector<Point2f>& corne
     //vector<Point2f> dst = {Point2f(400, 250), Point2f(0, 250), Point2f(400, 0), Point2f(0, 0)};
     vector<Point2f> dst;
 
-    cout<<corners<<endl;
     // Check table orientation
     if(norm(corners[0] - corners[3]) <= norm(corners[0] - corners[1])){
         dst = {Point2f(0, 0), Point2f(400, 0), Point2f(400, 250), Point2f(0, 250)};
@@ -235,7 +234,7 @@ int main(int argc, char** argv) {
         
         // TODO: object detection (Federico)
 
-        // TODO: edge detection (Fabrizio)
+        // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
 
         // First frame extraction
         Mat first_frame = video_frames[0];
@@ -284,7 +283,7 @@ int main(int argc, char** argv) {
 
         waitKey(0);
 
-        // TODO: segmentation (Leonardo)
+        // TODO: segmentation (Leonardo) ------------------------------------------------------------------
         // TODO: 2D top-view minimap
         // TODO: trajectory tracking
 
