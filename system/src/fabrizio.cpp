@@ -196,14 +196,21 @@ void sortCorners(vector<Point2f>& corners){
 void createMapView(const Mat& image, Mat& map_view, const vector<Point2f>& corners){
     //vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(0, 250), Point2f(400, 250)};
     //vector<Point2f> dst = {Point2f(400, 250), Point2f(0, 250), Point2f(400, 0), Point2f(0, 0)};
-    vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(400, 250), Point2f(0, 250)};
+    vector<Point2f> dst;
+
+    cout<<corners<<endl;
+    // Check table orientation
+    if(norm(corners[0] - corners[3]) <= norm(corners[0] - corners[1])){
+        dst = {Point2f(0, 0), Point2f(400, 0), Point2f(400, 250), Point2f(0, 250)};
+    } else {
+        dst = {Point2f(0, 250), Point2f(0, 0), Point2f(400, 0), Point2f(400, 250)};
+    }
 
     // Get perspective transform matrix
     Mat map_perspective = findHomography(corners, dst);
 
     // Generate map view
     warpPerspective(image, map_view, map_perspective, Size(400, 250));
-    //resize(map_view, map_view, Size(), 0.5, 0.5);
 }
 
 
@@ -266,7 +273,7 @@ int main(int argc, char** argv) {
         namedWindow("Billiard video frame");
         imshow("Billiard video frame", first_frame);
 
-        //// Compute map view of the billiard table
+        // Compute map view of the billiard table
         Mat map_view;
         sortCorners(corners);
         createMapView(first_frame, map_view, corners);
