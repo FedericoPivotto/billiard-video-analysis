@@ -80,4 +80,5 @@ target_link_libraries(leonardo
     system_video_utils
     system_filesystem_utils
     system_object_detection
-    system_segmentation)
+    system_segmentation
+    system_edge_detection)
