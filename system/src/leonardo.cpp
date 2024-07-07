@@ -34,27 +34,20 @@ const std::vector<cv::Point2f> corners) {
     for(cv::Point2f corner : corners)
          std::cout << "Corner: " << corner << std::endl;
  
-    //std::vector<cv::Point> intCorners = convertToIntegerPoints(floatCorners);
-    ///////funzione
-    std::vector<cv::Point> intPoints;
-    intPoints.reserve(corners.size()); // Riserva spazio per evitare riallocazioni
-
-    for (const auto& point : corners) {
-        intPoints.push_back(cv::Point(cvRound(point.x), cvRound(point.y)));
-    }
+    // convert float corners into integer corners
+    std::vector<cv::Point> intCorners = convertToIntegerPoints(corners);
+    
     // color table pixels within the table borders
     std::vector<std::vector<cv::Point>> fillContAll;
-    fillContAll.push_back(intPoints);
+    fillContAll.push_back(intCorners);
     cv::fillPoly(video_frames[n_frame], fillContAll, cv::Scalar(0, 255, 0));
-    ///////////////////////
-
     
     // scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
         // TODO: color balls according to class
-        //ball_segmentation(ball_bbox, video_frames[n_frame]);
+        ball_segmentation(ball_bbox, video_frames[n_frame]);
         
-        if (ball_bbox.ball_class == 1)
+        /*if (ball_bbox.ball_class == 1)
         {
             std::pair<unsigned int, unsigned int> center_point = ball_bbox.center();
             cv::Point center(center_point.first, center_point.second);
@@ -81,9 +74,10 @@ const std::vector<cv::Point2f> corners) {
             cv::Point center(center_point.first, center_point.second);
             cv::Scalar color(0, 0, 255);
             cv::circle( video_frames[n_frame], center, ball_bbox.radius(), color, -1 );
-        }
+        }*/
     }
 }
+
 
 /*std::vector<cv::Point> convertToIntegerPoints(const std::vector<cv::Point2f>& floatPoints) {
     std::vector<cv::Point> intPoints;
