@@ -6,7 +6,7 @@ using namespace cv;
 using namespace std;
 
 /* Manage candidate lines with negative rho to make them comparable */
-void negativeLines(vector<Vec2f>& lines){
+void negative_lines(vector<Vec2f>& lines){
     for(int i = 0; i < lines.size() - 1; i++ ){
         if(lines[i][0] < 0){
             lines[i][0] *= -1.0;
@@ -16,7 +16,7 @@ void negativeLines(vector<Vec2f>& lines){
 }
 
 /* Find the possible four borders among the candidate lines */
-void findBorders(const vector<Vec2f> lines, vector<Vec2f>& borders){
+void select_borders(const vector<Vec2f> lines, vector<Vec2f>& borders){
     
     // List of already visited candidates (similar to already selected borders)
     vector<bool> visited(lines.size(), false);
@@ -49,17 +49,17 @@ void findBorders(const vector<Vec2f> lines, vector<Vec2f>& borders){
 }
 
 /* Find the borders of the billiard table */
-void findLines(const Mat& edge_map, vector<Vec2f>& borders){
+void find_borders(const Mat& edge_map, vector<Vec2f>& borders){
 
     // Find line candidates and select the four borders
     vector<Vec2f> lines;
     HoughLines(edge_map, lines, 1, CV_PI / 180, 95, 0, 0);
-    negativeLines(lines);
-    findBorders(lines, borders);
+    negative_lines(lines);
+    select_borders(lines, borders);
 }
 
 /* Find the intersection of two lines */
-void bordersIntersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
+void borders_intersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
 
     // Compute line intersection by solving a linear system of two equations
     // The two equations are considered with the following notation:
@@ -86,7 +86,7 @@ void bordersIntersection(const Vec2f& first_line, const Vec2f& second_line, Poin
 }
 
 /* Find the corners of the borders */
-void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
+void find_corners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
     // Compute the borders by finding lines intersections
     for( size_t i = 0; i < borders.size(); i++ ){
@@ -98,7 +98,7 @@ void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
             // Find corner candidate
             Point2f corner;
-            bordersIntersection(borders[i], borders[j], corner);
+            borders_intersection(borders[i], borders[j], corner);
 
             // Check corner feasibility
             if((corner.x != -1.0 && corner.y != -1.0) && (corner.x >= 0 && corner.y >= 0)){
@@ -109,7 +109,7 @@ void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 }
 
 /* Draw the borders on the current frame */
-void drawBorders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
+void draw_borders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
     double distance_th = 5.0;
 
     // Draw the borders
@@ -135,7 +135,7 @@ void drawBorders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>
 }
 
 /* Generate mask by ranged HSV color segmentation */
-void hsvMask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
+void hsv_mask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
 
     // Color segmentation
     inRange(hsv_frame, lower_hsv, upper_hsv, mask);
@@ -147,7 +147,7 @@ void hsvMask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv
 }
 
 /* Sort corners in top-left, top-right, bottom-right, bottom-left */
-void sortCorners(vector<Point2f>& corners){
+void sort_corners(vector<Point2f>& corners){
         // Sort by y coordinate
         for( size_t i = 0; i < corners.size(); i++ ){
             for( size_t j = i + 1; j < corners.size(); j++ ){
@@ -168,7 +168,7 @@ void sortCorners(vector<Point2f>& corners){
 
 
 /* Generate map view of the area inside the borders */
-void createMapView(const Mat& image, Mat& map_view, const vector<Point2f>& corners){
+void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& corners){
     //vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(0, 250), Point2f(400, 250)};
     //vector<Point2f> dst = {Point2f(400, 250), Point2f(0, 250), Point2f(400, 0), Point2f(0, 0)};
     vector<Point2f> dst;
