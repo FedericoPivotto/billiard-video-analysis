@@ -5,6 +5,7 @@
 using namespace cv;
 using namespace std;
 
+
 /* Manage candidate lines with negative rho to make them comparable */
 void negative_lines(vector<Vec2f>& lines){
     for(int i = 0; i < lines.size() - 1; i++ ){
@@ -14,6 +15,7 @@ void negative_lines(vector<Vec2f>& lines){
         }
     }
 }
+
 
 /* Find the possible four borders among the candidate lines */
 void select_borders(const vector<Vec2f> lines, vector<Vec2f>& borders){
@@ -48,6 +50,7 @@ void select_borders(const vector<Vec2f> lines, vector<Vec2f>& borders){
 
 }
 
+
 /* Find the borders of the billiard table */
 void find_borders(const Mat& edge_map, vector<Vec2f>& borders){
 
@@ -57,6 +60,7 @@ void find_borders(const Mat& edge_map, vector<Vec2f>& borders){
     negative_lines(lines);
     select_borders(lines, borders);
 }
+
 
 /* Find the intersection of two lines */
 void borders_intersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
@@ -85,6 +89,7 @@ void borders_intersection(const Vec2f& first_line, const Vec2f& second_line, Poi
     corner.y = (a*f - d*c) / det;
 }
 
+
 /* Find the corners of the borders */
 void find_corners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
@@ -107,6 +112,7 @@ void find_corners(const vector<Vec2f>& borders, vector<Point2f>& corners){
         }
     }
 }
+
 
 /* Draw the borders on the current frame */
 void draw_borders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
@@ -134,6 +140,7 @@ void draw_borders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f
     }
 }
 
+
 /* Generate mask by ranged HSV color segmentation */
 void hsv_mask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
 
@@ -145,6 +152,7 @@ void hsv_mask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hs
     dilate(mask, mask, kernel);
     erode(mask, mask, kernel);
 }
+
 
 /* Sort corners in top-left, top-right, bottom-right, bottom-left */
 void sort_corners(vector<Point2f>& corners){
@@ -167,22 +175,73 @@ void sort_corners(vector<Point2f>& corners){
 }
 
 
+/* Compute the slope of a line expressed in polar representation (rho, theta) */
+double compute_slope(const double theta){
+    const double epsilon = 1e-1;
+
+    // Check if line is vertical, otherwise compute slope    
+    if((abs(theta) < epsilon) || abs(theta - CV_PI) < epsilon){
+        return numeric_limits<double>::infinity();
+    } else {
+        return - 1.0 / tan(theta);
+    }
+}
+
+
+/* Check whether the video point of view is affected by distortion */
+void check_perspective_distortion(const vector<Vec2f>& borders, bool& is_distorted){
+    is_distorted = false;
+    double slope_sum = 0.0;
+
+    // Sum the slopes of the borders 
+    for(const Vec2f& border : borders){
+        double slope = compute_slope(border[1]);
+
+        if(slope == numeric_limits<double>::infinity()){
+            slope_sum += 1000;
+        } else {
+            slope_sum += slope;
+        }
+    }
+
+    // Set threshold for distortion check
+    const double threshold = 100.0;
+
+    // Check for presence of distortion
+    if(slope_sum <= threshold){
+        is_distorted = true;
+    }
+}
+
+
 /* Generate map view of the area inside the borders */
-void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& corners){
+void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& corners, const bool is_distorted){
     //vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(0, 250), Point2f(400, 250)};
     //vector<Point2f> dst = {Point2f(400, 250), Point2f(0, 250), Point2f(400, 0), Point2f(0, 0)};
     vector<Point2f> dst;
 
     // Check table orientation
-    if(norm(corners[0] - corners[3]) <= norm(corners[0] - corners[1])){
-        dst = {Point2f(0, 0), Point2f(400, 0), Point2f(400, 250), Point2f(0, 250)};
+    if(!is_distorted){
+        dst = {Point2f(0, 0), Point2f(350, 0), Point2f(350, 200), Point2f(0, 200)};
     } else {
-        dst = {Point2f(0, 250), Point2f(0, 0), Point2f(400, 0), Point2f(400, 250)};
+        dst = {Point2f(0, 200), Point2f(0, 0), Point2f(350, 0), Point2f(350, 200)};
     }
 
     // Get perspective transform matrix
     Mat map_perspective = findHomography(corners, dst);
 
     // Generate map view
-    warpPerspective(image, map_view, map_perspective, Size(400, 250));
+    warpPerspective(image, map_view, map_perspective, Size(350, 200));
+}
+
+
+/* Overlay the map-view into the current frame */
+void overlay_map_view(Mat& frame, const Mat& map_view){
+    // Consider offsets for the coordinates
+    const int x = 10;
+    const int y = frame.rows - map_view.rows - 10;
+
+    // Set the region of interest and to overlay on it
+    Rect roi(x, y, map_view.cols, map_view.rows);
+    map_view.copyTo(frame(roi));
 }

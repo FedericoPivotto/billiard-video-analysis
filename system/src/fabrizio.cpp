@@ -30,6 +30,7 @@
 using namespace cv;
 using namespace std;
 
+
 int main(int argc, char** argv) {
     // get videos paths
     std::vector<cv::String> video_paths;
@@ -85,18 +86,21 @@ int main(int argc, char** argv) {
         find_corners(borders, corners);
         draw_borders(first_frame, borders, corners);
 
+        // Compute map view of the billiard table, considering point-view distortion
+        Mat map_view;
+        sort_corners(corners);
+        
+        bool is_distorted = false;
+        check_perspective_distortion(borders, is_distorted);
+
+        create_map_view(first_frame, map_view, corners, is_distorted);
+
+        // Overlay the map-view in the current frame
+        overlay_map_view(first_frame, map_view);
+
         // Show frame with borders
         namedWindow("Billiard video frame");
         imshow("Billiard video frame", first_frame);
-
-        // Compute map view of the billiard table
-        Mat map_view;
-        sort_corners(corners);
-        create_map_view(first_frame, map_view, corners);
-
-        // Show map view
-        namedWindow("Billiard map view");
-        imshow("Billiard map view", map_view);
 
         waitKey(0);
 

@@ -24,6 +24,12 @@ void hsv_mask(const cv::Mat& hsv_frame, cv::Mat& mask, cv::Scalar lower_hsv, cv:
 
 void sort_corners(std::vector<cv::Point2f>& corners);
 
-void create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners);
+void create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted);
+
+double compute_slope(const double theta);
+
+void check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& is_distorted);
+
+void overlay_map_view(cv::Mat& frame, const cv::Mat& map_view);
 
 #endif // EDGE_DETECTION_H
