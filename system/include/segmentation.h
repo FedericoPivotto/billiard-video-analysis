@@ -9,7 +9,8 @@
 #include <object_detection.h>
 
 namespace sg {
-    void ball_segmentation(od::Ball ball_bbox, const cv::Mat& frame);
+    void field_segmentation(const std::vector<cv::Point2f> corners, cv::Mat& frame);
+    void ball_segmentation(od::Ball ball_bbox, cv::Mat& frame);
     std::vector<cv::Point> convertToIntegerPoints(const std::vector<cv::Point2f>& floatPoints);
 }
 

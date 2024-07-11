@@ -20,7 +20,7 @@
 #include <segmentation.h>
 
 void segmentation(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, 
-const std::vector<cv::Point2f> corners) {
+const std::vector<cv::Point2f> corners, cv::Mat frame_segmentation) {
     // read frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
@@ -33,22 +33,16 @@ const std::vector<cv::Point2f> corners) {
 
     for(cv::Point2f corner : corners)
         std::cout << "Corner: " << corner << std::endl;
- 
-    // convert float corners into integer corners
-    std::vector<cv::Point> intCorners = sg::convertToIntegerPoints(corners);
-    
-    // video frame clone
-    //cv::Mat frame(video_frames[n_frame].clone());
+
+    frame_segmentation = video_frames[n_frame].clone();
 
     // color table pixels within the table borders
-    std::vector<std::vector<cv::Point>> fillContAll;
-    fillContAll.push_back(intCorners);
-    cv::fillPoly(video_frames[n_frame]/*frame*/, fillContAll, cv::Scalar(0, 255, 0));
+    sg::field_segmentation(corners, frame_segmentation);
     
     // scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
         // color balls according to class
-        sg::ball_segmentation(ball_bbox, video_frames[n_frame]);
+        sg::ball_segmentation(ball_bbox, frame_segmentation);
     }
 }
 
@@ -124,10 +118,12 @@ int main(int argc, char** argv) {
         if(i == 0) {
             // first and last video frame segmentation
             std::string bboxes_test_dir = "../dataset/game1_clip1/bounding_boxes";
-            segmentation(video_frames, 0, bboxes_test_dir, corners);
-            segmentation(video_frames, video_frames.size()-1, bboxes_test_dir, corners);
+            std::vector<cv::Mat> frame_segmentation(2);
+
+            segmentation(video_frames, 0, bboxes_test_dir, corners, frame_segmentation[0]);
+            segmentation(video_frames, video_frames.size()-1, bboxes_test_dir, corners, frame_segmentation[1]);
             
-            vu::show_video_frames(video_frames);
+            vu::show_video_frames(frame_segmentation);
             cv::waitKey(0);
         }
 
