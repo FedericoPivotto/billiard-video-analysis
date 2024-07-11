@@ -4,6 +4,8 @@
 
 /* Matches search */
 void bm::matches_search() {
+    // input: true bounding boxes file, predicted bounding boxes file
+
     // define the distance function between two bounding boxes rows (x, y, width, height, ball class)
     // ATTENTION: pay attention to the fact the matches are just between same ball classes
 
@@ -20,6 +22,8 @@ void bm::matches_search() {
     // NOTE: for each predicted bounding box store label it if TP, TN, FP, FN
     
     // sort the matches found in descending order of the confidence value
+
+    // output: sorted matches
 }
 
 /* Localization metric */
