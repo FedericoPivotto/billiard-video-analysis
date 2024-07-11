@@ -12,6 +12,9 @@
 // edge_detection detection library
 #include <edge_detection.h>
 
+// minimap detection library
+#include <minimap.h>
+
 int main(int argc, char** argv) {
     // get videos paths
     std::vector<cv::String> video_paths;
@@ -60,11 +63,11 @@ int main(int argc, char** argv) {
         
         // Compute map view of the billiard table-----------------------
         cv::Mat map_view;
-        ed::sort_corners(corners);   
-        ed::compute_map_view(map_view, first_frame, borders, corners);
+        mm::sort_corners(corners);   
+        mm::compute_map_view(map_view, first_frame, borders, corners);
 
-        // Overlay the map-view in the current frame0
-        ed::overlay_map_view(first_frame, map_view);
+        // Overlay the map-view in the current frame
+        mm::overlay_map_view(first_frame, map_view);
 
         // Compute map view of the billiard table-----------------------
 

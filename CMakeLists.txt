@@ -34,6 +34,10 @@ add_library(system_edge_detection
 add_library(system_segmentation
     system/include/segmentation.h
     system/src/segmentation.cpp)
+# minimap library
+add_library(system_minimap
+    system/include/minimap.h
+    system/src/minimap.cpp)
 
 ## Metrics libraries
 
@@ -71,7 +75,8 @@ target_link_libraries(fabrizio
     system_video_utils
     system_filesystem_utils
     system_object_detection
-    system_edge_detection)
+    system_edge_detection
+    system_minimap)
 
 ## Leonardo system executable
 add_executable(leonardo system/src/leonardo.cpp)
