@@ -28,6 +28,8 @@ void create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<
 
 double compute_slope(const double theta);
 
+void warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, cv::Point2f& warped_point);
+
 void check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& is_distorted);
 
 void overlay_map_view(cv::Mat& frame, const cv::Mat& map_view);

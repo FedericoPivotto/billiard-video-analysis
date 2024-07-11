@@ -214,10 +214,26 @@ void check_perspective_distortion(const vector<Vec2f>& borders, bool& is_distort
 }
 
 
+/* Compute the pixel location in the warped image w.r.t. the original image */
+void warped_pixel(const Point2f& point, const Mat& map_perspective, Point2f& warped_point){
+    
+    // Convert original point into homogeneous coordinates
+    Mat homogeneous_point(3, 1, CV_64F);
+    homogeneous_point.at<double>(0,0) = static_cast<double>(point.x);
+    homogeneous_point.at<double>(1,0) = static_cast<double>(point.y);
+    homogeneous_point.at<double>(2,0) = 1.0;
+    
+    // Compute warped point in homogeneous coordinates
+    Mat homogeneous_warped_point = map_perspective * homogeneous_point;
+
+    // Store warped point
+    warped_point.x = static_cast<float>(homogeneous_warped_point.at<double>(0,0) / homogeneous_warped_point.at<double>(2,0));
+    warped_point.y = static_cast<float>(homogeneous_warped_point.at<double>(1,0) / homogeneous_warped_point.at<double>(2,0));
+}
+
+
 /* Generate map view of the area inside the borders */
 void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& corners, const bool is_distorted){
-    //vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(0, 250), Point2f(400, 250)};
-    //vector<Point2f> dst = {Point2f(400, 250), Point2f(0, 250), Point2f(400, 0), Point2f(0, 0)};
     vector<Point2f> dst;
 
     // Check table orientation
@@ -232,6 +248,13 @@ void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& cor
 
     // Generate map view
     warpPerspective(image, map_view, map_perspective, Size(350, 200));
+
+    Point2f warped_point;
+
+    // TEST---------------------------
+    warped_pixel(Point2f(268, 317), map_perspective, warped_point);
+    cout<<"WARPED POINT: "<< warped_point<<endl;
+    circle(map_view, warped_point, 6, Scalar(0,0,255));
 }
 
 
