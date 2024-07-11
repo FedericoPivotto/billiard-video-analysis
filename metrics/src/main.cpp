@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     // NOTE: fix this only after all metrics are fine, substituting this part extracting correctly data from the provide video filename as input parameter
 
     // read true bounding boxes
-    // NOTE: it will come from result directory
+    // NOTE: it will come from dataset directory
     // ATTENTION: Federico will take care of this part
     std::vector<od::Ball> true_balls;
     std::string true_bboxes_frame_file_path = "../metrics/data/true_frame_first_bbox.txt";
