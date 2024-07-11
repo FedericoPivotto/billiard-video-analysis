@@ -32,66 +32,25 @@ const std::vector<cv::Point2f> corners) {
         std::cout << "Ball: " << ball << std::endl;
 
     for(cv::Point2f corner : corners)
-         std::cout << "Corner: " << corner << std::endl;
+        std::cout << "Corner: " << corner << std::endl;
  
     // convert float corners into integer corners
     std::vector<cv::Point> intCorners = sg::convertToIntegerPoints(corners);
     
     // video frame clone
-    cv::Mat frame(video_frames[n_frame].clone());
+    //cv::Mat frame(video_frames[n_frame].clone());
 
     // color table pixels within the table borders
     std::vector<std::vector<cv::Point>> fillContAll;
     fillContAll.push_back(intCorners);
-    cv::fillPoly(frame, fillContAll, cv::Scalar(0, 255, 0));
+    cv::fillPoly(video_frames[n_frame]/*frame*/, fillContAll, cv::Scalar(0, 255, 0));
     
     // scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
-        // TODO: color balls according to class
-        sg::ball_segmentation(ball_bbox, frame);
-        
-        /*if (ball_bbox.ball_class == 1)
-        {
-            std::pair<unsigned int, unsigned int> center_point = ball_bbox.center();
-            cv::Point center(center_point.first, center_point.second);
-            cv::Scalar color(255, 255, 255);
-            cv::circle( frame, center, ball_bbox.radius(), color, -1 );
-        }
-        else if (ball_bbox.ball_class == 2)
-        {
-            std::pair<unsigned int, unsigned int> center_point = ball_bbox.center();
-            cv::Point center(center_point.first, center_point.second);
-            cv::Scalar color(0, 0, 0);
-            cv::circle( frame, center, ball_bbox.radius(), color, -1 );
-        }
-        else if (ball_bbox.ball_class == 3)
-        {
-            std::pair<unsigned int, unsigned int> center_point = ball_bbox.center();
-            cv::Point center(center_point.first, center_point.second);
-            cv::Scalar color(255, 0, 0);
-            cv::circle( frame, center, ball_bbox.radius(), color, -1 );
-        }
-        else if(ball_bbox.ball_class == 4)
-        {
-            std::pair<unsigned int, unsigned int> center_point = ball_bbox.center();
-            cv::Point center(center_point.first, center_point.second);
-            cv::Scalar color(0, 0, 255);
-            cv::circle( frame, center, ball_bbox.radius(), color, -1 );
-        }*/
+        // color balls according to class
+        sg::ball_segmentation(ball_bbox, video_frames[n_frame]);
     }
 }
-
-
-/*std::vector<cv::Point> convertToIntegerPoints(const std::vector<cv::Point2f>& floatPoints) {
-    std::vector<cv::Point> intPoints;
-    intPoints.reserve(floatPoints.size()); // Riserva spazio per evitare riallocazioni
-
-    for (const auto& point : floatPoints) {
-        intPoints.push_back(cv::Point(cvRound(point.x), cvRound(point.y)));
-    }
-
-    return intPoints;
-}*/
 
 int main(int argc, char** argv) {
     // get videos paths
