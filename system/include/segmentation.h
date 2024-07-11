@@ -2,14 +2,16 @@
 #define SEGMENTATION_H
 
 // libraries required in this source file
-#include <iostream>
-// utility: std::pair
-#include <utility>
+
 // highgui: cv::Mat
 #include <opencv2/highgui.hpp>
-#include <opencv2/opencv.hpp>
+// object_detection: od::Ball
+#include <object_detection.h>
 
-int function_name();
-//void ball_segmentation(od::Ball ball_bbox, cv::Mat &frame);
+namespace sg {
+    void field_segmentation(const std::vector<cv::Point2f> corners, cv::Mat& frame);
+    void ball_segmentation(od::Ball ball_bbox, cv::Mat& frame);
+    std::vector<cv::Point> convertToIntegerPoints(const std::vector<cv::Point2f>& floatPoints);
+}
 
 #endif // SEGMENTATION_H
