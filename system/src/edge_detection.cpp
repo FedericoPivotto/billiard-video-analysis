@@ -5,8 +5,9 @@
 using namespace cv;
 using namespace std;
 
+
 /* Manage candidate lines with negative rho to make them comparable */
-void negativeLines(vector<Vec2f>& lines){
+void negative_lines(vector<Vec2f>& lines){
     for(int i = 0; i < lines.size() - 1; i++ ){
         if(lines[i][0] < 0){
             lines[i][0] *= -1.0;
@@ -15,8 +16,9 @@ void negativeLines(vector<Vec2f>& lines){
     }
 }
 
+
 /* Find the possible four borders among the candidate lines */
-void findBorders(const vector<Vec2f> lines, vector<Vec2f>& borders){
+void select_borders(const vector<Vec2f> lines, vector<Vec2f>& borders){
     
     // List of already visited candidates (similar to already selected borders)
     vector<bool> visited(lines.size(), false);
@@ -48,18 +50,20 @@ void findBorders(const vector<Vec2f> lines, vector<Vec2f>& borders){
 
 }
 
+
 /* Find the borders of the billiard table */
-void findLines(const Mat& edge_map, vector<Vec2f>& borders){
+void find_borders(const Mat& edge_map, vector<Vec2f>& borders){
 
     // Find line candidates and select the four borders
     vector<Vec2f> lines;
     HoughLines(edge_map, lines, 1, CV_PI / 180, 95, 0, 0);
-    negativeLines(lines);
-    findBorders(lines, borders);
+    negative_lines(lines);
+    select_borders(lines, borders);
 }
 
+
 /* Find the intersection of two lines */
-void bordersIntersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
+void borders_intersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
 
     // Compute line intersection by solving a linear system of two equations
     // The two equations are considered with the following notation:
@@ -85,8 +89,9 @@ void bordersIntersection(const Vec2f& first_line, const Vec2f& second_line, Poin
     corner.y = (a*f - d*c) / det;
 }
 
+
 /* Find the corners of the borders */
-void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
+void find_corners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
     // Compute the borders by finding lines intersections
     for( size_t i = 0; i < borders.size(); i++ ){
@@ -98,7 +103,7 @@ void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
             // Find corner candidate
             Point2f corner;
-            bordersIntersection(borders[i], borders[j], corner);
+            borders_intersection(borders[i], borders[j], corner);
 
             // Check corner feasibility
             if((corner.x != -1.0 && corner.y != -1.0) && (corner.x >= 0 && corner.y >= 0)){
@@ -108,8 +113,9 @@ void findCorners(const vector<Vec2f>& borders, vector<Point2f>& corners){
     }
 }
 
+
 /* Draw the borders on the current frame */
-void drawBorders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
+void draw_borders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
     double distance_th = 5.0;
 
     // Draw the borders
@@ -134,8 +140,9 @@ void drawBorders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>
     }
 }
 
+
 /* Generate mask by ranged HSV color segmentation */
-void hsvMask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
+void hsv_mask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
 
     // Color segmentation
     inRange(hsv_frame, lower_hsv, upper_hsv, mask);
@@ -146,8 +153,9 @@ void hsvMask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv
     erode(mask, mask, kernel);
 }
 
+
 /* Sort corners in top-left, top-right, bottom-right, bottom-left */
-void sortCorners(vector<Point2f>& corners){
+void sort_corners(vector<Point2f>& corners){
         // Sort by y coordinate
         for( size_t i = 0; i < corners.size(); i++ ){
             for( size_t j = i + 1; j < corners.size(); j++ ){
@@ -167,22 +175,133 @@ void sortCorners(vector<Point2f>& corners){
 }
 
 
+/* Compute the slope of a line expressed in polar representation (rho, theta) */
+double compute_slope(const double theta){
+    const double epsilon = 1e-1;
+
+    // Check if line is vertical, otherwise compute slope    
+    if((abs(theta) < epsilon) || abs(theta - CV_PI) < epsilon){
+        return numeric_limits<double>::infinity();
+    } else {
+        return - 1.0 / tan(theta);
+    }
+}
+
+
+/* Check whether the video point of view is affected by distortion */
+void check_perspective_distortion(const vector<Vec2f>& borders, bool& is_distorted){
+    is_distorted = false;
+    double slope_sum = 0.0;
+
+    // Sum the slopes of the borders 
+    for(const Vec2f& border : borders){
+        double slope = compute_slope(border[1]);
+
+        if(slope == numeric_limits<double>::infinity()){
+            slope_sum += 1000;
+        } else {
+            slope_sum += slope;
+        }
+    }
+
+    // Set threshold for distortion check
+    const double threshold = 100.0;
+
+    // Check for presence of distortion
+    if(slope_sum <= threshold){
+        is_distorted = true;
+    }
+}
+
+
+/* Compute the pixel location in the warped image w.r.t. the original image */
+void warped_pixel(const Point2f& point, const Mat& map_perspective, Point2f& warped_point){
+    
+    // Convert original point into homogeneous coordinates
+    Mat homogeneous_point(3, 1, CV_64F);
+    homogeneous_point.at<double>(0,0) = static_cast<double>(point.x);
+    homogeneous_point.at<double>(1,0) = static_cast<double>(point.y);
+    homogeneous_point.at<double>(2,0) = 1.0;
+    
+    // Compute warped point in homogeneous coordinates
+    Mat homogeneous_warped_point = map_perspective * homogeneous_point;
+
+    // Store warped point
+    warped_point.x = static_cast<float>(homogeneous_warped_point.at<double>(0,0) / homogeneous_warped_point.at<double>(2,0));
+    warped_point.y = static_cast<float>(homogeneous_warped_point.at<double>(1,0) / homogeneous_warped_point.at<double>(2,0));
+}
+
+
 /* Generate map view of the area inside the borders */
-void createMapView(const Mat& image, Mat& map_view, const vector<Point2f>& corners){
-    //vector<Point2f> dst = {Point2f(0, 0), Point2f(400, 0), Point2f(0, 250), Point2f(400, 250)};
-    //vector<Point2f> dst = {Point2f(400, 250), Point2f(0, 250), Point2f(400, 0), Point2f(0, 0)};
+void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& corners, const bool is_distorted){
     vector<Point2f> dst;
 
     // Check table orientation
-    if(norm(corners[0] - corners[3]) <= norm(corners[0] - corners[1])){
-        dst = {Point2f(0, 0), Point2f(400, 0), Point2f(400, 250), Point2f(0, 250)};
+    if(!is_distorted){
+        dst = {Point2f(0, 0), Point2f(350, 0), Point2f(350, 200), Point2f(0, 200)};
     } else {
-        dst = {Point2f(0, 250), Point2f(0, 0), Point2f(400, 0), Point2f(400, 250)};
+        dst = {Point2f(0, 200), Point2f(0, 0), Point2f(350, 0), Point2f(350, 200)};
     }
 
     // Get perspective transform matrix
     Mat map_perspective = findHomography(corners, dst);
 
     // Generate map view
-    warpPerspective(image, map_view, map_perspective, Size(400, 250));
+    warpPerspective(image, map_view, map_perspective, Size(350, 200));
+
+    Point2f warped_point;
+
+    // TEST---------------------------
+    warped_pixel(Point2f(268, 317), map_perspective, warped_point);
+    cout<<"WARPED POINT: "<< warped_point<<endl;
+    circle(map_view, warped_point, 6, Scalar(0,0,255));
+}
+
+
+/* Overlay the map-view into the current frame */
+void overlay_map_view(Mat& frame, const Mat& map_view){
+    // Consider offsets for the coordinates
+    const int x = 10;
+    const int y = frame.rows - map_view.rows - 10;
+
+    // Set the region of interest and to overlay on it
+    Rect roi(x, y, map_view.cols, map_view.rows);
+    map_view.copyTo(frame(roi));
+}
+
+
+/* Computes map-view of the current frame */
+void compute_map_view(Mat& map_view, const Mat& first_frame, const vector<Vec2f>& borders, const vector<Point2f>& corners){
+    
+    // Check for presenceof distortion
+    bool is_distorted = false;
+    check_perspective_distortion(borders, is_distorted);
+
+    // Create map-view
+    create_map_view(first_frame, map_view, corners, is_distorted);
+}
+
+
+/* Perform edge detectionon the first frame */
+void edge_detection(Mat& first_frame, vector<Vec2f>& borders, vector<Point2f>& corners){
+    // Frame pre-processing
+    Mat preprocessed_first_frame;
+    bilateralFilter(first_frame, preprocessed_first_frame, 9, 100.0, 75.0);
+    cvtColor(preprocessed_first_frame, preprocessed_first_frame, COLOR_BGR2HSV);
+
+    // Mask generation by ranged HSV color segmentation
+    Mat mask;
+    Scalar lower_hsv(60, 150, 110);
+    Scalar upper_hsv(120, 255, 230); 
+    hsv_mask(preprocessed_first_frame, mask, lower_hsv, upper_hsv);
+  
+    // Compute edge map of the mask by canny edge detection
+    Mat edge_map;
+    double upper_th = 100.0;
+    double lower_th = 10.0;
+    Canny(mask, edge_map, lower_th, upper_th);
+
+    // Line detection using hough lines
+    find_borders(edge_map, borders);
+    find_corners(borders, corners);
 }
