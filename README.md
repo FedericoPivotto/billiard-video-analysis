@@ -82,3 +82,4 @@ This step consists in generating a 2D Map-view starting from the borders of the 
 **Procedure**: in the mind of Fabri.
 
 ## 5 - Metrics
+Described in metrics code.
