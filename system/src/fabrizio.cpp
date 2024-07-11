@@ -1,14 +1,3 @@
-// Setup CMake: mkdir build && cd build && cmake ..
-// Compile with CMake: cd build && make
-
-// Compile: g++ fabrizio.cpp -o fabrizio -I/usr/local/include/opencv4 -lopencv_highgui -lopencv_core -lopencv_imgcodecs
-// Execute: ./fabrizio
-
-#include <iostream>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/opencv.hpp>
-
 // user-defined libraries
 
 // video_captures: video utilities
@@ -22,13 +11,6 @@
 
 // edge_detection detection library
 #include <edge_detection.h>
-
-// error constants
-#define INVALID_ARGUMENTS_ERROR -1
-#define IMAGE_READ_ERROR -2
-
-using namespace cv;
-using namespace std;
 
 int main(int argc, char** argv) {
     // get videos paths
@@ -54,43 +36,43 @@ int main(int argc, char** argv) {
         // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
 
         // Edge detection made on the first frame
-        Mat first_frame = video_frames[0];
-        vector<Vec2f> borders;
-        vector<Point2f> corners;
+        cv::Mat first_frame = video_frames[0];
+        std::vector<cv::Vec2f> borders;
+        std::vector<cv::Point2f> corners;
 
         if (first_frame.empty()) {
-            cout << "Could not open the frame!" << endl;
+            std::cout << "Could not open the frame!" << std::endl;
             return -1;
         } else {
-            edge_detection(first_frame, borders, corners);
-            draw_borders(first_frame, borders, corners);
+            ed::edge_detection(first_frame, borders, corners);
+            ed::draw_borders(first_frame, borders, corners);
         }
 
         // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
 
         // Store bounding boxes centers and compute average ray (TODO: generalize to our results)
-        vector<od::Ball> ball_boxes;
-        string ball_boxes_dir_path = "../dataset/game1_clip1/bounding_boxes";
-        string ball_boxes_path;
+        std::vector<od::Ball> ball_boxes;
+        std::string ball_boxes_dir_path = "../dataset/game1_clip1/bounding_boxes";
+        std::string ball_boxes_path;
 
         fsu::get_bboxes_frame_file_path(video_frames, 0, ball_boxes_dir_path, ball_boxes_path);
         fsu::read_ball_bboxes(ball_boxes_path, ball_boxes);
         
         // Compute map view of the billiard table-----------------------
-        Mat map_view;
-        sort_corners(corners);   
-        compute_map_view(map_view, first_frame, borders, corners);
+        cv::Mat map_view;
+        ed::sort_corners(corners);   
+        ed::compute_map_view(map_view, first_frame, borders, corners);
 
         // Overlay the map-view in the current frame0
-        overlay_map_view(first_frame, map_view);
+        ed::overlay_map_view(first_frame, map_view);
 
         // Compute map view of the billiard table-----------------------
 
         // Show frame with borders
-        namedWindow("Billiard video frame");
-        imshow("Billiard video frame", first_frame);
+        cv::namedWindow("Billiard video frame");
+        cv::imshow("Billiard video frame", first_frame);
 
-        waitKey(0);
+        cv::waitKey(0);
 
         // TODO: segmentation (Leonardo) ------------------------------------------------------------------
         // TODO: 2D top-view minimap

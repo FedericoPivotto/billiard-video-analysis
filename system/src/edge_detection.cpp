@@ -7,7 +7,7 @@ using namespace std;
 
 
 /* Manage candidate lines with negative rho to make them comparable */
-void negative_lines(vector<Vec2f>& lines){
+void ed::negative_lines(vector<Vec2f>& lines){
     for(int i = 0; i < lines.size() - 1; i++ ){
         if(lines[i][0] < 0){
             lines[i][0] *= -1.0;
@@ -18,7 +18,7 @@ void negative_lines(vector<Vec2f>& lines){
 
 
 /* Find the possible four borders among the candidate lines */
-void select_borders(const vector<Vec2f> lines, vector<Vec2f>& borders){
+void ed::select_borders(const vector<Vec2f> lines, vector<Vec2f>& borders){
     
     // List of already visited candidates (similar to already selected borders)
     vector<bool> visited(lines.size(), false);
@@ -52,7 +52,7 @@ void select_borders(const vector<Vec2f> lines, vector<Vec2f>& borders){
 
 
 /* Find the borders of the billiard table */
-void find_borders(const Mat& edge_map, vector<Vec2f>& borders){
+void ed::find_borders(const Mat& edge_map, vector<Vec2f>& borders){
 
     // Find line candidates and select the four borders
     vector<Vec2f> lines;
@@ -63,7 +63,7 @@ void find_borders(const Mat& edge_map, vector<Vec2f>& borders){
 
 
 /* Find the intersection of two lines */
-void borders_intersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
+void ed::borders_intersection(const Vec2f& first_line, const Vec2f& second_line, Point2f& corner){
 
     // Compute line intersection by solving a linear system of two equations
     // The two equations are considered with the following notation:
@@ -91,7 +91,7 @@ void borders_intersection(const Vec2f& first_line, const Vec2f& second_line, Poi
 
 
 /* Find the corners of the borders */
-void find_corners(const vector<Vec2f>& borders, vector<Point2f>& corners){
+void ed::find_corners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
     // Compute the borders by finding lines intersections
     for( size_t i = 0; i < borders.size(); i++ ){
@@ -115,7 +115,7 @@ void find_corners(const vector<Vec2f>& borders, vector<Point2f>& corners){
 
 
 /* Draw the borders on the current frame */
-void draw_borders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
+void ed::draw_borders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f>& corners){
     double distance_th = 5.0;
 
     // Draw the borders
@@ -142,7 +142,7 @@ void draw_borders(Mat& image, const vector<Vec2f>& borders, const vector<Point2f
 
 
 /* Generate mask by ranged HSV color segmentation */
-void hsv_mask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
+void ed::hsv_mask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hsv){
 
     // Color segmentation
     inRange(hsv_frame, lower_hsv, upper_hsv, mask);
@@ -155,7 +155,7 @@ void hsv_mask(const Mat& hsv_frame, Mat& mask, Scalar lower_hsv, Scalar upper_hs
 
 
 /* Sort corners in top-left, top-right, bottom-right, bottom-left */
-void sort_corners(vector<Point2f>& corners){
+void ed::sort_corners(vector<Point2f>& corners){
         // Sort by y coordinate
         for( size_t i = 0; i < corners.size(); i++ ){
             for( size_t j = i + 1; j < corners.size(); j++ ){
@@ -176,7 +176,7 @@ void sort_corners(vector<Point2f>& corners){
 
 
 /* Compute the slope of a line expressed in polar representation (rho, theta) */
-double compute_slope(const double theta){
+double ed::compute_slope(const double theta){
     const double epsilon = 1e-1;
 
     // Check if line is vertical, otherwise compute slope    
@@ -189,7 +189,7 @@ double compute_slope(const double theta){
 
 
 /* Check whether the video point of view is affected by distortion */
-void check_perspective_distortion(const vector<Vec2f>& borders, bool& is_distorted){
+void ed::check_perspective_distortion(const vector<Vec2f>& borders, bool& is_distorted){
     is_distorted = false;
     double slope_sum = 0.0;
 
@@ -215,7 +215,7 @@ void check_perspective_distortion(const vector<Vec2f>& borders, bool& is_distort
 
 
 /* Compute the pixel location in the warped image w.r.t. the original image */
-void warped_pixel(const Point2f& point, const Mat& map_perspective, Point2f& warped_point){
+void ed::warped_pixel(const Point2f& point, const Mat& map_perspective, Point2f& warped_point){
     
     // Convert original point into homogeneous coordinates
     Mat homogeneous_point(3, 1, CV_64F);
@@ -233,7 +233,7 @@ void warped_pixel(const Point2f& point, const Mat& map_perspective, Point2f& war
 
 
 /* Generate map view of the area inside the borders */
-void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& corners, const bool is_distorted){
+void ed::create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& corners, const bool is_distorted){
     vector<Point2f> dst;
 
     // Check table orientation
@@ -259,7 +259,7 @@ void create_map_view(const Mat& image, Mat& map_view, const vector<Point2f>& cor
 
 
 /* Overlay the map-view into the current frame */
-void overlay_map_view(Mat& frame, const Mat& map_view){
+void ed::overlay_map_view(Mat& frame, const Mat& map_view){
     // Consider offsets for the coordinates
     const int x = 10;
     const int y = frame.rows - map_view.rows - 10;
@@ -271,7 +271,7 @@ void overlay_map_view(Mat& frame, const Mat& map_view){
 
 
 /* Computes map-view of the current frame */
-void compute_map_view(Mat& map_view, const Mat& first_frame, const vector<Vec2f>& borders, const vector<Point2f>& corners){
+void ed::compute_map_view(Mat& map_view, const Mat& first_frame, const vector<Vec2f>& borders, const vector<Point2f>& corners){
     
     // Check for presenceof distortion
     bool is_distorted = false;
@@ -283,7 +283,7 @@ void compute_map_view(Mat& map_view, const Mat& first_frame, const vector<Vec2f>
 
 
 /* Perform edge detectionon the first frame */
-void edge_detection(Mat& first_frame, vector<Vec2f>& borders, vector<Point2f>& corners){
+void ed::edge_detection(Mat& first_frame, vector<Vec2f>& borders, vector<Point2f>& corners){
     // Frame pre-processing
     Mat preprocessed_first_frame;
     bilateralFilter(first_frame, preprocessed_first_frame, 9, 100.0, 75.0);

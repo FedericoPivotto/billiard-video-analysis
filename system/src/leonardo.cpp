@@ -1,8 +1,9 @@
-// user-defined libraries
 #include <iostream>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
+
+// user-defined libraries
 
 // video_captures: video utilities
 #include <video_utils.h>
@@ -66,51 +67,31 @@ int main(int argc, char** argv) {
         fsu::create_video_result_dir(video_paths[i], video_result_subdirs);
         
         // TODO: object detection (Federico)
-        // TODO: edge detection (Fabrizio)
-        // First frame extraction
+
+        // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
+
+        // Edge detection made on the first frame
         cv::Mat first_frame = video_frames[0];
+        std::vector<cv::Vec2f> borders;
+        std::vector<cv::Point2f> corners;
 
         if (first_frame.empty()) {
             std::cout << "Could not open the frame!" << std::endl;
             return -1;
+        } else {
+            ed::edge_detection(first_frame, borders, corners);
+            ed::draw_borders(first_frame, borders, corners);
         }
 
-        // Frame pre-processing
-        cv::Mat preprocessed_first_frame;
-        bilateralFilter(first_frame, preprocessed_first_frame, 9, 100.0, 75.0);
-        cvtColor(preprocessed_first_frame, preprocessed_first_frame, cv::COLOR_BGR2HSV);
+        // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
 
-        // Mask generation by ranged HSV color segmentation
-        cv::Mat mask;
-        cv::Scalar lower_hsv(60, 150, 110);
-        cv::Scalar upper_hsv(120, 255, 230); 
-        hsvMask(preprocessed_first_frame, mask, lower_hsv, upper_hsv);
-  
-        // Compute edge map of the mask by canny edge detection
-        cv::Mat edge_map;
-        double upper_th = 100.0;
-        double lower_th = 10.0;
-        Canny(mask, edge_map, lower_th, upper_th);
+        // Store bounding boxes centers and compute average ray (TODO: generalize to our results)
+        std::vector<od::Ball> ball_boxes;
+        std::string ball_boxes_dir_path = "../dataset/game1_clip1/bounding_boxes";
+        std::string ball_boxes_path;
 
-        // Line detection using hough lines
-        std::vector<cv::Vec2f> borders;
-        std::vector<cv::Point2f> corners;
-        findLines(edge_map, borders);
-        findCorners(borders, corners);
-        drawBorders(first_frame, borders, corners);
-
-        // Show frame with borders
-        //cv::namedWindow("Billiard video frame");
-        //cv::imshow("Billiard video frame", first_frame);
-
-        // Compute map view of the billiard table
-        cv::Mat map_view;
-        sortCorners(corners);
-        createMapView(first_frame, map_view, corners);
-
-        // Show map view
-        //cv::namedWindow("Billiard map view");
-        //cv::imshow("Billiard map view", map_view);
+        fsu::get_bboxes_frame_file_path(video_frames, 0, ball_boxes_dir_path, ball_boxes_path);
+        fsu::read_ball_bboxes(ball_boxes_path, ball_boxes);
 
         // TODO: segmentation (Leonardo)
         // ATTENTION: dataset path is specified just for testing
