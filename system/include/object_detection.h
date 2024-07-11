@@ -14,9 +14,10 @@ namespace od {
         public:
             // ball bounding box
             unsigned int x, y, width, height, ball_class;
+            double confidence;
 
             // constructor
-            Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class);
+            Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence = 0);
 
             // function declarations
             std::pair<unsigned int, unsigned int> center() const;

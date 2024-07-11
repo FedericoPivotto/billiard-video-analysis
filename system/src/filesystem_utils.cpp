@@ -52,7 +52,7 @@ void fsu::get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, c
 
 void fsu::write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball) {
     // write ball bounding box
-    bboxes_frame_file << ball << std::endl;
+    bboxes_frame_file << ball << " " << ball.confidence << std::endl;
 }
 
 void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
@@ -72,6 +72,30 @@ void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector
 
         // create and add ball to vector
         balls.push_back(od::Ball(x, y, width, height, ball_class));
+    }
+
+    // close frame bboxes text file
+    bboxes_frame_file.close();
+}
+
+void fsu::read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
+    // open frame bboxes text file
+    std::ifstream bboxes_frame_file(bboxes_frame_file_path);
+
+    // read frame bboxes text file lines
+    std::string line;
+    while(std::getline(bboxes_frame_file, line)) {
+        // stream for line parsing
+        std::istringstream iss(line);
+        unsigned int x, y, width, height, ball_class;
+        double confidence;
+
+        // skip and proceed to next line if error
+        if (! (iss >> x >> y >> width >> height >> ball_class >> confidence))
+            continue;
+
+        // create and add ball to vector
+        balls.push_back(od::Ball(x, y, width, height, ball_class, confidence));
     }
 
     // close frame bboxes text file

@@ -41,10 +41,10 @@ add_library(system_minimap
 
 ## Metrics libraries
 
-# library library
-add_library(metrics_library
-    metrics/include/library.h
-    metrics/src/library.cpp)
+# billiard_metric library
+add_library(metrics_billiard_metric
+    metrics/include/billiard_metric.h
+    metrics/src/billiard_metric.cpp)
 
 ## System executable
 add_executable(system system/src/main.cpp)
@@ -58,7 +58,9 @@ target_link_libraries(system
 add_executable(metrics metrics/src/main.cpp)
 target_link_libraries(metrics
     ${OpenCV_LIBS}
-    metrics_library)
+    metrics_billiard_metric
+    system_filesystem_utils
+    system_object_detection)
 
 ## Federico system executable
 add_executable(federico system/src/federico.cpp)

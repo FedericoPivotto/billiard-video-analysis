@@ -2,7 +2,7 @@
 
 // librarires required in this source file and not already included in object_detection.h
 
-od::Ball::Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class) : x(x), y(y), width(width), height(height), ball_class(ball_class) {
+od::Ball::Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence) : x(x), y(y), width(width), height(height), ball_class(ball_class), confidence(confidence) {
 }
 
 std::pair<unsigned int, unsigned int> od::Ball::center() const {
