@@ -7,9 +7,9 @@ Final project - June + July 2024.
 - Leonardo Egidati, 2106370
 
 # TODO
-- [ ] Federico: "1 - Object detection"
-- [ ] Fabrizio: "2 - Border identification"
-- [ ] Leonardo: "3 - Segmentation of playing field"
+- [ ] Federico: object detection
+- [ ] Fabrizio: 2D top-view minimap
+- [ ] Leonardo: metrics
 
 # Steps
 The project will be divided in steps according to the following schedule.
