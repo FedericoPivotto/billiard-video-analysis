@@ -268,3 +268,40 @@ void overlay_map_view(Mat& frame, const Mat& map_view){
     Rect roi(x, y, map_view.cols, map_view.rows);
     map_view.copyTo(frame(roi));
 }
+
+
+/* Computes map-view of the current frame */
+void compute_map_view(Mat& map_view, const Mat& first_frame, const vector<Vec2f>& borders, const vector<Point2f>& corners){
+    
+    // Check for presenceof distortion
+    bool is_distorted = false;
+    check_perspective_distortion(borders, is_distorted);
+
+    // Create map-view
+    create_map_view(first_frame, map_view, corners, is_distorted);
+}
+
+
+/* Perform edge detectionon the first frame */
+void edge_detection(Mat& first_frame, vector<Vec2f>& borders, vector<Point2f>& corners){
+    // Frame pre-processing
+    Mat preprocessed_first_frame;
+    bilateralFilter(first_frame, preprocessed_first_frame, 9, 100.0, 75.0);
+    cvtColor(preprocessed_first_frame, preprocessed_first_frame, COLOR_BGR2HSV);
+
+    // Mask generation by ranged HSV color segmentation
+    Mat mask;
+    Scalar lower_hsv(60, 150, 110);
+    Scalar upper_hsv(120, 255, 230); 
+    hsv_mask(preprocessed_first_frame, mask, lower_hsv, upper_hsv);
+  
+    // Compute edge map of the mask by canny edge detection
+    Mat edge_map;
+    double upper_th = 100.0;
+    double lower_th = 10.0;
+    Canny(mask, edge_map, lower_th, upper_th);
+
+    // Line detection using hough lines
+    find_borders(edge_map, borders);
+    find_corners(borders, corners);
+}

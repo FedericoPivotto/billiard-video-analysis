@@ -34,4 +34,8 @@ void check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& i
 
 void overlay_map_view(cv::Mat& frame, const cv::Mat& map_view);
 
+void compute_map_view(cv::Mat& map_view, const cv::Mat& first_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners);
+
+void edge_detection(cv::Mat& first_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners);
+
 #endif // EDGE_DETECTION_H

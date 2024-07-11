@@ -53,61 +53,38 @@ int main(int argc, char** argv) {
 
         // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
 
-        // First frame extraction
+        // Edge detection made on the first frame
         Mat first_frame = video_frames[0];
+        vector<Vec2f> borders;
+        vector<Point2f> corners;
 
         if (first_frame.empty()) {
             cout << "Could not open the frame!" << endl;
             return -1;
+        } else {
+            edge_detection(first_frame, borders, corners);
+            draw_borders(first_frame, borders, corners);
         }
 
-        // Frame pre-processing
-        Mat preprocessed_first_frame;
-        bilateralFilter(first_frame, preprocessed_first_frame, 9, 100.0, 75.0);
-        cvtColor(preprocessed_first_frame, preprocessed_first_frame, COLOR_BGR2HSV);
+        // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
 
-        // Mask generation by ranged HSV color segmentation
-        Mat mask;
-        Scalar lower_hsv(60, 150, 110);
-        Scalar upper_hsv(120, 255, 230); 
-        hsv_mask(preprocessed_first_frame, mask, lower_hsv, upper_hsv);
-  
-        // Compute edge map of the mask by canny edge detection
-        Mat edge_map;
-        double upper_th = 100.0;
-        double lower_th = 10.0;
-        Canny(mask, edge_map, lower_th, upper_th);
-
-        // Line detection using hough lines
-        vector<Vec2f> borders;
-        vector<Point2f> corners;
-        find_borders(edge_map, borders);
-        find_corners(borders, corners);
-        draw_borders(first_frame, borders, corners);
-
-        // Store bounding boxes centers and compute average ray
+        // Store bounding boxes centers and compute average ray (TODO: generalize to our results)
         vector<od::Ball> ball_boxes;
-        vector<string> ball_boxes_dir_path;
+        string ball_boxes_dir_path = "../dataset/game1_clip1/bounding_boxes";
         string ball_boxes_path;
 
-        vu::get_video_paths(ball_boxes_dir_path);
-        fsu::get_bboxes_frame_file_path(video_frames, 0, ball_boxes_dir_path[i], ball_boxes_path);
+        fsu::get_bboxes_frame_file_path(video_frames, 0, ball_boxes_dir_path, ball_boxes_path);
         fsu::read_ball_bboxes(ball_boxes_path, ball_boxes);
         
-        // Compute map view of the billiard table, considering point-view distortion
+        // Compute map view of the billiard table-----------------------
         Mat map_view;
-        sort_corners(corners);
-        
-        bool is_distorted = false;
-        check_perspective_distortion(borders, is_distorted);
+        sort_corners(corners);   
+        compute_map_view(map_view, first_frame, borders, corners);
 
-        create_map_view(first_frame, map_view, corners, is_distorted);
-        // TEST ------------
-        circle(first_frame, Point2f(268, 317), 10, Scalar(0,0,255));
-        // END TEST --------
-
-        // Overlay the map-view in the current frame
+        // Overlay the map-view in the current frame0
         overlay_map_view(first_frame, map_view);
+
+        // Compute map view of the billiard table-----------------------
 
         // Show frame with borders
         namedWindow("Billiard video frame");
