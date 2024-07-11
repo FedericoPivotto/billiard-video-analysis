@@ -10,10 +10,6 @@
 // user-defined libraries
 #include <library.h>
 
-// error constants
-#define INVALID_ARGUMENTS_ERROR -1
-#define IMAGE_READ_ERROR -2
-
 int main(int argc, char** argv) {
     // safety check on argc
 	if(argc < 2) {
