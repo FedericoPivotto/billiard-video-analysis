@@ -47,10 +47,10 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
 
 /* hsv_callback function parameters */
 typedef struct {
-	// window name
+	// Window name
 	const char* window_name;
 
-	// pointers to images
+	// Pointers to images
 	cv::Mat* src;
 	cv::Mat* dst;
 
@@ -68,6 +68,30 @@ typedef struct {
     int maxV;
 } ParameterHSV;
 
+/* hough_circle_callback function parameters */
+typedef struct {
+	// Window name
+	const char* window_name;
+
+	// Pointers to images
+	cv::Mat* src;
+	cv::Mat* dst;
+
+    // Hough circle parameters
+    int min_dist;
+    int param1;
+    int param2;
+    int min_radius;
+    int max_radius;
+
+    // Max threshold
+    int maxD;
+    int maxP1;
+    int maxP2;
+    int maxMinR;
+    int maxMaxR;
+} ParameterHoughCircle;
+
 /* Callback function */
 static void hsv_callback(int pos, void* userdata) {
     // Get Canny parameters from userdata
@@ -82,6 +106,36 @@ static void hsv_callback(int pos, void* userdata) {
 
     // Display our result
 	cv::imshow(params.window_name, mask);
+}
+
+/* Callback function */
+static void hough_circle_callback(int pos, void* userdata) {
+    // Get Hough circle parameters from userdata
+    ParameterHoughCircle params = *((ParameterHoughCircle*) userdata);
+
+    // Dereference images
+    cv::Mat mask = *params.src;
+    cv::Mat detected_edges = (*params.dst).clone();
+
+    // Hough circle transform
+    std::vector<cv::Vec3f> circles;
+    cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1, params.min_dist, params.param1, params.param2, params.min_radius, params.max_radius);
+
+    // Show detected circles
+    for(size_t i = 0; i < circles.size(); i++) {
+        // Circle data
+        cv::Vec3i c = circles[i];
+        cv::Point center(c[0], c[1]);
+        unsigned int radius = c[2];
+
+        // Show circle center
+        cv::circle(detected_edges, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+        // Show circle outline
+        cv::circle(detected_edges, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+    }
+
+    // Show the detected circles
+    cv::imshow(params.window_name, detected_edges);
 }
 
 /* Balls detection in given a video frame */
@@ -120,7 +174,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // HSV window trackbars
     cv::Mat mask;
-    ParameterHSV hsvp = {"Control", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
+    ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
 
     // Control window
     cv::namedWindow(hsvp.window_name);
@@ -158,22 +212,45 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     cv::Scalar upper_hsv(120, 255, 255);  
     cv::inRange(frame_hsv, lower_hsv, upper_hsv, mask);
 
+    // Dilate and erode mask
+    cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
+    cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9))); 
+
     // Show frame and mask
     cv::imshow("BGR", frame);
     cv::imshow("HSV", frame_hsv);
 	cv::imshow("Mask", mask);
 	// cv::waitKey(0);
 
-    /*// Frame preprocess
-    cv::GaussianBlur(frame_hsv, frame_hsv, cv::Size(5, 5), 2, 2);
-	// cv::medianBlur(frame_hsv, frame_hsv, 5);*/
+    // Hough circle parameters
+	cv::Mat detected_edges = frame.clone();
+    ParameterHoughCircle hcp = {"Hough circle", &mask, &detected_edges, 10, 90, 9, 1, 17, 100, 100, 100, 100, 100};
 
-    // Hough circle transform
+    // Control window
+    cv::namedWindow(hcp.window_name);
+
+    // Create trackbar for min distance
+    cv::createTrackbar("Min distance", hcp.window_name, &hcp.min_dist, hcp.maxD, hough_circle_callback, &hcp);
+    // Create trackbar for canny edge detector parameter 1
+    cv::createTrackbar("Param 1", hcp.window_name, &hcp.param1, hcp.maxP1, hough_circle_callback, &hcp);
+    // Create trackbar for canny edge detector parameter 2
+    cv::createTrackbar("Param 2", hcp.window_name, &hcp.param2, hcp.maxP2, hough_circle_callback, &hcp);
+    // Create trackbar for min radius
+    cv::createTrackbar("Min radius", hcp.window_name, &hcp.min_radius, hcp.maxMinR, hough_circle_callback, &hcp);
+    // Create trackbar for max radius
+    cv::createTrackbar("Max radius", hcp.window_name, &hcp.max_radius, hcp.maxMaxR, hough_circle_callback, &hcp);
+
+    // Wait key
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+
+    /*// Hough circle transform
+    // TODO: tune parameters using trackbars
     std::vector<cv::Vec3f> circles;
 	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
 		5, // distance between circles
-		100, 10, // canny edge detector parameters and circles center detection 
-		7, 15); // min_radius & max_radius of circles to detect
+		90, 10, // canny edge detector parameters and circles center detection 
+		1, 20); // min_radius & max_radius of circles to detect
     
     // Show detected circles
 	for(size_t i = 0; i < circles.size(); i++) {
@@ -221,7 +298,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     }
 
     // Close frame bboxes text file
-    bboxes_frame_file.close();
+    bboxes_frame_file.close();*/
 }
 
 // TODO: define ball bbox confidence
