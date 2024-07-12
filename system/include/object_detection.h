@@ -32,6 +32,9 @@ namespace od {
 
     // detect function declarations
     void detect_ball_class(Ball& ball_bbox, cv::Mat frame);
+
+    // object detection main
+    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame);
 }
 
 #endif // OBJECT_DETECTION_H

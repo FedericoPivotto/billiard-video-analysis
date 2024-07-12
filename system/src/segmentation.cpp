@@ -38,14 +38,17 @@ void sg::points_float_to_int(const std::vector<cv::Point2f> float_points, std::v
 
 /* Table and balls segmentation */
 void sg::segmentation(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, 
-const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+const std::vector<cv::Point2f> corners, cv::Mat& video_frame, bool test_flag) {
     // read frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
 
     // read ball bounding box from frame bboxes text file
     std::vector<od::Ball> ball_bboxes;
-    fsu::read_ball_bboxes_with_confidence(bboxes_frame_file_path, ball_bboxes);
+    if(test_flag)
+        fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+    else
+        fsu::read_ball_bboxes_with_confidence(bboxes_frame_file_path, ball_bboxes);
 
     // sorted float corners
     std::vector<cv::Point2f> sorted_corners(corners);

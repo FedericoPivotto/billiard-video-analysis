@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
             video_game_frames_cv.push_back(video_game_frame_cv);
 
             // TODO: 2D top-view minimap (Fabrizio)
-            
+
             // TODO: trajectory tracking
         }
 

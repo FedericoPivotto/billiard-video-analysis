@@ -70,7 +70,9 @@ target_link_libraries(federico
     ${OpenCV_LIBS}
     system_video_utils
     system_filesystem_utils
-    system_object_detection)
+    system_object_detection
+    system_edge_detection
+    system_segmentation)
 
 ## Fabrizio system executable
 add_executable(fabrizio system/src/fabrizio.cpp)
