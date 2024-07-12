@@ -74,9 +74,10 @@ int main(int argc, char** argv) {
             // TODO: object detection (Federico)
 
             // Segmentation (Leonardo)
-            sg::segmentation(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
+            sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
+
             // Draw field borders
-            ed::draw_borders(video_frame_cv, borders, corners);
+            ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
 
         // Assuming field corners of the first video frame
@@ -93,6 +94,7 @@ int main(int argc, char** argv) {
             video_game_frames_cv.push_back(video_game_frame_cv);
 
             // TODO: 2D top-view minimap (Fabrizio)
+
 
             // TODO: trajectory tracking
         }

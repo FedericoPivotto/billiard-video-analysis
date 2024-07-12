@@ -77,40 +77,22 @@ int main(int argc, char** argv) {
             // TODO: object detection (Federico)
 
             // Segmentation (Leonardo)
-            // TODO: when object detection is fine, the flag must be sat to false
-            // ATTENTION: test_flag is used just to do test with a dataset bounding box file
-            std::string bboxes_test_dir = "../dataset/game1_clip1/bounding_boxes";
-            bool test_flag = true;
-            //sg::segmentation(video_frames, k, bboxes_test_dir, corners, video_frame_cv, field_frame, test_flag);
-
             // Get video dataset directory
+            // TODO: change with result directory
             std::vector<std::string> video_dataset_subdirs;
             fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
 
-            // Draw field borders
-            ed::draw_borders(video_frame_cv, borders, corners);
-
-            // Compute map view of the billiard table
-            cv::Mat map_view, field_frame = video_frames[k].clone();
-            std::vector<od::Ball> ball_bboxes;
-
-            ed::sort_corners(first_corners);
-
-            std::string bboxes_frame_file_path;
-            fsu::get_bboxes_frame_file_path(video_frames, k, video_dataset_subdirs[0], bboxes_frame_file_path);
-            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
-
-            // get_ball_bboxes(ball_bboxes, video_frames, k, video_dataset_subdirs[0]);
+            // TODO: when object detection is fine, the flag must be sat to false
+            // ATTENTION: test_flag is used just to do test with a dataset bounding box file
+            bool test_flag = true;
+            sg::segmentation(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, test_flag);
             
-            sg::get_white_field_segmentation(corners, field_frame);
-            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
-
-            // Overlay the map-view in the current frame
-            mm::overlay_map_view(video_frame_cv, map_view);
+            // Draw field borders
+            ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
 
         // Assuming field corners of the first video frame
-        /*
+        
         // For each video frame
         std::vector<cv::Mat> video_game_frames_cv;
         for(size_t j = 0; j < video_frames.size(); ++j) {
@@ -124,33 +106,45 @@ int main(int argc, char** argv) {
 
             // TODO: 2D top-view minimap (Fabrizio)
             
-            // Store bounding boxes centers and compute average ray (TODO: generalize to our results)
-            std::vector<od::Ball> ball_boxes;
-            std::string ball_boxes_dir_path = "../dataset/game1_clip1/bounding_boxes", ball_boxes_path;
-            fsu::get_bboxes_frame_file_path(video_frames, 0, ball_boxes_dir_path, ball_boxes_path);
-            fsu::read_ball_bboxes(ball_boxes_path, ball_boxes);
-
             // Compute map view of the billiard table
-            cv::Mat map_view;
+
+            // Get video dataset directory
+            // TODO: change with result directory
+            std::vector<std::string> video_dataset_subdirs;
+            fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
+
+            // Get bounding box file path
+            // TODO: change with result directory
+            std::string bboxes_frame_file_path;
+            fsu::get_bboxes_frame_file_path(video_frames, j, video_dataset_subdirs[0], bboxes_frame_file_path);
+
+            // Read balls from bounding box file
+            std::vector<od::Ball> ball_bboxes;
+            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+            
+            // Sort corners
             ed::sort_corners(first_corners);
-            mm::compute_map_view(map_view, video_game_frame_cv, first_borders, first_corners);
+
+            // Field frame white table segmentation
+            cv::Mat field_frame = video_frames[j].clone();
+            sg::get_white_field_segmentation(first_corners, field_frame);
+
+            // Create map-view
+            cv::Mat map_view;
+            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
 
             // Overlay the map-view in the current frame
             mm::overlay_map_view(video_game_frame_cv, map_view);
 
-            // Show frame with borders
-            //cv::namedWindow("Billiard video frame");
-            //cv::imshow("Billiard video frame", video_game_frame_cv);
-            //cv::waitKey(0);
-
             // TODO: trajectory tracking
+            // NOTE: required to update minimap
         }
-        */
+        
         // Show computer vision video frames
         vu::show_video_frames(video_frames_cv);
 
         // Show video game frames
-        //vu::show_video_frames(video_game_frames_cv);
+        vu::show_video_frames(video_game_frames_cv);
     }
 
     return 0;
