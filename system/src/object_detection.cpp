@@ -109,11 +109,11 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     cv::Mat frame_gs = hsv_channels[2];*/
 
     // Useful code for ball mask       
-    cv::Mat frame_hsv, frame_hsv_bilateral;
-    cv::bilateralFilter(frame, frame_hsv_bilateral, 9, 100.0, 75.0);
-    cv::cvtColor(frame_hsv_bilateral, frame_hsv, cv::COLOR_BGR2HSV);
+    cv::Mat frame_hsv, frame_bilateral = frame.clone();
+    cv::bilateralFilter(frame, frame_bilateral, 9, 100.0, 75.0);
+    cv::cvtColor(frame_bilateral, frame_hsv, cv::COLOR_BGR2HSV);
 
-    // HSV parameters
+    /*// HSV parameters
     int iLowH = 0, iHighH = 179, maxH = 179;
     int iLowS = 0, iHighS = 255, maxS = 255;
     int iLowV = 0, iHighV = 255, maxV = 255;
@@ -139,6 +139,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Wait key
     cv::waitKey(0);
+    cv::destroyAllWindows();*/
     
     /*// Threshold the image
     cv::Mat frame_thresholded;
@@ -151,25 +152,25 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     // Wait key
     cv::waitKey(0);*/
 
-    /*// Mask generation by ranged HSV color segmentation
+    // Mask generation by ranged HSV color segmentation
     cv::Mat mask;
-    cv::Scalar lower_hsv(60, 150, 110);
-    cv::Scalar upper_hsv(120, 255, 230);  
+    cv::Scalar lower_hsv(60, 150, 140);
+    cv::Scalar upper_hsv(120, 255, 255);  
     cv::inRange(frame_hsv, lower_hsv, upper_hsv, mask);
 
     // Show frame and mask
     cv::imshow("BGR", frame);
     cv::imshow("HSV", frame_hsv);
 	cv::imshow("Mask", mask);
-	cv::waitKey(0);*/
+	// cv::waitKey(0);
 
     /*// Frame preprocess
     cv::GaussianBlur(frame_hsv, frame_hsv, cv::Size(5, 5), 2, 2);
-	// cv::medianBlur(frame_hsv, frame_hsv, 5);
+	// cv::medianBlur(frame_hsv, frame_hsv, 5);*/
 
     // Hough circle transform
     std::vector<cv::Vec3f> circles;
-	cv::HoughCircles(frame_hsv, circles, cv::HOUGH_GRADIENT, 1,
+	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
 		5, // distance between circles
 		100, 10, // canny edge detector parameters and circles center detection 
 		7, 15); // min_radius & max_radius of circles to detect
@@ -201,7 +202,6 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
 	// Show the detected circles
 	cv::imshow("Detected circles", frame);
-	// Wait key before going ahead
 	cv::waitKey(0);
 
     // TODO: detect ball bounding boxes using Viola and Jones approach
@@ -221,7 +221,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     }
 
     // Close frame bboxes text file
-    bboxes_frame_file.close();*/
+    bboxes_frame_file.close();
 }
 
 // TODO: define ball bbox confidence
