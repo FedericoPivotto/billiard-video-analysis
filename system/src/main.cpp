@@ -9,6 +9,9 @@
 // edge_detection detection library
 #include <edge_detection.h>
 
+// segmentation library
+#include <segmentation.h>
+
 int main(int argc, char** argv) {
     // get videos paths
     std::vector<cv::String> video_paths;
@@ -39,37 +42,60 @@ int main(int argc, char** argv) {
         // sort frame indexes
         std::sort(frame_indexes.begin(), frame_indexes.end());
 
-        // scan frames of interest
+        // for each video frame of interest
         std::vector<cv::Mat> video_frames_cv;
-        for(size_t j : frame_indexes) {
-            // skip frame if empty
-            if(video_frames[j].empty())
+        std::vector<cv::Vec2f> first_borders;
+        std::vector<cv::Point2f> first_corners;
+        for(size_t j = 0; j < frame_indexes.size(); ++j) {
+            // frame of interes index
+            size_t k = frame_indexes[j];
+
+            // skip video frame if empty
+            if(video_frames[k].empty())
                 continue;
 
             // video frame clone
-            cv::Mat video_frame_cv = video_frames[j].clone();
+            cv::Mat video_frame_cv = video_frames[k].clone();
             video_frames_cv.push_back(video_frame_cv);
 
-            // TODO: edge detection (Fabrizio)
-            std::vector<cv::Vec2f> borders;
-            std::vector<cv::Point2f> corners;
+            // check if first frame analyzed
+            bool is_first = video_frames_cv.size() == 1 ? true : false;
+
+            // edge detection (Fabrizio)
+            std::vector<cv::Vec2f> borders = is_first ? first_borders : std::vector<cv::Vec2f>();
+            std::vector<cv::Point2f> corners = is_first ? first_corners : std::vector<cv::Point2f>();
             ed::edge_detection(video_frame_cv, borders, corners);
 
             // TODO: object detection (Federico)
-            // TODO: segmentation (Leonardo)
 
+            // segmentation (Leonardo)
+            sg::segmentation(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
             // draw field borders
             ed::draw_borders(video_frame_cv, borders, corners);
+        }
+
+        // assuming field corners of the first video frame
+        // for each video frame
+        std::vector<cv::Mat> video_game_frames_cv;
+        for(size_t j = 0; j < video_frames.size(); ++j) {
+            // skip game video frame if empty
+            if(video_frames[j].empty())
+                continue;
+
+            // video game frame clone
+            cv::Mat video_game_frame_cv = video_frames[j].clone();
+            video_game_frames_cv.push_back(video_game_frame_cv);
+
+            // TODO: 2D top-view minimap (Fabrizio)
             
-            // TODO: 2D top-view minimap
             // TODO: trajectory tracking
         }
 
         // show computer vision video frames
         vu::show_video_frames(video_frames_cv);
 
-        // show video frames
-        // vu::show_video_frames(video_frames);
+        // show video game frames
+        vu::show_video_frames(video_game_frames_cv);
     }
 
     return 0;

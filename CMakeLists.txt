@@ -52,8 +52,9 @@ target_link_libraries(system
     ${OpenCV_LIBS}
     system_video_utils
     system_filesystem_utils
+    system_object_detection
     system_edge_detection
-    system_object_detection)
+    system_segmentation)
 
 ## Metrics executable
 add_executable(metrics metrics/src/main.cpp)

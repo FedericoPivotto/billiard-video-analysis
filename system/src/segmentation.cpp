@@ -38,28 +38,25 @@ void sg::points_float_to_int(const std::vector<cv::Point2f> float_points, std::v
 
 /* Table and balls segmentation */
 void sg::segmentation(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, 
-const std::vector<cv::Point2f> corners, cv::Mat& frame_segmentation) {
+const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
     // read frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
 
     // read ball bounding box from frame bboxes text file
     std::vector<od::Ball> ball_bboxes;
-    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+    fsu::read_ball_bboxes_with_confidence(bboxes_frame_file_path, ball_bboxes);
 
     // sorted float corners
     std::vector<cv::Point2f> sorted_corners(corners);
     ed::sort_corners(sorted_corners);
     
-    // frame clone
-    frame_segmentation = video_frames[n_frame].clone();
-    
     // color table pixels within the table borders
-    sg::field_segmentation(sorted_corners, frame_segmentation);
+    sg::field_segmentation(sorted_corners, video_frame);
     
     // scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
         // color balls according to class
-        sg::ball_segmentation(ball_bbox, frame_segmentation);
+        sg::ball_segmentation(ball_bbox, video_frame);
     }
 }

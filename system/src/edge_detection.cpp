@@ -151,17 +151,17 @@ void ed::hsv_mask(const cv::Mat& hsv_frame, cv::Mat& mask, cv::Scalar lower_hsv,
 
 
 /* Perform edge detectionon the first frame */
-void ed::edge_detection(cv::Mat& first_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners){
+void ed::edge_detection(cv::Mat& video_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners){
     // Frame pre-processing
-    cv::Mat preprocessed_first_frame;
-    cv::bilateralFilter(first_frame, preprocessed_first_frame, 9, 100.0, 75.0);
-    cv::cvtColor(preprocessed_first_frame, preprocessed_first_frame, cv::COLOR_BGR2HSV);
+    cv::Mat preprocessed_video_frame;
+    cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 100.0, 75.0);
+    cv::cvtColor(preprocessed_video_frame, preprocessed_video_frame, cv::COLOR_BGR2HSV);
 
     // Mask generation by ranged HSV color segmentation
     cv::Mat mask;
     cv::Scalar lower_hsv(60, 150, 110);
     cv::Scalar upper_hsv(120, 255, 230); 
-    ed::hsv_mask(preprocessed_first_frame, mask, lower_hsv, upper_hsv);
+    ed::hsv_mask(preprocessed_video_frame, mask, lower_hsv, upper_hsv);
   
     // Compute edge map of the mask by canny edge detection
     cv::Mat edge_map;

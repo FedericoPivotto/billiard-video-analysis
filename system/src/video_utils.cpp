@@ -37,9 +37,9 @@ void vu::read_video_frames(cv::VideoCapture capture, std::vector<cv::Mat>& video
 
 void vu::show_video_frames(const std::vector<cv::Mat> video_frames) {
     // show video frames
-    for(cv::Mat frame : video_frames) {
-        cv::namedWindow("Frame");
-        cv::imshow("Frame", frame);
+    for(cv::Mat video_frame : video_frames) {
+        cv::namedWindow("Video frame");
+        cv::imshow("Video frame", video_frame);
         cv::waitKey(0);
     }
 }
