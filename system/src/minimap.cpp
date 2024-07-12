@@ -8,7 +8,10 @@
 #include <opencv2/calib3d.hpp>
 // imgproc: warpPerspective(), cv::circle
 #include <opencv2/imgproc.hpp>
-
+// edge_detection: ed::sort_corners()
+#include <edge_detection.h>
+// segmentation: sg::field_segmentation()
+#include <segmentation.h>
 
 /* Compute the slope of a line expressed in polar representation (rho, theta) */
 double mm::compute_slope(const double theta) {
@@ -21,7 +24,6 @@ double mm::compute_slope(const double theta) {
         return - 1.0 / std::tan(theta);
     }
 }
-
 
 /* Check whether the video point of view is affected by distortion */
 void mm::check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& is_distorted) {
@@ -123,7 +125,6 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vec
     draw_map_view_details(map_view, ball_radius);
 }
 
-
 /* Overlay the map-view into the current frame */
 void mm::overlay_map_view(cv::Mat& frame, const cv::Mat& map_view) {
     // Consider offsets for the coordinates
@@ -135,13 +136,20 @@ void mm::overlay_map_view(cv::Mat& frame, const cv::Mat& map_view) {
     map_view.copyTo(frame(roi));
 }
 
-
 /* Computes map-view of the current frame */
-void mm::compute_map_view(cv::Mat& map_view, const cv::Mat& first_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes) {
+void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes) {
+    // Sorted float corners
+    std::vector<cv::Point2f> sorted_corners(corners);
+    ed::sort_corners(sorted_corners);
+
+    // Field frame white table segmentation
+    bool white_flag = true;
+    sg::field_segmentation(sorted_corners, field_frame, white_flag);
+    
     // Check for presenceof distortion
     bool is_distorted = false;
     mm::check_perspective_distortion(borders, is_distorted);
 
     // Create map-view
-    mm::create_map_view(first_frame, map_view, corners, is_distorted, ball_bboxes);
+    mm::create_map_view(field_frame, map_view, sorted_corners, is_distorted, ball_bboxes);
 }

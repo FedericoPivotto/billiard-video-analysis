@@ -104,10 +104,6 @@ int main(int argc, char** argv) {
             cv::Mat video_game_frame_cv = video_frames[j].clone();
             video_game_frames_cv.push_back(video_game_frame_cv);
 
-            // TODO: 2D top-view minimap (Fabrizio)
-            
-            // Compute map view of the billiard table
-
             // Get video dataset directory
             // TODO: change with result directory
             std::vector<std::string> video_dataset_subdirs;
@@ -118,22 +114,15 @@ int main(int argc, char** argv) {
             std::string bboxes_frame_file_path;
             fsu::get_bboxes_frame_file_path(video_frames, j, video_dataset_subdirs[0], bboxes_frame_file_path);
 
+            // TODO: 2D top-view minimap (Fabrizio)
+
             // Read balls from bounding box file
             std::vector<od::Ball> ball_bboxes;
             fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
             
-            // Sort corners
-            ed::sort_corners(first_corners);
-
-            // Field frame white table segmentation
-            cv::Mat field_frame = video_frames[j].clone();
-            bool white_flag = true;
-            sg::field_segmentation(first_corners, field_frame, white_flag);
-
             // Create map-view
-            cv::Mat map_view;
+            cv::Mat map_view, field_frame = video_frames[j].clone();
             mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
-
             // Overlay the map-view in the current frame
             mm::overlay_map_view(video_game_frame_cv, map_view);
 

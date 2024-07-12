@@ -51,10 +51,8 @@ const std::vector<cv::Point2f> corners, cv::Mat& video_frame, bool test_flag) {
 
     // Read ball bounding box from frame bboxes text file
     std::vector<od::Ball> ball_bboxes;
-    if(test_flag)
-        fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
-    else
-        fsu::read_ball_bboxes_with_confidence(bboxes_frame_file_path, ball_bboxes);
+    bool confidence_flag = ! test_flag;
+    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes, confidence_flag);
 
     // Color table pixels within the table borders
     sg::field_segmentation(corners, video_frame);

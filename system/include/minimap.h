@@ -24,7 +24,7 @@ namespace mm {
     void draw_map_view_details(cv::Mat& map_view, const int ball_radius);
 
     // Main function declarations
-    void compute_map_view(cv::Mat& map_view, const cv::Mat& first_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes);
+    void compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes);
     void overlay_map_view(cv::Mat& frame, const cv::Mat& map_view);
 }
 

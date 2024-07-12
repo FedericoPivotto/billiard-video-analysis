@@ -31,8 +31,7 @@ namespace fsu {
     void write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball);
 
     // Read function declarations
-    void read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls);
-    void read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls);
+    void read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls, const bool confidence_flag = false);
 }
 
 #endif // FILESYSTEM_UTILS_H
