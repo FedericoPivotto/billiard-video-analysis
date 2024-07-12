@@ -127,7 +127,8 @@ int main(int argc, char** argv) {
 
             // Field frame white table segmentation
             cv::Mat field_frame = video_frames[j].clone();
-            sg::get_white_field_segmentation(first_corners, field_frame);
+            bool white_flag = true;
+            sg::field_segmentation(first_corners, field_frame, white_flag);
 
             // Create map-view
             cv::Mat map_view;

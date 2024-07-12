@@ -79,7 +79,7 @@ void mm::draw_map_view_details(cv::Mat& map_view, const int ball_radius){
     };
 
     for(const cv::Point& hole : hole_positions){
-        cv::circle(map_view, hole, ball_radius + 2, cv::Scalar(50,50,50), -1);
+        cv::circle(map_view, hole, ball_radius + 2, cv::Scalar(50,50,50), 2);
     }
 }
 
