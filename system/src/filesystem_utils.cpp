@@ -58,32 +58,8 @@ void fsu::write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball) {
     bboxes_frame_file << ball << " " << ball.confidence << std::endl;
 }
 
-/* Read balls from the bounding box file path without confidence value */
-void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
-    // Open frame bboxes text file
-    std::ifstream bboxes_frame_file(bboxes_frame_file_path);
-
-    // Read frame bboxes text file lines
-    std::string line;
-    while(std::getline(bboxes_frame_file, line)) {
-        // Stream for line parsing
-        std::istringstream iss(line);
-        unsigned int x, y, width, height, ball_class;
-
-        // Skip and proceed to next line if error
-        if (! (iss >> x >> y >> width >> height >> ball_class))
-            continue;
-
-        // Create and add ball to vector
-        balls.push_back(od::Ball(x, y, width, height, ball_class));
-    }
-
-    // Close frame bboxes text file
-    bboxes_frame_file.close();
-}
-
-/* Read balls from the bounding box file path with confidence value */
-void fsu::read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
+/* Read balls from the bounding box file path with/without confidence value */
+void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls, const bool confidence_flag) {
     // Open frame bboxes text file
     std::ifstream bboxes_frame_file(bboxes_frame_file_path);
 
@@ -95,8 +71,15 @@ void fsu::read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_p
         unsigned int x, y, width, height, ball_class;
         double confidence;
 
+        // Read ball row with/without confidence
+        bool read_status;
+        if(confidence_flag)
+            read_status = ! (iss >> x >> y >> width >> height >> ball_class >> confidence);
+        else
+            read_status = ! (iss >> x >> y >> width >> height >> ball_class);
+
         // Skip and proceed to next line if error
-        if (! (iss >> x >> y >> width >> height >> ball_class >> confidence))
+        if(read_status)
             continue;
 
         // Create and add ball to vector
@@ -105,4 +88,17 @@ void fsu::read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_p
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
+}
+
+/* Get video result directory */
+void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::string>& video_dataset_subdirs) {
+    // Get dataset directory if not exists
+    std::string dataset_path = "../dataset/";
+
+    // Get video dataset directory
+    std::string video_dataset_dir = std::filesystem::path(video_path).parent_path().filename();
+    std::string video_dataset_path = dataset_path + video_dataset_dir;
+
+    // Get video bounding_boxes, frames, mask directories
+    video_dataset_subdirs = {video_dataset_path + "/bounding_boxes", video_dataset_path + "/frames", video_dataset_path + "/masks"};
 }

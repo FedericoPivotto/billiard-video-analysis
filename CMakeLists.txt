@@ -54,7 +54,8 @@ target_link_libraries(system
     system_filesystem_utils
     system_object_detection
     system_edge_detection
-    system_segmentation)
+    system_segmentation
+    system_minimap)
 
 ## Metrics executable
 add_executable(metrics metrics/src/main.cpp)

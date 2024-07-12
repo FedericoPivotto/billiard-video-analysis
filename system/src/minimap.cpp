@@ -8,6 +8,10 @@
 #include <opencv2/calib3d.hpp>
 // imgproc: warpPerspective(), cv::circle
 #include <opencv2/imgproc.hpp>
+// edge_detection: ed::sort_corners()
+#include <edge_detection.h>
+// segmentation: sg::field_segmentation()
+#include <segmentation.h>
 
 /* Compute the slope of a line expressed in polar representation (rho, theta) */
 double mm::compute_slope(const double theta) {
@@ -62,8 +66,27 @@ void mm::warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, 
     warped_point.y = static_cast<float>(homogeneous_warped_point.at<double>(1,0) / homogeneous_warped_point.at<double>(2,0));
 }
 
+/* Draw map-view holes */
+void mm::draw_map_view_details(cv::Mat& map_view, const int ball_radius){
+    // Store and draw holes
+    std::vector<cv::Point> hole_positions = {
+        cv::Point(ball_radius, ball_radius),
+        cv::Point((map_view.cols / 2) - ball_radius, ball_radius),
+        cv::Point(map_view.cols - ball_radius, ball_radius),
+        cv::Point(map_view.cols - ball_radius, (map_view.rows / 2) - ball_radius),
+        cv::Point(map_view.cols - ball_radius, map_view.rows - ball_radius),
+        cv::Point((map_view.cols / 2) - ball_radius, map_view.rows- ball_radius),
+        cv::Point(ball_radius, map_view.rows - ball_radius),
+        cv::Point(ball_radius, (map_view.rows / 2) - ball_radius),
+    };
+
+    for(const cv::Point& hole : hole_positions){
+        cv::circle(map_view, hole, ball_radius + 2, cv::Scalar(50,50,50), 2);
+    }
+}
+
 /* Generate map view of the area inside the borders */
-void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted) {
+void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted, const std::vector<od::Ball> ball_bboxes) {
     std::vector<cv::Point2f> dst;
 
     // Check table orientation
@@ -79,13 +102,27 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vec
     // Generate map view
     cv::warpPerspective(image, map_view, map_perspective, cv::Size(350, 200));
 
+    // Warp each ball center and draw mini-map balls
+    const int ball_radius = 6;
     cv::Point2f warped_point;
 
-    // TEST---------------------------
-    mm::warped_pixel(cv::Point2f(268, 317), map_perspective, warped_point);
-    // TODO: print to remove
-    std::cout<<"WARPED POINT: "<< warped_point << std::endl;
-    cv::circle(map_view, warped_point, 6, cv::Scalar(0,0,255));
+    for(const od::Ball& ball : ball_bboxes){
+        mm::warped_pixel(cv::Point2f(ball.x + ball.width / 2, ball.y + ball.height / 2), map_perspective, warped_point);
+        
+        // Draw balls
+        if(ball.ball_class == 1){
+            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(255,255,255), -1);
+        } else if(ball.ball_class == 2){
+            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(0,0,0), -1);
+        } else if(ball.ball_class == 3){
+            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(255,0,0), -1);
+        } else if(ball.ball_class == 4){
+            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(0,0,255), -1);
+        }
+    }
+
+    // Draw holes
+    draw_map_view_details(map_view, ball_radius);
 }
 
 /* Overlay the map-view into the current frame */
@@ -100,11 +137,19 @@ void mm::overlay_map_view(cv::Mat& frame, const cv::Mat& map_view) {
 }
 
 /* Computes map-view of the current frame */
-void mm::compute_map_view(cv::Mat& map_view, const cv::Mat& first_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners) {
+void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes) {
+    // Sorted float corners
+    std::vector<cv::Point2f> sorted_corners(corners);
+    ed::sort_corners(sorted_corners);
+
+    // Field frame white table segmentation
+    bool white_flag = true;
+    sg::field_segmentation(sorted_corners, field_frame, white_flag);
+    
     // Check for presenceof distortion
     bool is_distorted = false;
     mm::check_perspective_distortion(borders, is_distorted);
 
     // Create map-view
-    mm::create_map_view(first_frame, map_view, corners, is_distorted);
+    mm::create_map_view(field_frame, map_view, sorted_corners, is_distorted, ball_bboxes);
 }

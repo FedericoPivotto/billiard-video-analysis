@@ -14,7 +14,7 @@ namespace sg {
     void points_float_to_int(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& int_points);
 
     // Segmentation function declarations
-    void field_segmentation(std::vector<cv::Point2f>& corners, cv::Mat& frame);
+    void field_segmentation(const std::vector<cv::Point2f>& corners, cv::Mat& frame, const bool white_flag = false);
     void ball_segmentation(od::Ball ball_bbox, cv::Mat& frame);
 
     // Main function declaration

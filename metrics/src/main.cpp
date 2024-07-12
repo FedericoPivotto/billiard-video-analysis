@@ -33,7 +33,8 @@ int main(int argc, char** argv) {
     // ATTENTION: Federico will take care of this part
     std::vector<od::Ball> predicted_balls;
     std::string predicted_bboxes_frame_file_path = "../metrics/data/predicted_frame_first_bbox.txt";
-    fsu::read_ball_bboxes_with_confidence(predicted_bboxes_frame_file_path, predicted_balls);
+    bool confidence_flag = true;
+    fsu::read_ball_bboxes(predicted_bboxes_frame_file_path, predicted_balls, confidence_flag);
 
     // Print predicted balls
     for(od::Ball ball : predicted_balls)

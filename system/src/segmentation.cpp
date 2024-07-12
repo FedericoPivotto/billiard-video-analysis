@@ -10,13 +10,19 @@
 #include <edge_detection.h>
 
 /* Field segmentation */
-void sg::field_segmentation(std::vector<cv::Point2f>& corners, cv::Mat& frame) {
+void sg::field_segmentation(const std::vector<cv::Point2f>& corners, cv::Mat& frame, const bool white_flag) {
+    // Sorted float corners
+    std::vector<cv::Point2f> sorted_corners(corners);
+    ed::sort_corners(sorted_corners);
+
     // Round float corners to int
     std::vector<cv::Point> int_corners;
-    sg::points_float_to_int(corners, int_corners);
+    sg::points_float_to_int(sorted_corners, int_corners);
+
     // Field coloring
     std::vector<std::vector<cv::Point>> fill_corners = {int_corners};
-    cv::fillPoly(frame, fill_corners, cv::Scalar(35, 125, 55));
+    cv::Scalar field_color = white_flag ? cv::Scalar(190, 190, 190) : cv::Scalar(35, 125, 55);
+    cv::fillPoly(frame, fill_corners, field_color);
 }
 
 /* Ball segmentation */
@@ -24,7 +30,7 @@ void sg::ball_segmentation(od::Ball ball_bbox, cv::Mat& frame) {
     // Get ball center
     cv::Point center(ball_bbox.center().first, ball_bbox.center().second);
     // Ball color palette
-    std::vector<cv::Scalar> ball_colors = {cv::Scalar(255, 255, 255), cv::Scalar(0, 0, 0), cv::Scalar(255, 0, 0), cv::Scalar(0, 0, 255)};
+    std::vector<cv::Scalar> ball_colors = {cv::Scalar(255, 255, 255), cv::Scalar(0, 0, 0), cv::Scalar(255, 185, 35), cv::Scalar(0, 0, 255)};
     // Ball coloring
     cv::circle(frame, center, ball_bbox.radius(), ball_colors[ball_bbox.ball_class-1], -1);
 }
@@ -45,17 +51,11 @@ const std::vector<cv::Point2f> corners, cv::Mat& video_frame, bool test_flag) {
 
     // Read ball bounding box from frame bboxes text file
     std::vector<od::Ball> ball_bboxes;
-    if(test_flag)
-        fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
-    else
-        fsu::read_ball_bboxes_with_confidence(bboxes_frame_file_path, ball_bboxes);
+    bool confidence_flag = ! test_flag;
+    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes, confidence_flag);
 
-    // Sorted float corners
-    std::vector<cv::Point2f> sorted_corners(corners);
-    ed::sort_corners(sorted_corners);
-    
     // Color table pixels within the table borders
-    sg::field_segmentation(sorted_corners, video_frame);
+    sg::field_segmentation(corners, video_frame);
     
     // Scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {

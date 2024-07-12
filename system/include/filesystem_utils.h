@@ -25,13 +25,13 @@ namespace fsu {
 
     // Get function declarations
     void get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path);
+    void get_video_dataset_dir(const std::string video_path, std::vector<std::string>& video_dataset_subdirs);
 
     // Write function declarations
     void write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball);
 
     // Read function declarations
-    void read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls);
-    void read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls);
+    void read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls, const bool confidence_flag = false);
 }
 
 #endif // FILESYSTEM_UTILS_H
