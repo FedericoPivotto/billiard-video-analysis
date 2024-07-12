@@ -173,3 +173,23 @@ void ed::edge_detection(cv::Mat& first_frame, std::vector<cv::Vec2f>& borders, s
     ed::find_borders(edge_map, borders);
     ed::find_corners(borders, corners);
 }
+
+/* Sort corners in top-left, top-right, bottom-right, bottom-left */
+void ed::sort_corners(std::vector<cv::Point2f>& corners){
+        // Sort by y coordinate
+        for(size_t i = 0; i < corners.size(); i++){
+            for( size_t j = i + 1; j < corners.size(); j++ ){
+                if(corners[i].y > corners[j].y){
+                    std::swap(corners[i], corners[j]);
+                }
+            }
+        }
+
+        // Sort by x coordinate
+        if(corners[0].x >= corners[1].x){
+            std::swap(corners[0], corners[1]);
+        }
+        if(corners[2].x <= corners[3].x){
+            std::swap(corners[2], corners[3]);
+        }
+}

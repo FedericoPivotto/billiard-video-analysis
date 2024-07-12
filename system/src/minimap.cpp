@@ -6,29 +6,8 @@
 #include <iostream>
 // calib3d: findHomography()
 #include <opencv2/calib3d.hpp>
-// imgproc warpPerspective(), cv::circle
+// imgproc: warpPerspective(), cv::circle
 #include <opencv2/imgproc.hpp>
-
-/* Sort corners in top-left, top-right, bottom-right, bottom-left */
-void mm::sort_corners(std::vector<cv::Point2f>& corners){
-        // Sort by y coordinate
-        for( size_t i = 0; i < corners.size(); i++ ){
-            for( size_t j = i + 1; j < corners.size(); j++ ){
-                if(corners[i].y > corners[j].y){
-                    std::swap(corners[i], corners[j]);
-                }
-            }
-        }
-
-        // Sort by x coordinate
-        if(corners[0].x >= corners[1].x){
-            std::swap(corners[0], corners[1]);
-        }
-        if(corners[2].x <= corners[3].x){
-            std::swap(corners[2], corners[3]);
-        }
-}
-
 
 /* Compute the slope of a line expressed in polar representation (rho, theta) */
 double mm::compute_slope(const double theta){

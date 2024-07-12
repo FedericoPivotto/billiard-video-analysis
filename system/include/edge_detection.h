@@ -9,7 +9,6 @@
 #include <opencv2/opencv.hpp>
 
 namespace ed {
-
     void negative_lines(std::vector<cv::Vec2f>& lines);
 
     void select_borders(const std::vector<cv::Vec2f> lines, std::vector<cv::Vec2f>& borders);
@@ -25,6 +24,8 @@ namespace ed {
     void hsv_mask(const cv::Mat& hsv_frame, cv::Mat& mask, cv::Scalar lower_hsv, cv::Scalar upper_hsv);
 
     void edge_detection(cv::Mat& first_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners);
+
+    void sort_corners(std::vector<cv::Point2f>& corners);
 }
 
 #endif // EDGE_DETECTION_H

@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
         
         // Compute map view of the billiard table-----------------------
         cv::Mat map_view;
-        mm::sort_corners(corners);   
+        ed::sort_corners(corners);   
         mm::compute_map_view(map_view, first_frame, borders, corners);
 
         // Overlay the map-view in the current frame

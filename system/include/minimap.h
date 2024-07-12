@@ -9,8 +9,6 @@
 #include <opencv2/highgui.hpp>
 
 namespace mm {
-    void sort_corners(std::vector<cv::Point2f>& corners);
-
     void create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted);
 
     double compute_slope(const double theta);
