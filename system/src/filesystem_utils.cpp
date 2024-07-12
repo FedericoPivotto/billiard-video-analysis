@@ -106,3 +106,16 @@ void fsu::read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_p
     // Close frame bboxes text file
     bboxes_frame_file.close();
 }
+
+/* Get video result directory */
+void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::string>& video_dataset_subdirs) {
+    // Get dataset directory if not exists
+    std::string dataset_path = "../dataset/";
+
+    // Get video dataset directory
+    std::string video_dataset_dir = std::filesystem::path(video_path).parent_path().filename();
+    std::string video_dataset_path = dataset_path + video_dataset_dir;
+
+    // Get video bounding_boxes, frames, mask directories
+    video_dataset_subdirs = {video_dataset_path + "/bounding_boxes", video_dataset_path + "/frames", video_dataset_path + "/masks"};
+}
