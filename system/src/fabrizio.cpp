@@ -15,30 +15,6 @@
 // minimap detection library
 #include <minimap.h>
 
-/* Table-only segmentation (TO PUT IN segmentation.cpp)*/
-void get_field_segmentation(const std::vector<cv::Point2f> corners, cv::Mat& video_frame, cv::Mat& field_frame) {
-    // Sorted float corners
-    std::vector<cv::Point2f> sorted_corners(corners);
-    ed::sort_corners(sorted_corners);
-    
-    // Store frame with only field segmentation
-    field_frame = video_frame.clone(); 
-
-    // Color table pixels within the table borders
-    sg::field_segmentation(sorted_corners, field_frame);
-}
-
-/* Get ball bounding boxes (TO PUT IN filesystem_utils.cpp)*/
-void get_ball_bboxes(std::vector<od::Ball>& ball_bboxes, const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path){
-    // Read frame bboxes text file
-    std::string bboxes_frame_file_path;
-    fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
-
-    // Read ball bounding box from frame bboxes text file
-    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
-}
-
-
 /* Computer vision system main */
 int main(int argc, char** argv) {
     // Get videos paths
@@ -115,12 +91,18 @@ int main(int argc, char** argv) {
             ed::draw_borders(video_frame_cv, borders, corners);
 
             // Compute map view of the billiard table
-            cv::Mat map_view, field_frame;
+            cv::Mat map_view, field_frame = video_frames[k].clone();
             std::vector<od::Ball> ball_bboxes;
 
             ed::sort_corners(first_corners);
-            get_ball_bboxes(ball_bboxes, video_frames, k, video_dataset_subdirs[0]);
-            get_field_segmentation(corners, video_frame_cv, field_frame);
+
+            std::string bboxes_frame_file_path;
+            fsu::get_bboxes_frame_file_path(video_frames, k, video_dataset_subdirs[0], bboxes_frame_file_path);
+            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+
+            // get_ball_bboxes(ball_bboxes, video_frames, k, video_dataset_subdirs[0]);
+            
+            sg::get_white_field_segmentation(corners, field_frame);
             mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
 
             // Overlay the map-view in the current frame

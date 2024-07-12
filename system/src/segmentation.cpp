@@ -10,13 +10,14 @@
 #include <edge_detection.h>
 
 /* Field segmentation */
-void sg::field_segmentation(std::vector<cv::Point2f>& corners, cv::Mat& frame) {
+void sg::field_segmentation(std::vector<cv::Point2f>& corners, cv::Mat& frame, const bool white_flag) {
     // Round float corners to int
     std::vector<cv::Point> int_corners;
     sg::points_float_to_int(corners, int_corners);
     // Field coloring
     std::vector<std::vector<cv::Point>> fill_corners = {int_corners};
-    cv::fillPoly(frame, fill_corners, cv::Scalar(35, 125, 55));
+    cv::Scalar field_color = white_flag ? cv::Scalar(190, 190, 190) : cv::Scalar(35, 125, 55);
+    cv::fillPoly(frame, fill_corners, field_color);
 }
 
 /* Ball segmentation */
@@ -24,7 +25,7 @@ void sg::ball_segmentation(od::Ball ball_bbox, cv::Mat& frame) {
     // Get ball center
     cv::Point center(ball_bbox.center().first, ball_bbox.center().second);
     // Ball color palette
-    std::vector<cv::Scalar> ball_colors = {cv::Scalar(255, 255, 255), cv::Scalar(0, 0, 0), cv::Scalar(255, 0, 0), cv::Scalar(0, 0, 255)};
+    std::vector<cv::Scalar> ball_colors = {cv::Scalar(255, 255, 255), cv::Scalar(0, 0, 0), cv::Scalar(255, 185, 35), cv::Scalar(0, 0, 255)};
     // Ball coloring
     cv::circle(frame, center, ball_bbox.radius(), ball_colors[ball_bbox.ball_class-1], -1);
 }
@@ -62,4 +63,15 @@ const std::vector<cv::Point2f> corners, cv::Mat& video_frame, bool test_flag) {
         // Color balls according to class
         sg::ball_segmentation(ball_bbox, video_frame);
     }
+}
+
+/* Table-only segmentation */
+void sg::get_white_field_segmentation(const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+    // Sorted float corners
+    std::vector<cv::Point2f> sorted_corners(corners);
+    ed::sort_corners(sorted_corners);
+
+    // Color table pixels within the table borders
+    bool white_flag = true;
+    sg::field_segmentation(sorted_corners, video_frame, white_flag);
 }
