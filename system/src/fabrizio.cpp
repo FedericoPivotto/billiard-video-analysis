@@ -6,11 +6,11 @@
 // filesystem_utils: filesystem utilities
 #include <filesystem_utils.h>
 
-// object detection library
-#include <object_detection.h>
-
 // edge_detection detection library
 #include <edge_detection.h>
+
+// segmentation library
+#include <segmentation.h>
 
 // minimap detection library
 #include <minimap.h>
@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     vu::get_video_captures(video_paths, captures);
     
     // For each video read frames
-    for(int i = 0; i < captures.size(); ++i) {
+    for(size_t i = 0; i < captures.size(); ++i) {
         // Read video frames
         std::vector<cv::Mat> video_frames;
         vu::read_video_frames(captures[i], video_frames);
@@ -35,55 +35,99 @@ int main(int argc, char** argv) {
         std::vector<std::string> video_result_subdirs;
         fsu::create_video_result_dir(video_paths[i], video_result_subdirs);
         
-        // TODO: object detection (Federico)
+        // Skip video if empty
+        if(video_frames.empty())
+            continue;
 
-        // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
+        // First and last video frame indexes if exists
+        std::vector<size_t> frame_indexes = {video_frames.size()-1};
+        if(video_frames.size() > 1)
+            frame_indexes.push_back(0);
+        // Sort frame indexes
+        std::sort(frame_indexes.begin(), frame_indexes.end());
 
-        // Edge detection made on the first frame
-        cv::Mat first_frame = video_frames[0];
-        std::vector<cv::Vec2f> borders;
-        std::vector<cv::Point2f> corners;
+        // For each video frame of interest
+        std::vector<cv::Mat> video_frames_cv;
+        std::vector<cv::Vec2f> first_borders;
+        std::vector<cv::Point2f> first_corners;
+        for(size_t j = 0; j < frame_indexes.size(); ++j) {
+            // Frame of interes index
+            size_t k = frame_indexes[j];
 
-        if (first_frame.empty()) {
-            std::cout << "Could not open the frame!" << std::endl;
-            return -1;
-        } else {
-            ed::edge_detection(first_frame, borders, corners);
-            ed::draw_borders(first_frame, borders, corners);
+            // Skip video frame if empty
+            if(video_frames[k].empty())
+                continue;
+
+            // Video frame clone
+            cv::Mat video_frame_cv = video_frames[k].clone();
+            video_frames_cv.push_back(video_frame_cv);
+
+            // Edge detection (Fabrizio)
+            std::vector<cv::Vec2f> borders;
+            std::vector<cv::Point2f> corners;
+            ed::edge_detection(video_frame_cv, borders, corners);
+
+            // Store borders and corners if first frame analyzed
+            bool is_first = video_frames_cv.size() == 1 ? true : false;
+            if(is_first) {
+                first_borders = borders;
+                first_corners = corners;
+            }
+
+            // TODO: object detection (Federico)
+
+            // Segmentation (Leonardo)
+            // TODO: when object detection is fine, the flag must be sat to false
+            // ATTENTION: test_flag is used just to do test with a dataset bounding box file
+            std::string bboxes_test_dir = "../dataset/game1_clip1/bounding_boxes";
+            bool test_flag = true;
+            sg::segmentation(video_frames, k, bboxes_test_dir, corners, video_frame_cv, test_flag);
+            // Draw field borders
+            ed::draw_borders(video_frame_cv, borders, corners);
         }
 
-        // TODO: edge detection (Fabrizio) ----------------------------------------------------------------
-
-        // Store bounding boxes centers and compute average ray (TODO: generalize to our results)
-        std::vector<od::Ball> ball_boxes;
-        std::string ball_boxes_dir_path = "../dataset/game1_clip1/bounding_boxes";
-        std::string ball_boxes_path;
-
-        fsu::get_bboxes_frame_file_path(video_frames, 0, ball_boxes_dir_path, ball_boxes_path);
-        fsu::read_ball_bboxes(ball_boxes_path, ball_boxes);
+        // Assuming field corners of the first video frame
         
-        // Compute map view of the billiard table-----------------------
-        cv::Mat map_view;
-        ed::sort_corners(corners);   
-        mm::compute_map_view(map_view, first_frame, borders, corners);
+        // For each video frame
+        std::vector<cv::Mat> video_game_frames_cv;
+        for(size_t j = 0; j < video_frames.size(); ++j) {
+            // Skip game video frame if empty
+            if(video_frames[j].empty())
+                continue;
 
-        // Overlay the map-view in the current frame
-        mm::overlay_map_view(first_frame, map_view);
+            // Video game frame clone
+            cv::Mat video_game_frame_cv = video_frames[j].clone();
+            video_game_frames_cv.push_back(video_game_frame_cv);
 
-        // Compute map view of the billiard table-----------------------
+            // TODO: 2D top-view minimap (Fabrizio)
+            
+            // Store bounding boxes centers and compute average ray (TODO: generalize to our results)
+            std::vector<od::Ball> ball_boxes;
+            std::string ball_boxes_dir_path = "../dataset/game1_clip1/bounding_boxes", ball_boxes_path;
+            fsu::get_bboxes_frame_file_path(video_frames, 0, ball_boxes_dir_path, ball_boxes_path);
+            fsu::read_ball_bboxes(ball_boxes_path, ball_boxes);
 
-        // Show frame with borders
-        cv::namedWindow("Billiard video frame");
-        cv::imshow("Billiard video frame", first_frame);
+            // Compute map view of the billiard table
+            cv::Mat map_view;
+            ed::sort_corners(first_corners);
+            mm::compute_map_view(map_view, video_game_frame_cv, first_borders, first_corners);
 
-        cv::waitKey(0);
+            // Overlay the map-view in the current frame
+            mm::overlay_map_view(video_game_frame_cv, map_view);
 
-        // TODO: segmentation (Leonardo) ------------------------------------------------------------------
-        // TODO: 2D top-view minimap
-        // TODO: trajectory tracking
+            // Show frame with borders
+            cv::namedWindow("Billiard video frame");
+            cv::imshow("Billiard video frame", video_game_frame_cv);
+            cv::waitKey(0);
 
-        // Show video frames
-        // show_video_frames(video_frames);
+            // TODO: trajectory tracking
+        }
+
+        // Show computer vision video frames
+        vu::show_video_frames(video_frames_cv);
+
+        // Show video game frames
+        vu::show_video_frames(video_game_frames_cv);
     }
 
     return 0;

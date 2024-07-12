@@ -59,13 +59,17 @@ int main(int argc, char** argv) {
             cv::Mat video_frame_cv = video_frames[k].clone();
             video_frames_cv.push_back(video_frame_cv);
 
-            // Check if first frame analyzed
-            bool is_first = video_frames_cv.size() == 1 ? true : false;
-
             // Edge detection (Fabrizio)
-            std::vector<cv::Vec2f> borders = is_first ? first_borders : std::vector<cv::Vec2f>();
-            std::vector<cv::Point2f> corners = is_first ? first_corners : std::vector<cv::Point2f>();
+            std::vector<cv::Vec2f> borders;
+            std::vector<cv::Point2f> corners;
             ed::edge_detection(video_frame_cv, borders, corners);
+
+            // Store borders and corners if first frame analyzed
+            bool is_first = video_frames_cv.size() == 1 ? true : false;
+            if(is_first) {
+                first_borders = borders;
+                first_corners = corners;
+            }
 
             // TODO: object detection (Federico)
 

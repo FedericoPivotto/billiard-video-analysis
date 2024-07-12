@@ -144,7 +144,6 @@ void ed::hsv_mask(const cv::Mat& hsv_frame, cv::Mat& mask, cv::Scalar lower_hsv,
     cv::erode(mask, mask, kernel);
 }
 
-
 /* Perform edge detectionon the first frame */
 void ed::edge_detection(cv::Mat& video_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners) {
     // Frame pre-processing
