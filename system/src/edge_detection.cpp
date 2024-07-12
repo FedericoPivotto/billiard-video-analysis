@@ -1,6 +1,6 @@
 #include <edge_detection.h>
 
-// librarires required in this source file and not already included in edge_detection.h
+/* Librarires required in this source file and not already included in edge_detection.h */
 
 // iostream: std::cerr
 #include <iostream>

@@ -1,4 +1,4 @@
-// user-defined libraries
+/* User-defined libraries */
 
 // video_captures: video utilities
 #include <video_utils.h>
@@ -12,81 +12,83 @@
 // segmentation library
 #include <segmentation.h>
 
+/* Computer vision system main */
 int main(int argc, char** argv) {
-    // get videos paths
+    // Get videos paths
     std::vector<cv::String> video_paths;
     vu::get_video_paths(video_paths);
 
-    // get video captures
+    // Get video captures
     std::vector<cv::VideoCapture> captures;
     vu::get_video_captures(video_paths, captures);
     
-    // for each video read frames
+    // For each video read frames
     for(size_t i = 0; i < captures.size(); ++i) {
-        // read video frames
+        // Read video frames
         std::vector<cv::Mat> video_frames;
         vu::read_video_frames(captures[i], video_frames);
 
-        // create video result directory
+        // Create video result directory
         std::vector<std::string> video_result_subdirs;
         fsu::create_video_result_dir(video_paths[i], video_result_subdirs);
         
-        // skip video if empty
+        // Skip video if empty
         if(video_frames.empty())
             continue;
 
-        // first and last video frame indexes if exists
+        // First and last video frame indexes if exists
         std::vector<size_t> frame_indexes = {video_frames.size()-1};
         if(video_frames.size() > 1)
             frame_indexes.push_back(0);
-        // sort frame indexes
+        // Sort frame indexes
         std::sort(frame_indexes.begin(), frame_indexes.end());
 
-        // for each video frame of interest
+        // For each video frame of interest
         std::vector<cv::Mat> video_frames_cv;
         std::vector<cv::Vec2f> first_borders;
         std::vector<cv::Point2f> first_corners;
         for(size_t j = 0; j < frame_indexes.size(); ++j) {
-            // frame of interes index
+            // Frame of interes index
             size_t k = frame_indexes[j];
 
-            // skip video frame if empty
+            // Skip video frame if empty
             if(video_frames[k].empty())
                 continue;
 
-            // video frame clone
+            // Video frame clone
             cv::Mat video_frame_cv = video_frames[k].clone();
             video_frames_cv.push_back(video_frame_cv);
 
-            // check if first frame analyzed
+            // Check if first frame analyzed
             bool is_first = video_frames_cv.size() == 1 ? true : false;
 
-            // edge detection (Fabrizio)
+            // Edge detection (Fabrizio)
             std::vector<cv::Vec2f> borders = is_first ? first_borders : std::vector<cv::Vec2f>();
             std::vector<cv::Point2f> corners = is_first ? first_corners : std::vector<cv::Point2f>();
             ed::edge_detection(video_frame_cv, borders, corners);
 
             // TODO: object detection (Federico)
 
-            // segmentation (Leonardo)
+            // Segmentation (Leonardo)
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
             std::string bboxes_test_dir = "../dataset/game1_clip1/bounding_boxes";
             bool test_flag = true;
             sg::segmentation(video_frames, k, bboxes_test_dir, corners, video_frame_cv, test_flag);
-            // draw field borders
+            // Draw field borders
             ed::draw_borders(video_frame_cv, borders, corners);
         }
 
-        // assuming field corners of the first video frame
-        // for each video frame
+        // Assuming field corners of the first video frame
+        
+        // For each video frame
         std::vector<cv::Mat> video_game_frames_cv;
         for(size_t j = 0; j < video_frames.size(); ++j) {
-            // skip game video frame if empty
+            // Skip game video frame if empty
             if(video_frames[j].empty())
                 continue;
 
-            // video game frame clone
+            // Video game frame clone
             cv::Mat video_game_frame_cv = video_frames[j].clone();
             video_game_frames_cv.push_back(video_game_frame_cv);
 
@@ -95,10 +97,10 @@ int main(int argc, char** argv) {
             // TODO: trajectory tracking
         }
 
-        // show computer vision video frames
+        // Show computer vision video frames
         vu::show_video_frames(video_frames_cv);
 
-        // show video game frames
+        // Show video game frames
         vu::show_video_frames(video_game_frames_cv);
     }
 

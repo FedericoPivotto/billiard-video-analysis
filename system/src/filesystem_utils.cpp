@@ -1,44 +1,47 @@
 #include <filesystem_utils.h>
 
-// librarires required in this source file and not already included in video_utils.h
+/* Librarires required in this source file and not already included in video_utils.h */
 
 // filesystem: std::filesystem::exists(), std::filesystem::create_directory()
 #include <filesystem>
 // string: std::getline()
 #include <string>
 
+/* Create video result directory */
 void fsu::create_video_result_dir(const std::string video_path, std::vector<std::string>& video_result_subdirs) {
-    // create result directory if not exists
+    // Create result directory if not exists
     std::string result_path = "../system/result/";
     if(! std::filesystem::exists(result_path))
         std::filesystem::create_directory(result_path);
 
-    // create video result directory or delete if already exists
+    // Create video result directory or delete if already exists
     std::string video_result_dir = std::filesystem::path(video_path).parent_path().filename();
     std::string video_result_path = result_path + video_result_dir;
-    // delete existing video result directory
+    // Delete existing video result directory
     if(std::filesystem::exists(video_result_path))
         std::filesystem::remove_all(video_result_path);
-    // create video result directory
+    // Create video result directory
     std::filesystem::create_directory(video_result_path);
 
-    // create video bounding_boxes, frames, mask directories
+    // Create video bounding_boxes, frames, mask directories
     video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks"};
     for(std::string video_result_subdir : video_result_subdirs)
     std::filesystem::create_directory(video_result_subdir);
 }
 
+/* Create a bounding box file for the given video frame */
 void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
-    // create frame bboxes text file
+    // Create frame bboxes text file
     fsu::get_bboxes_frame_file_path(video_frames, nframe, bboxes_video_path, bboxes_frame_file_path);
     std::ofstream bboxes_frame_file(bboxes_frame_file_path);
 
-    // close frame bboxes text file
+    // Close frame bboxes text file
     bboxes_frame_file.close();
 }
 
+/* Get bounding box file path for the given video frame */
 void fsu::get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
-    // create frame bboxes text file
+    // Create frame bboxes text file
     bboxes_frame_file_path = bboxes_video_path + "/frame_";
     if(nframe == 0)
         bboxes_frame_file_path += "first";
@@ -49,54 +52,57 @@ void fsu::get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, c
     bboxes_frame_file_path += "_bbox.txt";
 }
 
+/* Write ball in the given opened bounding box file stream */
 void fsu::write_ball_bbox(std::ofstream& bboxes_frame_file, od::Ball ball) {
-    // write ball bounding box
+    // Write ball bounding box
     bboxes_frame_file << ball << " " << ball.confidence << std::endl;
 }
 
+/* Read balls from the bounding box file path without confidence value */
 void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
-    // open frame bboxes text file
+    // Open frame bboxes text file
     std::ifstream bboxes_frame_file(bboxes_frame_file_path);
 
-    // read frame bboxes text file lines
+    // Read frame bboxes text file lines
     std::string line;
     while(std::getline(bboxes_frame_file, line)) {
-        // stream for line parsing
+        // Stream for line parsing
         std::istringstream iss(line);
         unsigned int x, y, width, height, ball_class;
 
-        // skip and proceed to next line if error
+        // Skip and proceed to next line if error
         if (! (iss >> x >> y >> width >> height >> ball_class))
             continue;
 
-        // create and add ball to vector
+        // Create and add ball to vector
         balls.push_back(od::Ball(x, y, width, height, ball_class));
     }
 
-    // close frame bboxes text file
+    // Close frame bboxes text file
     bboxes_frame_file.close();
 }
 
+/* Read balls from the bounding box file path with confidence value */
 void fsu::read_ball_bboxes_with_confidence(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls) {
-    // open frame bboxes text file
+    // Open frame bboxes text file
     std::ifstream bboxes_frame_file(bboxes_frame_file_path);
 
-    // read frame bboxes text file lines
+    // Read frame bboxes text file lines
     std::string line;
     while(std::getline(bboxes_frame_file, line)) {
-        // stream for line parsing
+        // Stream for line parsing
         std::istringstream iss(line);
         unsigned int x, y, width, height, ball_class;
         double confidence;
 
-        // skip and proceed to next line if error
+        // Skip and proceed to next line if error
         if (! (iss >> x >> y >> width >> height >> ball_class >> confidence))
             continue;
 
-        // create and add ball to vector
+        // Create and add ball to vector
         balls.push_back(od::Ball(x, y, width, height, ball_class, confidence));
     }
 
-    // close frame bboxes text file
+    // Close frame bboxes text file
     bboxes_frame_file.close();
 }

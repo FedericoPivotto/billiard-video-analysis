@@ -1,28 +1,33 @@
 #include <object_detection.h>
 
-// librarires required in this source file and not already included in object_detection.h
+/* Librarires required in this source file and not already included in object_detection.h */
 
 // imgproc: cv::cvtColor(), color space conversion codes
 #include <opencv2/imgproc.hpp>
 
+/* Ball class */
 od::Ball::Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence) : x(x), y(y), width(width), height(height), ball_class(ball_class), confidence(confidence) {
 }
 
+/* Get ball center */
 std::pair<unsigned int, unsigned int> od::Ball::center() const {
     // compute ball center coordinates
     return {x + width / 2, y + height / 2};
 }
 
+/* Get ball radius */
 unsigned int od::Ball::radius() const {
     // compute ball radius
     return width < height ? width / 2 : height / 2;
 }
 
+/* Ball operator << overload */
 std::ostream& od::operator<<(std::ostream& os, const Ball& ball) {
     // ball information string
     return os << ball.x << " " << ball.y << " " << ball.width << " " << ball.height << " " << ball.ball_class;
 }
 
+/* Ball class detection */
 void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // TODO: remove background
 
@@ -35,6 +40,7 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // TODO: set ball class
 }
 
+/* Balls detection in given a video frame */
 void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
     /*// create frame bboxes text file
     std::string bboxes_frame_file_path;
