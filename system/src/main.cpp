@@ -78,7 +78,6 @@ int main(int argc, char** argv) {
 
             // Segmentation (Leonardo)
             sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
-
             // Draw field borders
             ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }

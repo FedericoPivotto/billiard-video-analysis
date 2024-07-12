@@ -1,5 +1,3 @@
-#include <iostream>
-
 /* User-defined libraries */
 
 // video_captures: video utilities
@@ -16,6 +14,9 @@
 
 // segmentation library
 #include <segmentation.h>
+
+// minimap detection library
+#include <minimap.h>
 
 /* Computer vision system main */
 int main(int argc, char** argv) {
@@ -98,9 +99,24 @@ int main(int argc, char** argv) {
             cv::Mat video_game_frame_cv = video_frames[j].clone();
             video_game_frames_cv.push_back(video_game_frame_cv);
 
-            // TODO: 2D top-view minimap (Fabrizio)
+            // Get bounding box file path
+            std::string bboxes_frame_file_path;
+            fsu::get_bboxes_frame_file_path(video_frames, j, video_result_subdirs[0], bboxes_frame_file_path);
+
+            // 2D top-view minimap (Fabrizio)
+
+            // Read balls from bounding box file
+            std::vector<od::Ball> ball_bboxes;
+            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+            
+            // Create map-view
+            cv::Mat map_view, field_frame = video_frames[j].clone();
+            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
+            // Overlay the map-view in the current frame
+            mm::overlay_map_view(video_game_frame_cv, map_view);
 
             // TODO: trajectory tracking
+            // NOTE: required to update minimap
         }
 
         // Show computer vision video frames

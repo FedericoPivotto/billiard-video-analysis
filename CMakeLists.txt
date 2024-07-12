@@ -73,7 +73,8 @@ target_link_libraries(federico
     system_filesystem_utils
     system_object_detection
     system_edge_detection
-    system_segmentation)
+    system_segmentation
+    system_minimap)
 
 ## Fabrizio system executable
 add_executable(fabrizio system/src/fabrizio.cpp)
@@ -94,4 +95,5 @@ target_link_libraries(leonardo
     system_filesystem_utils
     system_object_detection
     system_edge_detection
-    system_segmentation)
+    system_segmentation
+    system_minimap)

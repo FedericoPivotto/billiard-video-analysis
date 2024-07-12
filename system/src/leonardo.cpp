@@ -12,6 +12,9 @@
 // segmentation library
 #include <segmentation.h>
 
+// minimap detection library
+#include <minimap.h>
+
 /* Computer vision system main */
 int main(int argc, char** argv) {
     // Get videos paths
@@ -74,13 +77,18 @@ int main(int argc, char** argv) {
             // TODO: object detection (Federico)
 
             // Segmentation (Leonardo)
+            // Get video dataset directory
+            // TODO: change with result directory
+            std::vector<std::string> video_dataset_subdirs;
+            fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
+
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
-            std::string bboxes_test_dir = "../dataset/game1_clip1/bounding_boxes";
             bool test_flag = true;
-            sg::segmentation(video_frames, k, bboxes_test_dir, corners, video_frame_cv, test_flag);
+            sg::segmentation(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, test_flag);
+            
             // Draw field borders
-            ed::draw_borders(video_frame_cv, borders, corners);
+            ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
 
         // Assuming field corners of the first video frame
@@ -96,11 +104,32 @@ int main(int argc, char** argv) {
             cv::Mat video_game_frame_cv = video_frames[j].clone();
             video_game_frames_cv.push_back(video_game_frame_cv);
 
+            // Get video dataset directory
+            // TODO: change with result directory
+            std::vector<std::string> video_dataset_subdirs;
+            fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
+
+            // Get bounding box file path
+            // TODO: change with result directory
+            std::string bboxes_frame_file_path;
+            fsu::get_bboxes_frame_file_path(video_frames, j, video_dataset_subdirs[0], bboxes_frame_file_path);
+
             // TODO: 2D top-view minimap (Fabrizio)
 
-            // TODO: trajectory tracking
-        }
+            // Read balls from bounding box file
+            std::vector<od::Ball> ball_bboxes;
+            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+            
+            // Create map-view
+            cv::Mat map_view, field_frame = video_frames[j].clone();
+            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
+            // Overlay the map-view in the current frame
+            mm::overlay_map_view(video_game_frame_cv, map_view);
 
+            // TODO: trajectory tracking
+            // NOTE: required to update minimap
+        }
+        
         // Show computer vision video frames
         vu::show_video_frames(video_frames_cv);
 
