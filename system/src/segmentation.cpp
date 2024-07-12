@@ -24,7 +24,7 @@ void sg::ball_segmentation(od::Ball ball_bbox, cv::Mat& frame) {
     // Get ball center
     cv::Point center(ball_bbox.center().first, ball_bbox.center().second);
     // Ball color palette
-    std::vector<cv::Scalar> ball_colors = {cv::Scalar(255, 255, 255), cv::Scalar(0, 0, 0), cv::Scalar(255, 0, 0), cv::Scalar(0, 0, 255)};
+    std::vector<cv::Scalar> ball_colors = {cv::Scalar(255, 255, 255), cv::Scalar(0, 0, 0), cv::Scalar(255, 185, 35), cv::Scalar(0, 0, 255)};
     // Ball coloring
     cv::circle(frame, center, ball_bbox.radius(), ball_colors[ball_bbox.ball_class-1], -1);
 }
@@ -56,7 +56,7 @@ const std::vector<cv::Point2f> corners, cv::Mat& video_frame, bool test_flag) {
     
     // Color table pixels within the table borders
     sg::field_segmentation(sorted_corners, video_frame);
-    
+
     // Scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
         // Color balls according to class

@@ -34,8 +34,14 @@ namespace od {
     // Detect function declarations
     void detect_ball_class(Ball& ball_bbox, cv::Mat frame);
 
-    // Object detection main
+    // Ball bounding box confidence function declaration
+    void set_ball_bbox_confidence(od::Ball& ball);
+
+    // Object detection main declaration
     void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame);
+
+    // Check function declaration
+    bool is_ball_inside_field(const std::vector<cv::Point2f> corners, cv::Point center, unsigned int radius);
 }
 
 #endif // OBJECT_DETECTION_H
