@@ -78,12 +78,12 @@ int main(int argc, char** argv) {
             }
 
             // TODO: object detection (Federico)
-            od::object_detection(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
+            od::object_detection(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
 
             // Segmentation (Leonardo)
-            sg::segmentation(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
+            sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
             // Draw field borders
-            ed::draw_borders(video_frame_cv, borders, corners);
+            ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
 
         // Assuming field corners of the first video frame
@@ -120,10 +120,10 @@ int main(int argc, char** argv) {
         }
 
         // Show computer vision video frames
-        vu::show_video_frames(video_frames_cv);
+        // vu::show_video_frames(video_frames_cv);
 
         // Show video game frames
-        vu::show_video_frames(video_game_frames_cv);
+        // vu::show_video_frames(video_game_frames_cv);
     }
 
     return 0;
