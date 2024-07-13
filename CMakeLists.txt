@@ -41,6 +41,11 @@ add_library(system_segmentation
 add_library(system_minimap
     system/include/minimap.h
     system/src/minimap.cpp)
+# lourdes library
+add_library(system_lourdes
+    system/include/lourdes.h
+    system/src/lourdes.cpp)
+
 
 ## Metrics libraries
 
@@ -100,3 +105,16 @@ target_link_libraries(leonardo
     system_edge_detection
     system_segmentation
     system_minimap)
+
+## Lourdes system executable
+add_executable(main system/src/main_lourdes.cpp)
+target_link_libraries(main
+    ${OpenCV_LIBS}
+    system_video_utils
+    system_filesystem_utils
+    system_object_detection
+    system_edge_detection
+    system_segmentation
+    system_minimap
+    system_lourdes)
+    
