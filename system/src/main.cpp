@@ -80,8 +80,8 @@ int main(int argc, char** argv) {
             sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
 
             // Create segmentation mask
-            cv::Mat video_frame_cv_mask;
-            sg::segmentation_mask(video_frame_cv, video_frame_cv_mask);
+            cv::Mat video_frame_cv_mask = video_frames[k].clone();
+            sg::segmentation_mask(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv_mask);
             // Save segmentation mask
             fsu::save_segmentation_mask(video_frames, video_frame_cv_mask, k, video_result_subdirs[2]);
             

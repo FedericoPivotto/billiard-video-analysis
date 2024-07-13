@@ -144,7 +144,7 @@ void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::ve
 
     // Field frame white table segmentation
     bool white_flag = true;
-    sg::field_segmentation(sorted_corners, field_frame, white_flag);
+    sg::field_segmentation(sorted_corners, field_frame, mm::FIELD_BGR);
     
     // Check for presenceof distortion
     bool is_distorted = false;
