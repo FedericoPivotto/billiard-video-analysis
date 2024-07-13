@@ -34,7 +34,6 @@ namespace sg {
     void ball_segmentation(od::Ball ball_bbox, cv::Mat& frame, const bool mask_flag = false);
 
     // Mask creation function declarations
-    void change_color(cv::Mat& frame, cv::Scalar color, cv::Scalar new_color);
     void segmentation_mask(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame, bool test_flag = false);
 
     // Main function declaration
