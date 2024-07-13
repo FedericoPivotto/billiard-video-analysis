@@ -332,3 +332,91 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
 bool od::is_ball_inside_field(const std::vector<cv::Point2f> corners, cv::Point center, unsigned int radius) {
     return true;
 }
+
+/*
+
+static void hsv_callback(int pos, void* userdata) {
+    // Get Canny parameters from userdata
+	ParameterHSV params = *((ParameterHSV*) userdata);
+
+    // Dereference images
+    cv::Mat frame = (*params.src).clone();
+	cv::Mat frame_hsv, mask;
+
+    // Threshold the image in hsv
+    cv::cvtColor(frame, frame_hsv, cv::COLOR_BGR2HSV);
+    cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
+
+    // Dilate and erosion set operations on mask 
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::dilate(mask, mask, kernel);
+    cv::erode(mask, mask, kernel);
+
+    std::vector<cv::Vec3f> circles;
+	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
+		10, // distance between circles
+		100, 9, // canny edge detector parameters and circles center detection 
+		5, 20); // min_radius & max_radius of circles to detect
+    
+    // Show detected circles
+    for(size_t i = 0; i < circles.size(); i++) {
+        // Circle data
+        cv::Vec3i c = circles[i];
+        cv::Point center(c[0], c[1]);
+        unsigned int radius = c[2];
+
+        // Show circle center
+        cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+        // Show circle outline
+        cv::circle(frame, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+    }
+
+    // Display our result
+	cv::imshow(params.window_name, frame);
+    cv::imshow("Mask of change", mask);
+}
+
+
+void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+    // Create frame bboxes text file
+    std::string bboxes_frame_file_path;
+    fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
+
+    // Vector of bounding boxes
+    std::vector<od::Ball> ball_bboxes;
+    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+
+    // Video frame clone
+    cv::Mat frame(video_frames[n_frame].clone());
+
+    // Image frame pre-processing       
+    cv::Mat frame_bilateral;
+    cv::bilateralFilter(frame, frame_bilateral, 9, 100.0, 75.0);
+
+    // HSV parameters
+    int iLowH = 60, iHighH = 120, maxH = 179;
+    int iLowS = 150, iHighS = 255, maxS = 255;
+    int iLowV = 110, iHighV = 255, maxV = 255;
+
+    // ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
+    ParameterHSV hsvp = {"Control HSV", &frame_bilateral, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
+    
+    // Control window
+    cv::namedWindow(hsvp.window_name);
+
+    // Create trackbar for Hue (0 - 179)
+    cv::createTrackbar("LowH", hsvp.window_name, &hsvp.iLowH, hsvp.maxH, hsv_callback, &hsvp);
+    cv::createTrackbar("HighH", hsvp.window_name, &hsvp.iHighH, hsvp.maxH, hsv_callback, &hsvp);
+    // Create trackbar for Saturation (0 - 255)
+    cv::createTrackbar("LowS", hsvp.window_name, &hsvp.iLowS, hsvp.maxS, hsv_callback, &hsvp);
+    cv::createTrackbar("HighS", hsvp.window_name, &hsvp.iHighS, hsvp.maxS, hsv_callback, &hsvp);
+    // Create trackbar for Value (0 - 255)
+    cv::createTrackbar("LowV", hsvp.window_name, &hsvp.iLowV, hsvp.maxV, hsv_callback, &hsvp);
+    cv::createTrackbar("HighV", hsvp.window_name, &hsvp.iHighV, hsvp.maxV, hsv_callback, &hsvp);
+
+    // Wait key
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+
+}
+*/
