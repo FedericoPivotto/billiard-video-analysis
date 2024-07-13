@@ -17,5 +17,4 @@ build
 .vscode
 
 # Result directory
-!result/
-result/*
+system/result
