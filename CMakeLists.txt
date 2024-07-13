@@ -1,7 +1,10 @@
 ## Initial setup
 
-# CMake versione
+# CMake version
 cmake_minimum_required(VERSION 2.8)
+# Set everything up for C++ 17 features
+set(CMAKE_CXX_STANDARD 17)
+
 # Project name
 project(billiard)
 # OpenCV package
