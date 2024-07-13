@@ -103,9 +103,31 @@ static void hsv_callback(int pos, void* userdata) {
 
     // Threshold the image
     cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
+    
+    cv::Mat edge_map;
+    cv::Canny(mask, edge_map, 10, 100);
+
+    std::vector<cv::Vec3f> circles;
+	cv::HoughCircles(edge_map, circles, cv::HOUGH_GRADIENT, 1,
+		10, // distance between circles
+		90, 9, // canny edge detector parameters and circles center detection 
+		1, 20); // min_radius & max_radius of circles to detect
+    
+    // Show detected circles
+    for(size_t i = 0; i < circles.size(); i++) {
+        // Circle data
+        cv::Vec3i c = circles[i];
+        cv::Point center(c[0], c[1]);
+        unsigned int radius = c[2];
+
+        // Show circle center
+        cv::circle(frame_hsv, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+        // Show circle outline
+        cv::circle(frame_hsv, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+    }
 
     // Display our result
-	cv::imshow(params.window_name, mask);
+	cv::imshow(params.window_name, frame_hsv);
 }
 
 /* Callback function */
@@ -157,16 +179,16 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     cv::cvtColor(frame_bilateral, frame_hsv, cv::COLOR_BGR2HSV);
     
     // HSV channels
-    cv::Mat hsv_channels[3];
-    cv::split(frame_hsv, hsv_channels);
+    //cv::Mat hsv_channels[3];
+    //cv::split(frame_hsv, hsv_channels);
     // Apply histogram equalization to each channel
     // cv::equalizeHist(hsv_channels[0], hsv_channels[0]);
     // cv::equalizeHist(hsv_channels[1], hsv_channels[1]);
     // cv::equalizeHist(hsv_channels[2], hsv_channels[2]);
 
     // Merge the equalized channels back
-    cv::Mat frame_hsv_equalized;
-    cv::merge(hsv_channels, 3, frame_hsv_equalized);
+    //cv::Mat frame_hsv_equalized;
+    //cv::merge(hsv_channels, 3, frame_hsv_equalized);
 
     // Show the frame HSV channels
     // cv::imshow("Hue", hsv_channels[0]);
@@ -182,14 +204,14 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     // cv::imshow("Frame HSV equalized", frame_hsv_equalized);
 
     // HSV parameters
-    /*int iLowH = 60, iHighH = 120, maxH = 179;
+    int iLowH = 60, iHighH = 120, maxH = 179;
     int iLowS = 150, iHighS = 255, maxS = 255;
     int iLowV = 110, iHighV = 255, maxV = 255;
 
     // HSV window trackbars
     cv::Mat mask;
     // ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
-    ParameterHSV hsvp = {"Control HSV", &frame_hsv_equalized, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
+    ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
     
     // Control window
     cv::namedWindow(hsvp.window_name);
@@ -206,16 +228,16 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Wait key
     cv::waitKey(0);
-    cv::destroyAllWindows();*/
+    cv::destroyAllWindows();
 
-    // Mask generation by ranged HSV
-    cv::Mat mask;
-    cv::Scalar lower_hsv(60, 150, 110), upper_hsv(120, 255, 255);
-    cv::inRange(frame_hsv_equalized, lower_hsv, upper_hsv, mask);
-    
-    // Dilate and erode mask
-    cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
-    cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
+    //// Mask generation by ranged HSV
+    //cv::Mat mask;
+    //cv::Scalar lower_hsv(60, 150, 110), upper_hsv(120, 255, 255);
+    //cv::inRange(frame_hsv_equalized, lower_hsv, upper_hsv, mask);
+    //
+    //// Dilate and erode mask
+    //cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
+    //cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
 
     // Show frame and mask
     // cv::imshow("Mask", mask);
@@ -241,7 +263,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     // Wait key
     cv::waitKey(0);
     cv::destroyAllWindows();*/
-
+/*
     // Hough circle transform
     // TODO: tune parameters using trackbars
     std::vector<cv::Vec3f> circles;
@@ -281,7 +303,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     // Wait key
     cv::waitKey(0);
     cv::destroyAllWindows();
-
+*/
     /*// TODO: detect ball bounding boxes using Viola and Jones approach
     // TODO: update ball vector with bounding box x, y, width, height
     // SEE: notes p.122 for extract ball image
