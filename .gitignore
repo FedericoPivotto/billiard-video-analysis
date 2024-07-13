@@ -10,8 +10,11 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-# CMake build
+# build directory
 build
 
-# VScode
+# VScode directory
 .vscode
+
+# Result directory
+result/*
