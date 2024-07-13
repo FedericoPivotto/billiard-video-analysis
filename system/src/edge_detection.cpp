@@ -128,7 +128,7 @@ void ed::draw_borders(cv::Mat& image, const std::vector<cv::Vec2f>& borders, con
 
         // Check if correct number of corners
         if(matched_corners.size() == 2) {
-            cv::line(image, matched_corners[0], matched_corners[1], cv::Scalar(0,255,255), 3, cv::LINE_AA);
+            cv::line(image, matched_corners[0], matched_corners[1], ed::BORDER_BGR, 3, cv::LINE_AA);
         }
     }
 }

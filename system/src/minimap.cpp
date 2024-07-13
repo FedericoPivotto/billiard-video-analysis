@@ -81,7 +81,7 @@ void mm::draw_map_view_details(cv::Mat& map_view, const int ball_radius){
     };
 
     for(const cv::Point& hole : hole_positions){
-        cv::circle(map_view, hole, ball_radius + 2, cv::Scalar(50,50,50), 2);
+        cv::circle(map_view, hole, ball_radius + 2, mm::HOLE_BGR, 2);
     }
 }
 
@@ -111,13 +111,13 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vec
         
         // Draw balls
         if(ball.ball_class == 1){
-            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(255,255,255), -1);
+            cv::circle(map_view, warped_point, ball_radius, sg::WHITE_BALL_BGR.second, -1);
         } else if(ball.ball_class == 2){
-            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(0,0,0), -1);
+            cv::circle(map_view, warped_point, ball_radius, sg::BLACK_BALL_BGR.second, -1);
         } else if(ball.ball_class == 3){
-            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(255,0,0), -1);
+            cv::circle(map_view, warped_point, ball_radius, sg::SOLID_BALL_BGR.second, -1);
         } else if(ball.ball_class == 4){
-            cv::circle(map_view, warped_point, ball_radius, cv::Scalar(0,0,255), -1);
+            cv::circle(map_view, warped_point, ball_radius, sg::STRIPE_BALL_BGR.second, -1);
         }
     }
 

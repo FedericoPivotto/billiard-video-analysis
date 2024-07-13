@@ -11,9 +11,12 @@
 /* User-defined libraries */
 #include<object_detection.h>
 
-
 /* Minimap namespace */
 namespace mm {
+    // Color constants
+    const cv::Scalar HOLE_BGR(50, 50, 50);
+    const cv::Scalar FIELD_BGR(190, 190, 190);
+
     // Create function declarations
     void create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted, const std::vector<od::Ball> ball_bboxes);
 

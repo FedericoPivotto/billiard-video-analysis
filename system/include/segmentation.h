@@ -10,6 +10,14 @@
 
 /* Segmentation namespace */
 namespace sg {
+    // Color constants
+    const std::pair<int, cv::Scalar> BACKGROUND_BGR(0, cv::Scalar(0, 0, 0));
+    const std::pair<int, cv::Scalar> WHITE_BALL_BGR(1, cv::Scalar(255, 255, 255));
+    const std::pair<int, cv::Scalar> BLACK_BALL_BGR(2, cv::Scalar(0, 0, 0));
+    const std::pair<int, cv::Scalar> SOLID_BALL_BGR(3, cv::Scalar(255, 185, 35));
+    const std::pair<int, cv::Scalar> STRIPE_BALL_BGR(4, cv::Scalar(0, 0, 255));
+    const std::pair<int, cv::Scalar> FIELD_BGR(5, cv::Scalar(35, 125, 55));  
+
     // Auxiliary function declarations
     void points_float_to_int(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& int_points);
 

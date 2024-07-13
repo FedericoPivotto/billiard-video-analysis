@@ -8,6 +8,9 @@
 
 /* Edge detection namespace */
 namespace ed {
+    // Color constant
+    const cv::Scalar BORDER_BGR(0, 255, 255);
+
     // Auxiliary function declarations
     void hsv_mask(const cv::Mat& hsv_frame, cv::Mat& mask, cv::Scalar lower_hsv, cv::Scalar upper_hsv);
     void negative_lines(std::vector<cv::Vec2f>& lines);
