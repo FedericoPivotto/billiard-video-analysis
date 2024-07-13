@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
             cv::Mat video_frame_cv_mask = video_frames[k].clone();
             sg::segmentation_mask(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv_mask, test_flag);
             // Save segmentation mask
-            fsu::save_segmentation_mask(video_frames, video_frame_cv_mask, k, video_result_subdirs[2]);
+            fsu::save_video_frame(video_frames, video_frame_cv_mask, k, video_result_subdirs[2]);
 
             // Draw field borders
             ed::draw_borders(video_frame_cv, first_borders, first_corners);

@@ -52,8 +52,8 @@ void fsu::get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, c
     bboxes_frame_file_path += "_bbox.txt";
 }
 
-/* Get segmentation mask file path for the given video frame */
-void fsu::get_segmentation_mask_frame_file_path(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
+/* Get file path for the given video frame */
+void fsu::get_video_frame_file_path(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
     // Set segmentation mask frame filename
     bboxes_frame_file_path = bboxes_video_path + "/frame_";
     if(nframe == 0)
@@ -116,10 +116,10 @@ void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::s
     video_dataset_subdirs = {video_dataset_path + "/bounding_boxes", video_dataset_path + "/frames", video_dataset_path + "/masks"};
 }
 
-/* Seve frame in given directory */
-void fsu::save_segmentation_mask(const std::vector<cv::Mat>& video_frames, const cv::Mat& frame, const int nframe, const std::string& video_result_subdir) {
+/* Save video frame in given directory */
+void fsu::save_video_frame(const std::vector<cv::Mat>& video_frames, const cv::Mat& frame, const int nframe, const std::string& video_result_subdir) {
     // Save segmentation mask frame
-    std::string segmentation_mask_frame_file_path;
-    fsu::get_segmentation_mask_frame_file_path(video_frames, nframe, video_result_subdir, segmentation_mask_frame_file_path);
-    cv::imwrite(segmentation_mask_frame_file_path, frame);
+    std::string video_frame_file_path;
+    fsu::get_video_frame_file_path(video_frames, nframe, video_result_subdir, video_frame_file_path);
+    cv::imwrite(video_frame_file_path, frame);
 }
