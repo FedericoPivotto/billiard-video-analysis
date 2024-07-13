@@ -48,12 +48,12 @@ void vu::show_video_frames(const std::vector<cv::Mat> video_frames) {
     }
 }
 
-void vu::save_video(std::vector<cv::Mat>& video_frames, const int fourcc, const double fps, const int width, const int height, const std::string video_path) {
+void vu::save_video(std::vector<cv::Mat>& video_frames, const double fps, const int width, const int height, const std::string video_path) {
     // Video writer
     cv::VideoWriter video_writer;
     
     // Open video writer
-    video_writer.open(video_path, fourcc, fps, cv::Size(width, height));
+    video_writer.open(video_path, cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, cv::Size(width, height));
     if(! video_writer.isOpened()){
         std::cerr << "Error: The video cannot be written." << std::endl;
         exit(vu::VIDEO_WRITE_ERROR);

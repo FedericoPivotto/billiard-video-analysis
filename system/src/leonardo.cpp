@@ -157,12 +157,11 @@ int main(int argc, char** argv) {
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
         // Video parameters
-        int fourcc = captures[i].get(cv::CAP_PROP_FOURCC);
         double fps = captures[i].get(cv::CAP_PROP_FPS);
         int width  = captures[i].get(cv::CAP_PROP_FRAME_WIDTH);
         int height = captures[i].get(cv::CAP_PROP_FRAME_HEIGHT);
         // Create and save video
-        vu::save_video(video_game_frames_cv, fourcc, fps, width, height, result_video_path);
+        vu::save_video(video_game_frames_cv, fps, width, height, result_video_path);
     }
 
     return 0;
