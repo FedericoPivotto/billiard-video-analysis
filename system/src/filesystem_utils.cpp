@@ -24,7 +24,7 @@ void fsu::create_video_result_dir(const std::string video_path, std::vector<std:
     std::filesystem::create_directory(video_result_path);
 
     // Create video bounding_boxes, frames, mask directories
-    video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks"};
+    video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks", video_result_path + "/edge_detection", video_result_path + "/object_detection", video_result_path + "/segmentation", video_result_path + "/output"};
     for(std::string video_result_subdir : video_result_subdirs)
     std::filesystem::create_directory(video_result_subdir);
 }
@@ -117,7 +117,7 @@ void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::s
 }
 
 /* Save video frame in given directory */
-void fsu::save_video_frame(const std::vector<cv::Mat>& video_frames, const cv::Mat& frame, const int nframe, const std::string& video_result_subdir) {
+void fsu::save_video_frame(const std::vector<cv::Mat>& video_frames, const int nframe, const cv::Mat& frame, const std::string& video_result_subdir) {
     // Save segmentation mask frame
     std::string video_frame_file_path;
     fsu::get_video_frame_file_path(video_frames, nframe, video_result_subdir, video_frame_file_path);

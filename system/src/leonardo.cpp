@@ -61,6 +61,8 @@ int main(int argc, char** argv) {
             // Video frame clone
             cv::Mat video_frame_cv = video_frames[k].clone();
             video_frames_cv.push_back(video_frame_cv);
+            // Save video frame
+            fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[1]);
 
             // Edge detection (Fabrizio)
             std::vector<cv::Vec2f> borders;
@@ -74,6 +76,11 @@ int main(int argc, char** argv) {
                 first_corners = corners;
             }
 
+            // Save edge detection frame
+            cv::Mat edge_video_frame_cv = video_frames[k].clone();
+            ed::draw_borders(edge_video_frame_cv, borders, corners);
+            fsu::save_video_frame(video_frames, k, edge_video_frame_cv, video_result_subdirs[3]);
+
             // TODO: object detection (Federico)
 
             // Segmentation (Leonardo)
@@ -85,16 +92,19 @@ int main(int argc, char** argv) {
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
             bool test_flag = true;
-            sg::segmentation(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, test_flag);
+            sg::segmentation(video_frames, k, video_dataset_subdirs[0], corners, video_frame_cv, test_flag);
+            // Save segmentation
+            fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[5]);
 
             // Segmentation mask
             cv::Mat video_frame_cv_mask = video_frames[k].clone();
-            sg::segmentation_mask(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv_mask, test_flag);
+            sg::segmentation_mask(video_frames, k, video_dataset_subdirs[0], corners, video_frame_cv_mask, test_flag);
             // Save segmentation mask
-            fsu::save_video_frame(video_frames, video_frame_cv_mask, k, video_result_subdirs[2]);
+            fsu::save_video_frame(video_frames, k, video_frame_cv_mask, video_result_subdirs[2]);
 
-            // Draw field borders
-            ed::draw_borders(video_frame_cv, first_borders, first_corners);
+            // Save output frame
+            ed::draw_borders(video_frame_cv, borders, corners);
+            fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[6]);
         }
 
         // Assuming field corners of the first video frame

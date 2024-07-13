@@ -35,7 +35,7 @@ namespace fsu {
     void read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector<od::Ball>& balls, const bool confidence_flag = false);
 
     // Save function declarations
-    void save_video_frame(const std::vector<cv::Mat>& video_frames, const cv::Mat& frame, const int nframe, const std::string& video_result_subdir);
+    void save_video_frame(const std::vector<cv::Mat>& video_frames, const int nframe, const cv::Mat& frame, const std::string& video_result_subdir);
 }
 
 #endif // FILESYSTEM_UTILS_H
