@@ -2,13 +2,11 @@
 
 /* Librarires required in this source file and not already included in video_utils.h */
 
-// filesystem: std::filesystem::exists(), std::filesystem::create_directory()
-#include <filesystem>
 // string: std::getline()
 #include <string>
 
 /* Create video result directory */
-void fsu::create_video_result_dir(const std::string video_path, std::vector<std::string>& video_result_subdirs) {
+void fsu::create_video_result_dir(const std::string video_path, std::string& video_result_path, std::vector<std::string>& video_result_subdirs) {
     // Create result directory if not exists
     std::string result_path = "../system/result/";
     if(! std::filesystem::exists(result_path))
@@ -16,7 +14,8 @@ void fsu::create_video_result_dir(const std::string video_path, std::vector<std:
 
     // Create video result directory or delete if already exists
     std::string video_result_dir = std::filesystem::path(video_path).parent_path().filename();
-    std::string video_result_path = result_path + video_result_dir;
+    video_result_path = result_path + video_result_dir;
+
     // Delete existing video result directory
     if(std::filesystem::exists(video_result_path))
         std::filesystem::remove_all(video_result_path);

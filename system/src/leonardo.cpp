@@ -32,8 +32,9 @@ int main(int argc, char** argv) {
         vu::read_video_frames(captures[i], video_frames);
 
         // Create video result directory
+        std::string video_result_path;
         std::vector<std::string> video_result_subdirs;
-        fsu::create_video_result_dir(video_paths[i], video_result_subdirs);
+        fsu::create_video_result_dir(video_paths[i], video_result_path, video_result_subdirs);
         
         // Skip video if empty
         if(video_frames.empty())
@@ -151,6 +152,17 @@ int main(int argc, char** argv) {
 
         // Show video game frames
         // vu::show_video_frames(video_game_frames_cv);
+
+        // Game video filename
+        std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
+        std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
+        // Video parameters
+        int fourcc = captures[i].get(cv::CAP_PROP_FOURCC);
+        double fps = captures[i].get(cv::CAP_PROP_FPS);
+        int width  = captures[i].get(cv::CAP_PROP_FRAME_WIDTH);
+        int height = captures[i].get(cv::CAP_PROP_FRAME_HEIGHT);
+        // Create and save video
+        vu::save_video(video_game_frames_cv, fourcc, fps, width, height, result_video_path);
     }
 
     return 0;

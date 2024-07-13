@@ -26,7 +26,7 @@ void vu::get_video_captures(const std::vector<cv::String> video_paths, std::vect
 void vu::read_video_frames(cv::VideoCapture capture, std::vector<cv::Mat>& video_frames) {
     // Safety check on video
     if(! capture.isOpened()){
-        std::cerr << "Error: The video cannot be read"<< std::endl;
+        std::cerr << "Error: The video cannot be read." << std::endl;
         exit(vu::VIDEO_READ_ERROR);
     }
     
@@ -46,4 +46,23 @@ void vu::show_video_frames(const std::vector<cv::Mat> video_frames) {
         cv::imshow("Video frame", video_frame);
         cv::waitKey(0);
     }
+}
+
+void vu::save_video(std::vector<cv::Mat>& video_frames, const int fourcc, const double fps, const int width, const int height, const std::string video_path) {
+    // Video writer
+    cv::VideoWriter video_writer;
+    
+    // Open video writer
+    video_writer.open(video_path, fourcc, fps, cv::Size(width, height));
+    if(! video_writer.isOpened()){
+        std::cerr << "Error: The video cannot be written." << std::endl;
+        exit(vu::VIDEO_WRITE_ERROR);
+    }
+
+    // Write video frames
+    for(cv::Mat& video_frame : video_frames)
+        video_writer.write(video_frame);
+
+    // Close video writer
+    video_writer.release();
 }
