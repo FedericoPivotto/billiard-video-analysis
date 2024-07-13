@@ -214,7 +214,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Dilate and erode mask
     cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
-    cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9))); 
+    cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
 
     // Show frame and mask
     cv::imshow("BGR", frame);

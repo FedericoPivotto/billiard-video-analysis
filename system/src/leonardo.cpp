@@ -86,7 +86,13 @@ int main(int argc, char** argv) {
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
             bool test_flag = true;
             sg::segmentation(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, test_flag);
-            
+
+            // Segmentation mask
+            cv::Mat video_frame_cv_mask;
+            sg::segmentation_mask(video_frame_cv, video_frame_cv_mask);
+            // Save segmentation mask
+            fsu::save_segmentation_mask(video_frames, video_frame_cv_mask, k, video_result_subdirs[2]);
+
             // Draw field borders
             ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
@@ -131,10 +137,10 @@ int main(int argc, char** argv) {
         }
         
         // Show computer vision video frames
-        vu::show_video_frames(video_frames_cv);
+        // vu::show_video_frames(video_frames_cv);
 
         // Show video game frames
-        vu::show_video_frames(video_game_frames_cv);
+        // vu::show_video_frames(video_game_frames_cv);
     }
 
     return 0;

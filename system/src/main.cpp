@@ -78,6 +78,13 @@ int main(int argc, char** argv) {
 
             // Segmentation (Leonardo)
             sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
+
+            // Create segmentation mask
+            cv::Mat video_frame_cv_mask;
+            sg::segmentation_mask(video_frame_cv, video_frame_cv_mask);
+            // Save segmentation mask
+            fsu::save_segmentation_mask(video_frames, video_frame_cv_mask, k, video_result_subdirs[2]);
+            
             // Draw field borders
             ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }

@@ -17,6 +17,10 @@ namespace sg {
     void field_segmentation(const std::vector<cv::Point2f>& corners, cv::Mat& frame, const bool white_flag = false);
     void ball_segmentation(od::Ball ball_bbox, cv::Mat& frame);
 
+    // Mask creation function declarations
+    void change_color(cv::Mat& frame, cv::Scalar color, cv::Scalar new_color);
+    void segmentation_mask(const cv::Mat segmentation_frame, cv::Mat& segmentation_mask);
+
     // Main function declaration
     void segmentation(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& frame_segmentation, bool test_flag = false);
 }
