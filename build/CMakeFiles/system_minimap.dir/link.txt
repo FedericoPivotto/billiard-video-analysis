@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsystem_minimap.a CMakeFiles/system_minimap.dir/system/src/minimap.cpp.o
-/usr/bin/ranlib libsystem_minimap.a

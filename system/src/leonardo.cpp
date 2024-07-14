@@ -18,14 +18,11 @@
 // Tracking libraries
 // TODO: move away
 
-// tracking cv::Tracker
-#include <opencv2/video/tracking.hpp>
 // tracking: cv::TrackerKCF
 #include <opencv2/tracking.hpp>
-// cvstd_wrapper: cv::Ptr
-#include <opencv2/core/cvstd_wrapper.hpp>
-// types: cv::Rect2d
-#include <opencv2/core/types.hpp>
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/ocl.hpp>
 
 /* Computer vision system main */
 int main(int argc, char** argv) {
@@ -162,16 +159,10 @@ int main(int argc, char** argv) {
                     // Get ball bbox rectangle
                     cv::Rect bbox(ball_bboxes[k].x, ball_bboxes[k].y, ball_bboxes[k].width, ball_bboxes[k].height);
                     // Create tracker
-                    /*
-                    TrackerBoosting::create();
-                    TrackerMIL::create();
-                    TrackerKCF::create();
-                    TrackerTLD::create();
-                    TrackerMedianFlow::create();
-                    TrackerGOTURN::create();
-                    TrackerMOSSE::create();
-                    TrackerCSRT::create();
-                    */
+                    // ALTERNATIVES:
+                    // 1. TrackerCSRT::create();
+                    // 2. TrackerKCF::create();
+                    // 3. TrackerMIL::create();
                     trackers.push_back(cv::TrackerCSRT::create());
                     trackers[k]->init(video_game_frame_cv, bbox);
                 }
