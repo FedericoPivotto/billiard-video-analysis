@@ -91,34 +91,39 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vec
 
     // Check table orientation
     if(!is_distorted) {
-        dst = {cv::Point2f(0, 0), cv::Point2f(350, 0), cv::Point2f(350, 200), cv::Point2f(0, 200)};
+        dst = {cv::Point2f(0, 0), cv::Point2f(350, 0), cv::Point2f(350, 175), cv::Point2f(0, 175)};
     } else {
-        dst = {cv::Point2f(0, 200), cv::Point2f(0, 0), cv::Point2f(350, 0), cv::Point2f(350, 200)};
+        dst = {cv::Point2f(0, 175), cv::Point2f(0, 0), cv::Point2f(350, 0), cv::Point2f(350, 175)};
     }
 
     // Get perspective transform matrix
     cv::Mat map_perspective = cv::findHomography(corners, dst);
 
     // Generate map view
-    cv::warpPerspective(image, map_view, map_perspective, cv::Size(350, 200));
+    cv::warpPerspective(image, map_view, map_perspective, cv::Size(350, 175));
 
     // Warp each ball center and draw mini-map balls
     const int ball_radius = 6;
     cv::Point2f warped_point;
 
+    // Balls drawing
     for(const od::Ball& ball : ball_bboxes){
         mm::warped_pixel(cv::Point2f(ball.x + ball.width / 2, ball.y + ball.height / 2), map_perspective, warped_point);
         
-        // Draw balls
+        // Draw ball inside
         if(ball.ball_class == 1){
-            cv::circle(map_view, warped_point, ball_radius, sg::WHITE_BALL_BGR.second, -1);
+            cv::circle(map_view, warped_point, ball_radius, mm::WHITE_BALL_BGR.second, cv::FILLED);
         } else if(ball.ball_class == 2){
-            cv::circle(map_view, warped_point, ball_radius, sg::BLACK_BALL_BGR.second, -1);
+            cv::circle(map_view, warped_point, ball_radius, mm::BLACK_BALL_BGR.second, cv::FILLED);
         } else if(ball.ball_class == 3){
-            cv::circle(map_view, warped_point, ball_radius, sg::SOLID_BALL_BGR.second, -1);
+            cv::circle(map_view, warped_point, ball_radius, mm::SOLID_BALL_BGR.second, cv::FILLED);
         } else if(ball.ball_class == 4){
-            cv::circle(map_view, warped_point, ball_radius, sg::STRIPE_BALL_BGR.second, -1);
+            cv::circle(map_view, warped_point, ball_radius, mm::STRIPE_BALL_BGR.second, cv::FILLED);
         }
+
+        // Draw ball border
+        int ball_border_thickness = 1;
+        cv::circle(map_view, warped_point, ball_radius, mm::BALL_BORDER, ball_border_thickness);
     }
 
     // Draw holes
@@ -144,7 +149,7 @@ void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::ve
 
     // Field frame white table segmentation
     bool white_flag = true;
-    sg::field_segmentation(sorted_corners, field_frame, mm::FIELD_BGR);
+    sg::field_segmentation(sorted_corners, field_frame, mm::FIELD_BGR.second);
     
     // Check for presenceof distortion
     bool is_distorted = false;

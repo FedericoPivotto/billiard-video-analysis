@@ -13,9 +13,14 @@
 
 /* Minimap namespace */
 namespace mm {
-    // Color constants
+    // Minimap color constants
+    const std::pair<int, cv::Scalar> WHITE_BALL_BGR(1, cv::Scalar(255, 255, 255));
+    const std::pair<int, cv::Scalar> BLACK_BALL_BGR(2, cv::Scalar(0, 0, 0));
+    const std::pair<int, cv::Scalar> SOLID_BALL_BGR(3, cv::Scalar(255, 232, 184));
+    const std::pair<int, cv::Scalar> STRIPE_BALL_BGR(4, cv::Scalar(179, 179, 255));
+    const std::pair<int, cv::Scalar> FIELD_BGR(5, cv::Scalar(255, 255, 255));
     const cv::Scalar HOLE_BGR(50, 50, 50);
-    const cv::Scalar FIELD_BGR(190, 190, 190);
+    const cv::Scalar BALL_BORDER(58, 58, 58);
 
     // Create function declarations
     void create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted, const std::vector<od::Ball> ball_bboxes);
