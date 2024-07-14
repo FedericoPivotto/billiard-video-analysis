@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
             fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
 
             ed::sort_corners(first_corners);
-            //lrds::lrds_sift_object_detection(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv);
+            lrds::lrds_object_detection(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv);
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
             //bool test_flag = true;
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
         }
 
         // Show computer vision video frames
-        vu::show_video_frames(video_frames_cv);
+        //vu::show_video_frames(video_frames_cv);
     }
 
     return 0;

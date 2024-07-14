@@ -23,6 +23,8 @@ namespace lrds {
     void ball_feature_extraction(cv::Mat frame, std::vector<cv::KeyPoint>& table_keypoints, cv::Mat& table_descriptors);
 
     void feature_matching(cv::Mat frame, const std::vector<cv::KeyPoint>& table_keypoints, const cv::Mat& table_descriptors);
+
+    void points_float_to_point(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& int_points);
 }
 
 #endif // LOURDES_H

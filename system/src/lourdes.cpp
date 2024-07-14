@@ -126,6 +126,13 @@ void lrds::lrds_sift_object_detection(const std::vector<cv::Mat>& video_frames, 
     cv::destroyAllWindows();
 }
 
+/* Convert points from float to int */
+void lrds::points_float_to_point(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& points) {
+    // Convert points from float to int
+    for (cv::Point2f point : float_points)
+        points.push_back(cv::Point(cvRound(point.x), cvRound(point.y)));
+}
+
 /* Balls detection in given a video frame */
 void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
     // Create frame bboxes text file
@@ -141,14 +148,88 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
 
     // Frame preprocessing 
     cv::Mat preprocessed_video_frame;
-    cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 50.0, 25.0);
-
-    // Gray frame
-    cv::Mat frame_gray;
-    cv::cvtColor(preprocessed_video_frame, frame_gray, cv::COLOR_BGR2GRAY);
+    cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 150.0, 75.0);
     
     // HSV space
     //cv::cvtColor(preprocessed_video_frame, preprocessed_video_frame, cv::COLOR_BGR2HSV);
+
+    // Mask image to consider only the billiard table
+    cv::Mat mask = cv::Mat::zeros(frame.size(), CV_8UC3);
+    std::vector<cv::Point> table_corners;
+    points_float_to_point(corners, table_corners);
+    cv::fillConvexPoly(mask, table_corners, cv::Scalar(255, 255, 255));
+
+
+    // Filter out the background of the billiard table
+    cv::Mat frame_masked;
+    cv::bitwise_and(preprocessed_video_frame, mask, frame_masked);
+
+    // Gray frame
+    cv::Mat frame_gray;
+    cv::cvtColor(frame_masked, frame_gray, cv::COLOR_BGR2GRAY);
+
+    // Split in BGR channels
+    std::vector<cv::Mat> bgr_channels;
+    cv::split(frame_masked, bgr_channels);
+
+    // Define ball templates
+    std::vector<std::string> ball_templates_names = {"white_ball.png", "black_ball.png", "solid_ball.png", "stripe_ball.png" };
+    //std::vector<std::string> ball_templates_names = {"white_ball.png" };
+    std::string templates_path = "../dataset/billiard_balls/";
+
+    // Multiple scales
+    std::vector<double> scales = {0.67, 0.8, 0.9, 1.0, 1.1, 1.2};
+
+    // Template matching of balls
+    for(const std::string& ball_template_file : ball_templates_names){
+        cv::Mat ball_template = cv::imread(templates_path + ball_template_file);
+        //cv::bilateralFilter(ball_template.clone(), ball_template, 9, 25.0, 25.0);
+        
+        // Check template existence
+        if(ball_template.empty()){
+            continue;
+        }
+
+        // Convert to gray
+        cv::Mat ball_gray;
+        cv::cvtColor(ball_template, ball_gray, cv::COLOR_BGR2GRAY);
+
+        for(const double& scale : scales){
+            cv::Mat ball_scaled;
+            cv::resize(ball_gray, ball_scaled, cv::Size(), scale, scale);
+            
+            // Matching
+            cv::Mat matching;
+            cv::matchTemplate(frame_gray, ball_scaled, matching, cv::TM_CCOEFF_NORMED);
+
+            //double min_val, max_val;
+            //cv::Point min_point, max_point;
+            //cv::normalize(matching, matching, 0, 1, cv::NORM_MINMAX);
+            //cv::minMaxLoc(matching, &min_val, &max_val, &min_point, &max_point);
+
+            std::vector<cv::Rect> boxes;
+            std::vector<double> scores;
+
+            const double max_th = 0.9;
+
+            for(size_t i = 0; i < matching.rows; i++){
+                for(size_t j = 0; j < matching.cols; j++){
+                    if(matching.at<float>(i, j) > max_th){
+                        cv::Rect match_rect(j, i, ball_scaled.rows, ball_scaled.cols);
+                        boxes.push_back(match_rect);
+                        scores.push_back(matching.at<float>(i, j));
+                    }
+                }
+            }
+
+            for(const cv::Rect& match_rect : boxes){
+                cv::rectangle(frame, match_rect, cv::Scalar(0, 0, 255), 2);
+            }
+
+            cv::imshow("Template", frame);
+        }
+    }
+
 
     // Haar cascade vs template matching
 
