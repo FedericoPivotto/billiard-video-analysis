@@ -16,7 +16,7 @@ void lrds::frame_feature_extraction(cv::Mat frame, const std::vector<cv::Point2f
     cv::Mat frame_descriptors;
     
     // SIFT ball detector
-    cv::Ptr<cv::SIFT> ball_detector = cv::SIFT::create();
+    cv::Ptr<cv::SIFT> ball_detector = cv::SIFT::create(400);
     ball_detector -> detectAndCompute(frame, cv::noArray(), frame_keypoints, frame_descriptors);
     
     // Filter features outside the table
@@ -31,13 +31,54 @@ void lrds::frame_feature_extraction(cv::Mat frame, const std::vector<cv::Point2f
     }
 }
 
+/* Feature extraction from the single bgr channels */
+void lrds::ball_feature_extraction(cv::Mat frame, std::vector<cv::KeyPoint>& table_keypoints, cv::Mat& table_descriptors){
+    // Convert to grayscale
+    cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+
+    // SIFT ball detector
+    cv::Ptr<cv::SIFT> ball_detector = cv::SIFT::create();
+    ball_detector -> detectAndCompute(frame, cv::noArray(), table_keypoints, table_descriptors);
+}
+
 /* Matching the extracted features w.r.t. the ball samples */
 void lrds::feature_matching(cv::Mat frame, const std::vector<cv::KeyPoint>& table_keypoints, const cv::Mat& table_descriptors){
+    // Read ball template
+    cv::Mat ball_solid = cv::imread("../dataset/billiard_balls/white_ball.png");
+    //cv::resize(ball_solid, ball_solid, cv::Size(50, 50), 0, 0, cv::INTER_NEAREST);
 
+    // Ball template feature extraction
+    std::vector<cv::KeyPoint> ball_keypoints;
+    cv::Mat ball_descriptors;
+    ball_feature_extraction(ball_solid, ball_keypoints, ball_descriptors);
+
+    // Show keypoints in ball template
+    cv::drawKeypoints(ball_solid, ball_keypoints, ball_solid, cv::Scalar::all(-1));
+    cv::imshow("Ball", ball_solid);
+
+    // Ball matching
+    cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+    std::vector<std::vector<cv::DMatch>> matches;
+
+    matcher->knnMatch(table_descriptors, ball_descriptors, matches, 2);
+
+    // Keep good matches
+    std::vector<cv::DMatch> good_matches;
+    const float ratio_th = 0.75;
+    for(size_t i = 0; i < matches.size(); i++){
+        if(matches[i][0].distance < ratio_th * matches[i][1].distance){
+            good_matches.push_back(matches[i][0]);
+        }
+    }
+
+    // Show matching
+    cv::Mat img_matches;
+    cv::drawMatches(frame, table_keypoints, ball_solid, ball_keypoints, good_matches, img_matches);
+    cv::imshow("Ball", img_matches);
 }
 
 /* Balls detection in given a video frame */
-void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+void lrds::lrds_sift_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
     // Create frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
@@ -72,10 +113,44 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     lrds::frame_feature_extraction(bgr_channels[1], corners, table_keypoints, table_descriptors);
     lrds::frame_feature_extraction(bgr_channels[2], corners, table_keypoints, table_descriptors);
 
+    // Feature matching w.r.t. ball templates
+    feature_matching(frame, table_keypoints, table_descriptors);
+
     // Draw features keypoints
-    cv::Mat frame_key;
-    cv::drawKeypoints(frame_gray, table_keypoints, frame_key, cv::Scalar::all(-1));
-    cv::imshow("SIFT frame", frame_key);
+    //cv::Mat frame_key;
+    //cv::drawKeypoints(frame_gray, table_keypoints, frame_key, cv::Scalar::all(-1));
+    //cv::imshow("SIFT frame", frame_key);
+
+    // Wait key
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+}
+
+/* Balls detection in given a video frame */
+void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+    // Create frame bboxes text file
+    std::string bboxes_frame_file_path;
+    fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
+
+    // Vector of bounding boxes
+    std::vector<od::Ball> ball_bboxes;
+    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+
+    // Video frame clone
+    cv::Mat frame(video_frames[n_frame].clone());
+
+    // Frame preprocessing 
+    cv::Mat preprocessed_video_frame;
+    cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 50.0, 25.0);
+
+    // Gray frame
+    cv::Mat frame_gray;
+    cv::cvtColor(preprocessed_video_frame, frame_gray, cv::COLOR_BGR2GRAY);
+    
+    // HSV space
+    //cv::cvtColor(preprocessed_video_frame, preprocessed_video_frame, cv::COLOR_BGR2HSV);
+
+    // Haar cascade vs template matching
 
     // Wait key
     cv::waitKey(0);
