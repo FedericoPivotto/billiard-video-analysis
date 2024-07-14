@@ -10,7 +10,7 @@
 #include <edge_detection.h>
 
 // object detection library
-#include <object_detection.h>
+#include <lourdes.h>
 
 // segmentation library
 #include <segmentation.h>
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
             }
 
             // TODO: object detection (Federico)
-            od::object_detection(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
+            lrds::object_detection(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
 
             // Segmentation (Leonardo)
             sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
@@ -87,44 +87,9 @@ int main(int argc, char** argv) {
             ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
 
-        // Assuming field corners of the first video frame
-        
-        // For each video frame
-        std::vector<cv::Mat> video_game_frames_cv;
-        for(size_t j = 0; j < video_frames.size(); ++j) {
-            // Skip game video frame if empty
-            if(video_frames[j].empty())
-                continue;
-
-            // Video game frame clone
-            cv::Mat video_game_frame_cv = video_frames[j].clone();
-            video_game_frames_cv.push_back(video_game_frame_cv);
-
-            // Get bounding box file path
-            std::string bboxes_frame_file_path;
-            fsu::get_bboxes_frame_file_path(video_frames, j, video_result_subdirs[0], bboxes_frame_file_path);
-
-            // 2D top-view minimap (Fabrizio)
-
-            // Read balls from bounding box file
-            std::vector<od::Ball> ball_bboxes;
-            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
-            
-            // Create map-view
-            cv::Mat map_view, field_frame = video_frames[j].clone();
-            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
-            // Overlay the map-view in the current frame
-            mm::overlay_map_view(video_game_frame_cv, map_view);
-
-            // TODO: trajectory tracking
-            // NOTE: required to update minimap
-        }
 
         // Show computer vision video frames
-        // vu::show_video_frames(video_frames_cv);
-
-        // Show video game frames
-        // vu::show_video_frames(video_game_frames_cv);
+        vu::show_video_frames(video_frames_cv);
     }
 
     return 0;

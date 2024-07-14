@@ -107,8 +107,8 @@ target_link_libraries(leonardo
     system_minimap)
 
 ## Lourdes system executable
-add_executable(main system/src/main_lourdes.cpp)
-target_link_libraries(main
+add_executable(lou system/src/main_lourdes.cpp)
+target_link_libraries(lou
     ${OpenCV_LIBS}
     system_video_utils
     system_filesystem_utils
