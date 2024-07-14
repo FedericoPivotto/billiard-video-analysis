@@ -1,9 +1,42 @@
 #include <billiard_metric.h>
 
 /* Librarires required in this source file and not already included in library.h */
+#include <iostream>
+#include <algorithm>
+
+/* Distance function to compute the correspondences*/
+void bm::distance_function(const od::Ball &true_ball, std::vector<od::Ball> predicted_balls){
+
+    //for(od::Ball predicted_ball : predicted_balls) {
+    //    std::cout << predicted_ball << " " << predicted_ball.confidence << std::endl;        
+    //}
+
+    float min_distance = std::numeric_limits<float>::max();
+    od::Ball* closest_ball = nullptr;
+    std::vector<std::pair<od::Ball, od::Ball>> ball_pairs;
+
+    for(od::Ball predicted_ball : predicted_balls) {
+        if (predicted_ball.ball_class == true_ball.ball_class) {
+            float distance = std::sqrt(std::pow(true_ball.x - predicted_ball.x, 2) + std::pow(true_ball.y - predicted_ball.y, 2));
+            if (distance < min_distance) {
+                min_distance = distance;
+                closest_ball = &predicted_ball;
+            }
+            ball_pairs.push_back(std::make_pair(true_ball, *closest_ball));
+        }       
+    }
+
+    for (const auto& pair : ball_pairs) {
+        std::cout << std::endl;
+        std::cout << "Pair: " << std::endl;
+        std::cout << pair.first << std::endl;
+        std::cout << pair.second << std::endl;
+        std::cout << " " << std::endl;
+    }
+}
 
 /* Matches search */
-void bm::matches_search() {
+void bm::matches_search(const std::vector<od::Ball>& predicted_balls, const std::vector<od::Ball>& true_balls) {
     // Input: true bounding boxes file, predicted bounding boxes file
 
     // Define the distance function between two bounding boxes rows (x, y, width, height, ball class)
@@ -11,6 +44,11 @@ void bm::matches_search() {
 
     // For each true bounding box:
     // 1. Associate true bounding box with the corresponding predicted bounding box according to the distance function
+    for (std::size_t i = 0; i < true_balls.size(); ++i) {
+        //std::cout << true_balls[i] << " ";
+        //std::cout << std::endl;
+        distance_function(true_balls[i], predicted_balls);
+    }
     // 2. Compute corresponding IoU
     //    * IoU = intersected area / union area
     // 3. Determine if TP (above IoU threshold 0.5) or TN (below IoU threshold 0.5) with IoU threshold 0.5

@@ -22,11 +22,11 @@ int main(int argc, char** argv) {
     fsu::read_ball_bboxes(true_bboxes_frame_file_path, true_balls);
 
     // Print true balls
-    for(od::Ball ball : true_balls)
-        std::cout << "True ball: " << ball << std::endl;
+    //for(od::Ball ball : true_balls)
+    //    std::cout << "True ball: " << ball << std::endl;
 
     // Dummy print
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     // Read predicted bounding boxes
     // NOTE: it will come from result directory
@@ -37,11 +37,11 @@ int main(int argc, char** argv) {
     fsu::read_ball_bboxes(predicted_bboxes_frame_file_path, predicted_balls, confidence_flag);
 
     // Print predicted balls
-    for(od::Ball ball : predicted_balls)
-        std::cout << "Predicted ball: " << ball << " " << ball.confidence << std::endl;
+    //for(od::Ball ball : predicted_balls)
+    //    std::cout << "Predicted ball: " << ball << " " << ball.confidence << std::endl;
 
     // TODO: matches search
-    bm::matches_search();
+    bm::matches_search(predicted_balls, true_balls);
 
     // TODO: localization metric
     bm::localization_metric();
