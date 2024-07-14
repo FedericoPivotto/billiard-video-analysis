@@ -66,25 +66,6 @@ void mm::warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, 
     warped_point.y = static_cast<float>(homogeneous_warped_point.at<double>(1,0) / homogeneous_warped_point.at<double>(2,0));
 }
 
-/* Draw map-view holes */
-void mm::draw_map_view_details(cv::Mat& map_view, const int ball_radius){
-    // Store and draw holes
-    std::vector<cv::Point> hole_positions = {
-        cv::Point(ball_radius, ball_radius),
-        cv::Point((map_view.cols / 2) - ball_radius, ball_radius),
-        cv::Point(map_view.cols - ball_radius, ball_radius),
-        cv::Point(map_view.cols - ball_radius, (map_view.rows / 2) - ball_radius),
-        cv::Point(map_view.cols - ball_radius, map_view.rows - ball_radius),
-        cv::Point((map_view.cols / 2) - ball_radius, map_view.rows- ball_radius),
-        cv::Point(ball_radius, map_view.rows - ball_radius),
-        cv::Point(ball_radius, (map_view.rows / 2) - ball_radius),
-    };
-
-    for(const cv::Point& hole : hole_positions){
-        cv::circle(map_view, hole, ball_radius + 2, mm::HOLE_BGR, 2);
-    }
-}
-
 /* Generate map view of the area inside the borders */
 void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted, const std::vector<od::Ball> ball_bboxes) {
     std::vector<cv::Point2f> dst;
@@ -126,8 +107,33 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vec
         cv::circle(map_view, warped_point, ball_radius, mm::BALL_BORDER, ball_border_thickness);
     }
 
-    // Draw holes
-    draw_map_view_details(map_view, ball_radius);
+    // Add billiard minimap background
+    mm::overlay_map_view_background(map_view);
+
+    // Resize map-view
+    double scale = 0.85;
+    cv::resize(map_view, map_view, cv::Size(), scale, scale);
+}
+
+/* Overlay the map-view into the ma-view background */
+void mm::overlay_map_view_background(cv::Mat& map_view) {
+    // Read billiard minimap background image
+    cv::Mat map_view_background = cv::imread("../system/img/billiard_minimap.png");
+
+    // Resize map-view background according to scale
+    double scale = 0.255;
+    cv::resize(map_view_background, map_view_background, cv::Size(), scale, scale);
+
+    // Consider offsets for the coordinates
+    const int x = (map_view_background.cols - map_view.cols) / 2;
+    const int y = (map_view_background.rows - map_view.rows) / 2;
+
+    // Set the region of interest and to overlay on it
+    cv::Rect roi(x, y, map_view.cols, map_view.rows);
+    map_view.copyTo(map_view_background(roi));
+
+    // Update map-view
+    map_view = map_view_background;
 }
 
 /* Overlay the map-view into the current frame */

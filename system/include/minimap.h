@@ -29,7 +29,7 @@ namespace mm {
     double compute_slope(const double theta);
     void warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, cv::Point2f& warped_point);
     void check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& is_distorted);
-    void draw_map_view_details(cv::Mat& map_view, const int ball_radius);
+    void overlay_map_view_background(cv::Mat& map_view);
 
     // Main function declarations
     void compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes);
