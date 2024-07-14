@@ -79,14 +79,22 @@ int main(int argc, char** argv) {
             }
 
             // TODO: object detection (Federico)
-            lrds::object_detection(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
 
             // Segmentation (Leonardo)
-            sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
+            // Get video dataset directory
+            // TODO: change with result directory
+            std::vector<std::string> video_dataset_subdirs;
+            fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
+
+            lrds::lrds_object_detection(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv);
+            // TODO: when object detection is fine, the flag must be sat to false
+            // ATTENTION: test_flag is used just to do test with a dataset bounding box file
+            //bool test_flag = true;
+            //sg::segmentation(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, test_flag);
+            
             // Draw field borders
             ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
-
 
         // Show computer vision video frames
         vu::show_video_frames(video_frames_cv);
