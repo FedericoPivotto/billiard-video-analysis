@@ -15,6 +15,20 @@
 // minimap detection library
 #include <minimap.h>
 
+// Tracking libraries
+// TODO: move away
+
+// tracking_legacy: cv::legacy::MultiTracker
+#include <opencv2/tracking/tracking_legacy.hpp>
+// tracking: cv::TrackerKCF
+#include <opencv2/tracking.hpp>
+// tracking cv::Tracker
+#include <opencv2/video/tracking.hpp>
+// types: cv::Rect2d
+#include <opencv2/core/types.hpp>
+// cvstd_wrapper: cv::Ptr
+#include <opencv2/core/cvstd_wrapper.hpp>
+
 /* Computer vision system main */
 int main(int argc, char** argv) {
     // Get videos paths
@@ -110,8 +124,14 @@ int main(int argc, char** argv) {
 
         // Assuming field corners of the first video frame
         
-        // For each video frame
+        // Common variables for minimap and tracking
         std::vector<cv::Mat> video_game_frames_cv;
+        std::vector<od::Ball> ball_bboxes;
+        
+        // Create multi-tracker (outside)
+        cv::legacy::MultiTracker trackers;
+        
+        // For each video frame
         for(size_t j = 0; j < video_frames.size(); ++j) {
             // Skip game video frame if empty
             if(video_frames[j].empty())
@@ -125,26 +145,45 @@ int main(int argc, char** argv) {
             // TODO: change with result directory
             std::vector<std::string> video_dataset_subdirs;
             fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
-
-            // Get bounding box file path
-            // TODO: change with result directory
-            std::string bboxes_frame_file_path;
-            fsu::get_bboxes_frame_file_path(video_frames, j, video_dataset_subdirs[0], bboxes_frame_file_path);
-
-            // TODO: 2D top-view minimap (Fabrizio)
-
-            // Read balls from bounding box file
-            std::vector<od::Ball> ball_bboxes;
-            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
             
+            // TODO: trajectory tracking (Federico)
+            // OPTIONAL: frame resize for making tracking faster
+
+            // Read balls from bounding box file of first frame
+            if(j == 0) {
+                // Get bounding box file path
+                // TODO: change with result directory
+                std::string bboxes_frame_file_path;
+                fsu::get_bboxes_frame_file_path(video_frames, j, video_dataset_subdirs[0], bboxes_frame_file_path);
+
+                // Read balls from bounding box file
+                fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+
+                // For each ball add tracker to multi-tracker (outside)
+                for(od::Ball ball_bbox : ball_bboxes) {
+                    cv::Ptr<cv::Tracker> tracker = cv::TrackerKCF::create();
+                    cv::Rect2d bbox(ball.x, ball.y, ball.width, ball.height);
+                    trackers.add(tracker, video_game_frame_cv, bbox);
+                }
+            } else {
+                // Update multi-tracker
+                trackers.update(video_game_frame_cv);
+                // Update ball bboxes vector
+                for(size_t k = 0; k < trackers.objects.size(); ++k) {
+                    ball_bboxes[k].x = trackers.objects[k].x;
+                    ball_bboxes[k].y = trackers.objects[k].y;
+                    ball_bboxes[k].width = trackers.objects[k].width;
+                    ball_bboxes[k].height = trackers.objects[k].height;
+                }
+            }
+
+            // 2D top-view minimap (Fabrizio)
+
             // Create map-view
             cv::Mat map_view, field_frame = video_frames[j].clone();
             mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
             // Overlay the map-view in the current frame
             mm::overlay_map_view(video_game_frame_cv, map_view);
-
-            // TODO: trajectory tracking
-            // NOTE: required to update minimap
         }
         
         // Show computer vision video frames
