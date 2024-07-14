@@ -18,16 +18,14 @@
 // Tracking libraries
 // TODO: move away
 
-// tracking_legacy: cv::legacy::MultiTracker
-#include <opencv2/tracking/tracking_legacy.hpp>
-// tracking: cv::TrackerKCF
-#include <opencv2/tracking.hpp>
 // tracking cv::Tracker
 #include <opencv2/video/tracking.hpp>
-// types: cv::Rect2d
-#include <opencv2/core/types.hpp>
+// tracking: cv::TrackerKCF
+#include <opencv2/tracking.hpp>
 // cvstd_wrapper: cv::Ptr
 #include <opencv2/core/cvstd_wrapper.hpp>
+// types: cv::Rect2d
+#include <opencv2/core/types.hpp>
 
 /* Computer vision system main */
 int main(int argc, char** argv) {
@@ -128,9 +126,9 @@ int main(int argc, char** argv) {
         std::vector<cv::Mat> video_game_frames_cv;
         std::vector<od::Ball> ball_bboxes;
         
-        // Create multi-tracker (outside)
-        cv::legacy::MultiTracker trackers;
-        
+        // Create trackers for balls
+        std::vector<cv::Ptr<cv::Tracker>> trackers;
+
         // For each video frame
         for(size_t j = 0; j < video_frames.size(); ++j) {
             // Skip game video frame if empty
@@ -159,21 +157,36 @@ int main(int argc, char** argv) {
                 // Read balls from bounding box file
                 fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
 
-                // For each ball add tracker to multi-tracker (outside)
-                for(od::Ball ball_bbox : ball_bboxes) {
-                    cv::Ptr<cv::Tracker> tracker = cv::TrackerKCF::create();
-                    cv::Rect2d bbox(ball.x, ball.y, ball.width, ball.height);
-                    trackers.add(tracker, video_game_frame_cv, bbox);
+                // For each ball create tracker
+                for(size_t k = 0; k < ball_bboxes.size(); ++k) {
+                    // Get ball bbox rectangle
+                    cv::Rect bbox(ball_bboxes[k].x, ball_bboxes[k].y, ball_bboxes[k].width, ball_bboxes[k].height);
+                    // Create tracker
+                    /*
+                    TrackerBoosting::create();
+                    TrackerMIL::create();
+                    TrackerKCF::create();
+                    TrackerTLD::create();
+                    TrackerMedianFlow::create();
+                    TrackerGOTURN::create();
+                    TrackerMOSSE::create();
+                    TrackerCSRT::create();
+                    */
+                    trackers.push_back(cv::TrackerCSRT::create());
+                    trackers[k]->init(video_game_frame_cv, bbox);
                 }
             } else {
-                // Update multi-tracker
-                trackers.update(video_game_frame_cv);
-                // Update ball bboxes vector
-                for(size_t k = 0; k < trackers.objects.size(); ++k) {
-                    ball_bboxes[k].x = trackers.objects[k].x;
-                    ball_bboxes[k].y = trackers.objects[k].y;
-                    ball_bboxes[k].width = trackers.objects[k].width;
-                    ball_bboxes[k].height = trackers.objects[k].height;
+                // For each ball update tracker
+                for(size_t k = 0; k < ball_bboxes.size(); ++k) {
+                    // Update tracker
+                    cv::Rect bbox;
+                    trackers[k]->update(video_game_frame_cv, bbox);
+                    
+                    // Update ball bbox
+                    ball_bboxes[k].x = bbox.x;
+                    ball_bboxes[k].y = bbox.y;
+                    ball_bboxes[k].width = bbox.width;
+                    ball_bboxes[k].height = bbox.height;
                 }
             }
 
