@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsystem_edge_detection.a CMakeFiles/system_edge_detection.dir/system/src/edge_detection.cpp.o
+/usr/bin/ranlib libsystem_edge_detection.a

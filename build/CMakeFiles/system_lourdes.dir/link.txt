@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsystem_lourdes.a CMakeFiles/system_lourdes.dir/system/src/lourdes.cpp.o
+/usr/bin/ranlib libsystem_lourdes.a

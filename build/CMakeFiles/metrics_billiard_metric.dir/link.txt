@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmetrics_billiard_metric.a CMakeFiles/metrics_billiard_metric.dir/metrics/src/billiard_metric.cpp.o
+/usr/bin/ranlib libmetrics_billiard_metric.a

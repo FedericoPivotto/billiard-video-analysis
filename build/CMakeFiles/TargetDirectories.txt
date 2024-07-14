@@ -1,0 +1,17 @@
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/rebuild_cache.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/edit_cache.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/main.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/leonardo.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_filesystem_utils.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_video_utils.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/metrics_billiard_metric.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/federico.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_tracking.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_minimap.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_edge_detection.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/fabrizio.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_segmentation.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_lourdes.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system_object_detection.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/system.dir
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/build/CMakeFiles/metrics.dir

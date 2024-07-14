@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsystem_video_utils.a CMakeFiles/system_video_utils.dir/system/src/video_utils.cpp.o
+/usr/bin/ranlib libsystem_video_utils.a

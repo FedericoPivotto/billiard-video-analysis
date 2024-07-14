@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsystem_tracking.a CMakeFiles/system_tracking.dir/system/src/tracking.cpp.o
+/usr/bin/ranlib libsystem_tracking.a

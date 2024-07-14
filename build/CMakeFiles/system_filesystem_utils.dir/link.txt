@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsystem_filesystem_utils.a CMakeFiles/system_filesystem_utils.dir/system/src/filesystem_utils.cpp.o
+/usr/bin/ranlib libsystem_filesystem_utils.a

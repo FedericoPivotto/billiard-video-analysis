@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../system/include/lourdes.h
+
+/home/local/pivofed79822/Documents/CV/Project/billiard-video-analysis/system/src/lourdes.cpp
+lourdes.h
+-
+

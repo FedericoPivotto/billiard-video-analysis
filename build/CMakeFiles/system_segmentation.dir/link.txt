@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsystem_segmentation.a CMakeFiles/system_segmentation.dir/system/src/segmentation.cpp.o
+/usr/bin/ranlib libsystem_segmentation.a
