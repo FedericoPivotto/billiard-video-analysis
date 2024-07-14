@@ -9,6 +9,7 @@
 // SIFT
 #include <opencv2/features2d.hpp>
 
+/* Feature extraction from the single bgr channels */
 void lrds::frame_feature_extraction(cv::Mat frame, const std::vector<cv::Point2f>& corners, std::vector<cv::KeyPoint>& table_keypoints, cv::Mat& table_descriptors){
     // Keypoints and descriptors
     std::vector<cv::KeyPoint> frame_keypoints;
@@ -30,7 +31,8 @@ void lrds::frame_feature_extraction(cv::Mat frame, const std::vector<cv::Point2f
     }
 }
 
-void lrds::feature_matching(cv::Mat frame, std::vector<cv::KeyPoint>& table_keypoints, cv::Mat& table_descriptors){
+/* Matching the extracted features w.r.t. the ball samples */
+void lrds::feature_matching(cv::Mat frame, const std::vector<cv::KeyPoint>& table_keypoints, const cv::Mat& table_descriptors){
 
 }
 
