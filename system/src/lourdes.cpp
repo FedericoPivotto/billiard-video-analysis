@@ -175,12 +175,12 @@ void lrds::lrds_template_object_detection(const std::vector<cv::Mat>& video_fram
     cv::split(frame_masked, bgr_channels);
 
     // Define ball templates
-    std::vector<std::string> ball_templates_names = {"white_ball.png", "black_ball.png", "solid_ball.png", "stripe_ball.png" };
+    std::vector<std::string> ball_templates_names = {"white.jpg"};
     //std::vector<std::string> ball_templates_names = {"white_ball.png" };
     std::string templates_path = "../dataset/billiard_balls/";
 
     // Multiple scales
-    std::vector<double> scales = {0.67, 0.8, 0.9, 1.0, 1.1, 1.2};
+    std::vector<double> scales = {0.16, 0.25, 0.28};
 
     // Template matching of balls
     for(const std::string& ball_template_file : ball_templates_names){
@@ -212,7 +212,7 @@ void lrds::lrds_template_object_detection(const std::vector<cv::Mat>& video_fram
             std::vector<cv::Rect> boxes;
             std::vector<double> scores;
 
-            const double max_th = 0.9;
+            const double max_th = 0.8;
 
             for(size_t i = 0; i < matching.rows; i++){
                 for(size_t j = 0; j < matching.cols; j++){
