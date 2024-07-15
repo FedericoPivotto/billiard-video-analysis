@@ -1,9 +1,14 @@
 #include <billiard_metric.h>
 
-/* Librarires required in this source file and not already included in library.h */
+/* Librarires required in this source file and not already included in billiard_metric.h */
+
+// iostream: std::cout
 #include <iostream>
 
-/* Distance function to compute the correspondences*/
+/* Distance function to evaluate ball match */
+// TODO: alter to get it independent from the order of true balls and predicted balls vectors
+// NOTE: define the distance function between two bounding boxes rows (x, y, width, height, ball class)
+// ATTENTION: pay attention to the fact the matches are just between same ball classes
 double bm::distance_function(const od::Ball true_ball, const od::Ball predicted_ball) {
     // Distance value
     double distance = 0;
@@ -25,19 +30,8 @@ double bm::distance_function(const od::Ball true_ball, const od::Ball predicted_
     return distance;
 }
 
-/* Matches search */
+/* Ball matches search */
 void bm::matches_search(std::vector<od::Ball>& true_balls, std::vector<od::Ball>& predicted_balls) {
-    // Input: true bounding boxes file, predicted bounding boxes file
-
-    // Balls information
-    // TODO: to be removed
-    std::cout << "Number of true balls: " << true_balls.size() << std::endl;
-    std::cout << "Number of predicted balls: " << predicted_balls.size() << std::endl;
-    std::cout << std::endl;
-
-    // Define the distance function between two bounding boxes rows (x, y, width, height, ball class)
-    // ATTENTION: pay attention to the fact the matches are just between same ball classes
-
     // For each true bounding box:
     // 1. Associate true bounding box with the corresponding predicted bounding box according to the distance function
     
@@ -76,17 +70,18 @@ void bm::matches_search(std::vector<od::Ball>& true_balls, std::vector<od::Ball>
 
     // Show ball matches
     // TODO: to be removed
-    for(std::pair<od::Ball, od::Ball> ball_match : ball_matches) {
+    /*for(std::pair<od::Ball, od::Ball> ball_match : ball_matches) {
         std::cout << "Pair: " << std::endl;
         std::cout << ball_match.first << std::endl;
         std::cout << ball_match.second << std::endl;
         std::cout << std::endl;
-    }
+    }*/
 
     // ATTENTION: from vectors is_true_ball_matched, is_predicted_ball_matched it is possible to know which balls in true_balls and predicted_balls, respectively, are not matched; it is useful in the next steps
 
     // 2. Compute corresponding IoU
     //    * IoU = intersected area / union area
+
     // 3. Determine if TP (above IoU threshold 0.5) or TN (below IoU threshold 0.5) with IoU threshold 0.5
     
     // For each true bounding box not matched, assign IoU=0 (below IoU threshold 0.5) since FP (does not exist a corresponding predicted bounding box)

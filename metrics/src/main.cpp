@@ -22,8 +22,10 @@ int main(int argc, char** argv) {
     fsu::read_ball_bboxes(true_bboxes_frame_file_path, true_balls);
 
     // Print true balls
+    // TODO: to be removed
     // for(od::Ball ball : true_balls)
     //    std::cout << "True ball: " << ball << std::endl;
+    std::cout << "Number of true balls: " << true_balls.size() << std::endl;
 
     // Dummy print
     // std::cout << std::endl;
@@ -37,8 +39,10 @@ int main(int argc, char** argv) {
     fsu::read_ball_bboxes(predicted_bboxes_frame_file_path, predicted_balls, confidence_flag);
 
     // Print predicted balls
+    // TODO: to be removed
     // for(od::Ball ball : predicted_balls)
     //    std::cout << "Predicted ball: " << ball << " " << ball.confidence << std::endl;
+    std::cout << "Number of predicted balls: " << predicted_balls.size() << std::endl << std::endl;
 
     // TODO: matches search
     bm::matches_search(true_balls, predicted_balls);
