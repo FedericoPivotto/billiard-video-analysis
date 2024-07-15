@@ -2,69 +2,89 @@
 
 /* Librarires required in this source file and not already included in library.h */
 #include <iostream>
-// map: std::map
-#include <map>
 
 /* Distance function to compute the correspondences*/
-double bm::distance_function(const od::Ball true_ball, const od::Ball predicted_ball){
+double bm::distance_function(const od::Ball true_ball, const od::Ball predicted_ball) {
+    // Distance value
+    double distance = 0;
+    
+    // Check ball class
+    if(true_ball.ball_class != predicted_ball.ball_class)
+        return distance;
 
-    //for(od::Ball predicted_ball : predicted_balls) {
-    //    std::cout << predicted_ball << " " << predicted_ball.confidence << std::endl;        
-    //}
+    // Compute ball distance contribute
+    double geometric_distance = std::sqrt(std::pow(true_ball.center().first - predicted_ball.center().first, 2) + std::pow(true_ball.center().second - predicted_ball.center().second, 2));
 
-    /*float min_distance = std::numeric_limits<float>::max();
-    od::Ball* closest_ball = nullptr;
+    // Compute bounding box difference contribute
+    int width_diff = std::abs(static_cast<int>(true_ball.width - predicted_ball.width));
+    int height_diff = std::abs(static_cast<int>(true_ball.height - predicted_ball.height));
 
-    for(od::Ball predicted_ball : predicted_balls) {
-        if (predicted_ball.ball_class == true_ball.ball_class) {
-            float distance = std::sqrt(std::pow(true_ball.x - predicted_ball.x, 2) + std::pow(true_ball.y - predicted_ball.y, 2));
-            if (distance < min_distance) {
-                min_distance = distance;
-                closest_ball = &predicted_ball;
+    // Sum of all contributes
+    distance = geometric_distance + width_diff + height_diff;
 
-                for (auto& pair : ball_pairs) {
-                    if (pair.first == true_ball) {
-                        pair.second = *closest_ball;  // Sostituisce il secondo membro della coppia esistente
-                        return;
-                    }
-                }
-                ball_pairs.push_back(std::make_pair(true_ball, *closest_ball));
-                //ball_pairs.push_back(std::make_pair(true_ball, *closest_ball));
-            }
-        }       
-    }*/
-   return 0;
+    return distance;
 }
 
 /* Matches search */
-void bm::matches_search(const std::vector<od::Ball>& predicted_balls, const std::vector<od::Ball>& true_balls) {
+void bm::matches_search(std::vector<od::Ball>& true_balls, std::vector<od::Ball>& predicted_balls) {
     // Input: true bounding boxes file, predicted bounding boxes file
+
+    // Balls information
+    // TODO: to be removed
+    std::cout << "Number of true balls: " << true_balls.size() << std::endl;
+    std::cout << "Number of predicted balls: " << predicted_balls.size() << std::endl;
+    std::cout << std::endl;
 
     // Define the distance function between two bounding boxes rows (x, y, width, height, ball class)
     // ATTENTION: pay attention to the fact the matches are just between same ball classes
 
     // For each true bounding box:
     // 1. Associate true bounding box with the corresponding predicted bounding box according to the distance function
-    std::vector<std::pair<od::Ball, od::Ball>> ball_pairs;
-    std::vector<std::map<od::Ball, double>> ball_distances;
     
-    for (size_t i = 0; i < true_balls.size(); ++i) {
-        //std::cout << true_balls[i] << " ";
-        //std::cout << std::endl;
-        std::map<od::Ball, double> ball_map;
-        ball_distances.push_back(ball_map);
-        for(size_t j = 0; i < predicted_balls.size(); ++j){
-            ball_map.insert(std::pair<od::Ball, double>(predicted_balls[j], distance_function(true_balls[i], predicted_balls[j])));
+    // For each true bounding box compute distances
+    std::vector<std::vector<double>> balls_distances(true_balls.size());
+    for(size_t i = 0; i < true_balls.size(); ++i) {
+        // For each predicted bounding box
+        for(size_t j = 0; j < predicted_balls.size(); ++j) {
+            // Compute distance function
+            balls_distances[i].push_back(bm::distance_function(true_balls[i], predicted_balls[j]));
+        }
+
+        // Sort in ascending order
+        std::sort(balls_distances[i].begin(), balls_distances[i].end());
+    }
+
+    // For each true bounding box find minimum distance predicted ball
+    std::vector<std::pair<od::Ball, od::Ball>> ball_matches;
+    std::vector<bool> is_true_ball_matched(true_balls.size(), false);
+    std::vector<bool> is_predicted_ball_matched(predicted_balls.size(), false);
+    for(size_t i = 0; i < true_balls.size(); ++i) {
+        // Get non-matched predicted ball of minimum distance value
+        for(size_t j = 0; j < predicted_balls.size() && !is_true_ball_matched[i]; ++j) {
+            // Skip predicted ball already matched
+            if(is_predicted_ball_matched[j])
+                continue;
+
+            // Create match between true and predicted ball
+            ball_matches.push_back(std::pair<od::Ball, od::Ball>(true_balls[i], predicted_balls[j]));
+
+            // Update matching history
+            is_true_ball_matched[i] = true;
+            is_predicted_ball_matched[j] = true;
         }
     }
 
-    /*for (const auto& pair : ball_pairs) {
-        std::cout << std::endl;
+    // Show ball matches
+    // TODO: to be removed
+    for(std::pair<od::Ball, od::Ball> ball_match : ball_matches) {
         std::cout << "Pair: " << std::endl;
-        std::cout << pair.first << std::endl;
-        std::cout << pair.second << std::endl;
-        std::cout << " " << std::endl;
-    }*/
+        std::cout << ball_match.first << std::endl;
+        std::cout << ball_match.second << std::endl;
+        std::cout << std::endl;
+    }
+
+    // ATTENTION: from vectors is_true_ball_matched, is_predicted_ball_matched it is possible to know which balls in true_balls and predicted_balls, respectively, are not matched; it is useful in the next steps
+
     // 2. Compute corresponding IoU
     //    * IoU = intersected area / union area
     // 3. Determine if TP (above IoU threshold 0.5) or TN (below IoU threshold 0.5) with IoU threshold 0.5
