@@ -200,35 +200,40 @@ void lrds::lrds_template_object_detection(const std::vector<cv::Mat>& video_fram
             cv::Mat ball_scaled;
             cv::resize(ball_gray, ball_scaled, cv::Size(), scale, scale);
             
-            // Matching
-            cv::Mat matching;
-            cv::matchTemplate(frame_gray, ball_scaled, matching, cv::TM_CCOEFF_NORMED);
-
-            //double min_val, max_val;
-            //cv::Point min_point, max_point;
-            //cv::normalize(matching, matching, 0, 1, cv::NORM_MINMAX);
-            //cv::minMaxLoc(matching, &min_val, &max_val, &min_point, &max_point);
-
-            std::vector<cv::Rect> boxes;
-            std::vector<double> scores;
-
-            const double max_th = 0.8;
-
-            for(size_t i = 0; i < matching.rows; i++){
-                for(size_t j = 0; j < matching.cols; j++){
-                    if(matching.at<float>(i, j) > max_th){
-                        cv::Rect match_rect(j, i, ball_scaled.rows, ball_scaled.cols);
-                        boxes.push_back(match_rect);
-                        scores.push_back(matching.at<float>(i, j));
+            for(size_t i = 0; i < 2; i++){
+                if(i == 1){
+                    cv::rotate(ball_scaled, ball_scaled, cv::ROTATE_90_COUNTERCLOCKWISE);
+                }
+                // Matching
+                cv::Mat matching;
+                cv::matchTemplate(bgr_channels[2], ball_scaled, matching, cv::TM_CCOEFF_NORMED);
+    
+                //double min_val, max_val;
+                //cv::Point min_point, max_point;
+                //cv::normalize(matching, matching, 0, 1, cv::NORM_MINMAX);
+                //cv::minMaxLoc(matching, &min_val, &max_val, &min_point, &max_point);
+    
+                std::vector<cv::Rect> boxes;
+                std::vector<double> scores;
+    
+                const double max_th = 0.8;
+    
+                for(size_t i = 0; i < matching.rows; i++){
+                    for(size_t j = 0; j < matching.cols; j++){
+                        if(matching.at<float>(i, j) > max_th){
+                            cv::Rect match_rect(j, i, ball_scaled.rows, ball_scaled.cols);
+                            boxes.push_back(match_rect);
+                            scores.push_back(matching.at<float>(i, j));
+                        }
                     }
                 }
+    
+                for(const cv::Rect& match_rect : boxes){
+                    cv::rectangle(frame, match_rect, cv::Scalar(0, 0, 255), 2);
+                }
+    
+                cv::imshow("Template", frame);
             }
-
-            for(const cv::Rect& match_rect : boxes){
-                cv::rectangle(frame, match_rect, cv::Scalar(0, 0, 255), 2);
-            }
-
-            cv::imshow("Template", frame);
         }
     }
 
@@ -242,7 +247,7 @@ void lrds::lrds_template_object_detection(const std::vector<cv::Mat>& video_fram
 
 //-----------------------------------------------------------------------------------------
 
-/* Callback function parameters */
+/* 
 typedef struct {
 	// Window name
 	const char* window_name;
@@ -269,7 +274,7 @@ typedef struct {
     int maxV;
 } ParameterHoughHSV;
 
-/* Callback function */
+
 static void hsv_hough_callback(int pos, void* userdata) {
     // Get Canny parameters from userdata
 	ParameterHoughHSV params = *((ParameterHoughHSV*) userdata);
@@ -391,7 +396,7 @@ static void mouseCallBack(int event, int x, int y, int flags, void* userdata){
     }
 }
 
-/* Balls detection in given a video frame */
+
 void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
     // Create frame bboxes text file
     std::string bboxes_frame_file_path;
@@ -450,7 +455,7 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     
     //cv::imshow("Frame", frame_hsv);
 
-    /* Mouse callback */
+
     cv::imshow("HSV", frame_masked);
     cv::setMouseCallback("HSV", mouseCallBack, (void*)&frame_masked);
 
@@ -496,3 +501,4 @@ static void to_CMYK(const cv::Mat& frame_bgr, cv::Mat& frame_cmyk){
     std::vector<cv::Mat> channels_cmyk = {c_cmyk, m_cmyk, y_cmyk, k_cmyk};
     cv::merge(channels_cmyk, frame_cmyk);
 }
+*/
