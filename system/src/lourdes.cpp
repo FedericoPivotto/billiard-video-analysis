@@ -126,6 +126,8 @@ void lrds::lrds_sift_object_detection(const std::vector<cv::Mat>& video_frames, 
     cv::destroyAllWindows();
 }
 
+//-----------------------------------------------------------------------------------------------
+
 /* Convert points from float to int */
 void lrds::points_float_to_point(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& points) {
     // Convert points from float to int
@@ -134,7 +136,7 @@ void lrds::points_float_to_point(const std::vector<cv::Point2f> float_points, st
 }
 
 /* Balls detection in given a video frame */
-void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+void lrds::lrds_template_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
     // Create frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
@@ -230,6 +232,172 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
         }
     }
 
+
+    // Haar cascade vs template matching
+
+    // Wait key
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+}
+
+//-----------------------------------------------------------------------------------------
+
+/* Callback function parameters */
+typedef struct {
+	// Window name
+	const char* window_name;
+
+	// Pointers to images
+	cv::Mat* src;
+
+    // HSV parameters
+    int iLowH;
+    int iHighH;
+    int iLowS;
+    int iHighS;
+    int iLowV;
+    int iHighV;
+
+    // Bilateral filter
+    int color_std;
+    int space_std;
+    int max_th;
+
+    // Max threshold
+    int maxH;
+    int maxS;
+    int maxV;
+} ParameterHoughHSV;
+
+/* Callback function */
+static void hsv_hough_callback(int pos, void* userdata) {
+    // Get Canny parameters from userdata
+	ParameterHoughHSV params = *((ParameterHoughHSV*) userdata);
+
+    // Dereference images
+    cv::Mat frame = (*params.src).clone();
+	cv::Mat frame_hsv, frame_bilateral, mask;
+    cv::bilateralFilter(frame, frame_bilateral, 9, params.color_std, params.space_std);
+
+    // Threshold the image in hsv
+    cv::cvtColor(frame_bilateral, frame_hsv, cv::COLOR_BGR2HSV);
+
+    int hbins = 30, sbins = 32;
+    int histSize[] = { hbins, sbins };
+    float hranges[] = { 0, 180 };
+    float sranges[] = { 0, 256 };
+    const float* ranges[] = { hranges, sranges };
+    cv::Mat hist;
+    int channels[] = { 0, 1 };
+
+    cv::calcHist(&frame_hsv, 1, channels, cv::Mat(), hist, 2, histSize, ranges, true, false);
+    cv::normalize(hist, hist, 0, 255, cv::NORM_MINMAX);
+
+    double maxVal = 0;
+    int maxIdx[] = { 0, 0 };
+    minMaxIdx(hist, 0, &maxVal, 0, maxIdx);
+    int dominantHue = maxIdx[0] * (180 / hbins); // Hue is in the range 0-180
+    int dominantSaturation = maxIdx[1] * (256 / sbins); 
+
+    int hueRange = 150; // Adjust as needed
+    cv::inRange(frame_hsv, 
+            cv::Scalar(dominantHue - hueRange, dominantSaturation - 150, 100),
+            cv::Scalar(dominantHue + hueRange, dominantSaturation + 100, 255), 
+            mask);
+    //cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
+
+    // Dilate and erosion set operations on mask 
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+    cv::dilate(mask, mask, kernel);
+    //cv::erode(mask, mask, kernel);
+    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::Mat(), cv::Point(-1, -1), 5);
+    //cv::morphologyEx(mask, mask, cv::MORPH_OPEN, cv::Mat(), cv::Point(-1, -1), 3);
+
+    std::vector<cv::Vec3f> circles;
+	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
+		10, // distance between circles
+		100, 9, // canny edge detector parameters and circles center detection 
+		3, 20); // min_radius & max_radius of circles to detect
+    
+    // Show detected circles
+    for(size_t i = 0; i < circles.size(); i++) {
+        // Circle data
+        cv::Vec3i c = circles[i];
+        cv::Point center(c[0], c[1]);
+        unsigned int radius = c[2];
+
+        // Show circle center
+        cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+        // Show circle outline
+        cv::circle(frame, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+    }
+
+    // Display our result
+	cv::imshow(params.window_name, frame);
+    cv::imshow("Mask of change", mask);
+}
+
+
+/* Balls detection in given a video frame */
+void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+    // Create frame bboxes text file
+    std::string bboxes_frame_file_path;
+    fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
+
+    // Vector of bounding boxes
+    std::vector<od::Ball> ball_bboxes;
+    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+
+    // Video frame clone
+    cv::Mat frame(video_frames[n_frame].clone());
+
+    // Frame preprocessing 
+    cv::Mat preprocessed_video_frame;
+    cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 150.0, 75.0);
+    
+    // Mask image to consider only the billiard table
+    cv::Mat mask = cv::Mat::zeros(frame.size(), CV_8UC3);
+    std::vector<cv::Point> table_corners;
+    points_float_to_point(corners, table_corners);
+    cv::fillConvexPoly(mask, table_corners, cv::Scalar(255, 255, 255));
+
+    // Filter out the background of the billiard table
+    cv::Mat frame_masked;
+    cv::bitwise_and(preprocessed_video_frame, mask, frame_masked);
+
+    // Gray frame
+    cv::Mat frame_hsv;
+    cv::cvtColor(frame_masked, frame_hsv, cv::COLOR_BGR2GRAY);
+
+    // HSV parameters
+    int iLowH = 30, iHighH = 110, maxH = 179;
+    int iLowS = 160, iHighS = 255, maxS = 255;
+    int iLowV = 140, iHighV = 255, maxV = 255;
+
+    // Bilateral filter parameters
+    int max_th = 300;
+    int color_std = 100;
+    int space_std = 75;
+
+    // HSV window trackbars
+    // ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
+    ParameterHoughHSV hsvp = {"Control HSV", &frame_masked, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, color_std, space_std, max_th, maxH, maxS, maxV};
+    
+    // Control window
+    cv::namedWindow(hsvp.window_name);
+
+    // Create trackbar for Hue (0 - 179)
+    cv::createTrackbar("LowH", hsvp.window_name, &hsvp.iLowH, hsvp.maxH, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("HighH", hsvp.window_name, &hsvp.iHighH, hsvp.maxH, hsv_hough_callback, &hsvp);
+    // Create trackbar for Saturation (0 - 255)
+    cv::createTrackbar("LowS", hsvp.window_name, &hsvp.iLowS, hsvp.maxS, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("HighS", hsvp.window_name, &hsvp.iHighS, hsvp.maxS, hsv_hough_callback, &hsvp);
+    // Create trackbar for Value (0 - 255)
+    cv::createTrackbar("LowV", hsvp.window_name, &hsvp.iLowV, hsvp.maxV, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("HighV", hsvp.window_name, &hsvp.iHighV, hsvp.maxV, hsv_hough_callback, &hsvp);
+    // Create trackbar for color and space std
+    cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
 
     // Haar cascade vs template matching
 
