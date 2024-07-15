@@ -122,6 +122,12 @@ int main(int argc, char** argv) {
         // Common variables for minimap and tracking
         std::vector<cv::Mat> video_game_frames_cv;
         std::vector<od::Ball> ball_bboxes;
+
+        // 2D top-view minimap (Fabrizio)
+
+        // Create map-view
+        cv::Mat map_view, field_frame = video_frames[0].clone(), map_perspective;
+        mm::compute_map_view(map_view, field_frame, map_perspective, first_borders, first_corners);
         
         // Create trackers for balls
         std::vector<cv::Ptr<cv::Tracker>> trackers;
@@ -181,13 +187,15 @@ int main(int argc, char** argv) {
                 }
             }
 
-            // 2D top-view minimap (Fabrizio)
-
-            // Create map-view
-            cv::Mat map_view, field_frame = video_frames[j].clone();
-            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
+            // Overlay billiard mini-view balls trajectories
+            mm::overlay_map_view_trajectories(map_view, map_perspective, ball_bboxes);
+            // Overlay billiard mini-view balls
+            cv::Mat balls_map_view = map_view.clone();
+            mm::overlay_map_view_balls(balls_map_view, map_perspective, ball_bboxes);
+            // Overlay billiard mini-view background
+            mm::overlay_map_view_background(balls_map_view);
             // Overlay the map-view in the current frame
-            mm::overlay_map_view(video_game_frame_cv, map_view);
+            mm::overlay_map_view(video_game_frame_cv, balls_map_view);
         }
         
         // Show computer vision video frames

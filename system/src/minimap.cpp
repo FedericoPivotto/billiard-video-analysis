@@ -67,7 +67,7 @@ void mm::warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, 
 }
 
 /* Generate map view of the area inside the borders */
-void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted, const std::vector<od::Ball> ball_bboxes) {
+void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, cv::Mat& map_perspective, const std::vector<cv::Point2f>& corners, const bool is_distorted) {
     std::vector<cv::Point2f> dst;
 
     // Check table orientation
@@ -78,11 +78,29 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vec
     }
 
     // Get perspective transform matrix
-    cv::Mat map_perspective = cv::findHomography(corners, dst);
+    map_perspective = cv::findHomography(corners, dst);
 
     // Generate map view
     cv::warpPerspective(image, map_view, map_perspective, cv::Size(350, 175));
+}
 
+/* Overlay the balls trajectories on the map_view*/
+void mm::overlay_map_view_trajectories(cv::Mat& map_view, cv::Mat& map_perspective, const std::vector<od::Ball> ball_bboxes) {
+    // Warp each ball center and draw mini-map balls position
+    cv::Point2f warped_point;
+
+    // Balls position drawing
+    for(const od::Ball& ball : ball_bboxes){
+        mm::warped_pixel(cv::Point2f(ball.x + ball.width / 2, ball.y + ball.height / 2), map_perspective, warped_point);
+        
+        // Draw ball position
+        int point_radius = 0;
+        cv::circle(map_view, warped_point, point_radius, mm::BALL_BORDER, cv::FILLED);
+    }
+}
+
+/* Overlay the balls on the map-view */
+void mm::overlay_map_view_balls(cv::Mat& map_view, cv::Mat& map_perspective, const std::vector<od::Ball> ball_bboxes) {
     // Warp each ball center and draw mini-map balls
     const int ball_radius = 6;
     cv::Point2f warped_point;
@@ -104,20 +122,14 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vec
 
         // Draw ball border
         int ball_border_thickness = 1;
-        cv::circle(map_view, warped_point, ball_radius, mm::BALL_BORDER, ball_border_thickness);
+        cv::circle(map_view, warped_point, ball_radius, mm::BALL_POSITION, ball_border_thickness);
     }
-
-    // Add billiard minimap background
-    mm::overlay_map_view_background(map_view);
-
-    // Resize map-view
-    double scale = 0.85;
-    cv::resize(map_view, map_view, cv::Size(), scale, scale);
 }
 
-/* Overlay the map-view into the ma-view background */
+/* Overlay the map-view on the map-view background */
 void mm::overlay_map_view_background(cv::Mat& map_view) {
     // Read billiard minimap background image
+    // TODO: decide one of the two image as background
     cv::Mat map_view_background = cv::imread("../system/img/billiard_minimap.png");
 
     // Resize map-view background according to scale
@@ -137,7 +149,11 @@ void mm::overlay_map_view_background(cv::Mat& map_view) {
 }
 
 /* Overlay the map-view into the current frame */
-void mm::overlay_map_view(cv::Mat& frame, const cv::Mat& map_view) {
+void mm::overlay_map_view(cv::Mat& frame, cv::Mat& map_view) {
+    // Resize map-view
+    double scale = 0.85;
+    cv::resize(map_view, map_view, cv::Size(), scale, scale);
+
     // Consider offsets for the coordinates
     const int x = 10;
     const int y = frame.rows - map_view.rows - 10;
@@ -148,7 +164,7 @@ void mm::overlay_map_view(cv::Mat& frame, const cv::Mat& map_view) {
 }
 
 /* Computes map-view of the current frame */
-void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes) {
+void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, cv::Mat& map_perspective, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners) {
     // Sorted float corners
     std::vector<cv::Point2f> sorted_corners(corners);
     ed::sort_corners(sorted_corners);
@@ -162,5 +178,5 @@ void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::ve
     mm::check_perspective_distortion(borders, is_distorted);
 
     // Create map-view
-    mm::create_map_view(field_frame, map_view, sorted_corners, is_distorted, ball_bboxes);
+    mm::create_map_view(field_frame, map_view, map_perspective, sorted_corners, is_distorted);
 }

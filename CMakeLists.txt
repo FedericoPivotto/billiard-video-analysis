@@ -59,6 +59,8 @@ add_library(metrics_billiard_metric
     metrics/include/billiard_metric.h
     metrics/src/billiard_metric.cpp)
 
+#[===[
+
 ## System executable
 add_executable(system system/src/main.cpp)
 target_link_libraries(system
@@ -103,6 +105,8 @@ target_link_libraries(fabrizio
     system_minimap
     system_tracking)
 
+]===]
+
 ## Leonardo system executable
 add_executable(leonardo system/src/leonardo.cpp)
 target_link_libraries(leonardo
@@ -115,6 +119,8 @@ target_link_libraries(leonardo
     system_minimap
     system_tracking)
 
+#[===[
+
 ## Lourdes system executable
 add_executable(main system/src/main_lourdes.cpp)
 target_link_libraries(main
@@ -126,4 +132,5 @@ target_link_libraries(main
     system_segmentation
     system_minimap
     system_lourdes)
-    
+
+]===]

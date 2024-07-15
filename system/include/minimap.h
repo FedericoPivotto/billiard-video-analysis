@@ -21,19 +21,22 @@ namespace mm {
     const std::pair<int, cv::Scalar> FIELD_BGR(5, cv::Scalar(255, 255, 255));
     const cv::Scalar HOLE_BGR(50, 50, 50);
     const cv::Scalar BALL_BORDER(58, 58, 58);
+    const cv::Scalar BALL_POSITION(0, 0, 0);
 
     // Create function declarations
-    void create_map_view(const cv::Mat& image, cv::Mat& map_view, const std::vector<cv::Point2f>& corners, const bool is_distorted, const std::vector<od::Ball> ball_bboxes);
+    void create_map_view(const cv::Mat& image, cv::Mat& map_view, cv::Mat& map_perspective, const std::vector<cv::Point2f>& corners, const bool is_distorted);
 
     // Auxiliary function declarations
     double compute_slope(const double theta);
     void warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, cv::Point2f& warped_point);
     void check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& is_distorted);
+    void overlay_map_view_trajectories(cv::Mat& map_view, cv::Mat& map_perspective, const std::vector<od::Ball> ball_bboxes);
+    void overlay_map_view_balls(cv::Mat& map_view, cv::Mat& map_perspective, const std::vector<od::Ball> ball_bboxes);
     void overlay_map_view_background(cv::Mat& map_view);
 
     // Main function declarations
-    void compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners, const std::vector<od::Ball> ball_bboxes);
-    void overlay_map_view(cv::Mat& frame, const cv::Mat& map_view);
+    void compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, cv::Mat& map_perspective, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners);
+    void overlay_map_view(cv::Mat& frame, cv::Mat& map_view);
 }
 
 #endif // MINIMAP_H
