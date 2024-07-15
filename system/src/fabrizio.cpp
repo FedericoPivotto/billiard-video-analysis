@@ -93,6 +93,12 @@ int main(int argc, char** argv) {
         }
 
         // Assuming field corners of the first video frame
+
+        // 2D top-view minimap and tracking (Fabrizio)
+        
+        // Create map-view base
+        cv::Mat map_view, field_frame = video_frames[0].clone(), map_perspective;
+        mm::compute_map_view(map_view, field_frame, map_perspective, first_borders, first_corners);
         
         // For each video frame
         std::vector<cv::Mat> video_game_frames_cv;
@@ -121,11 +127,15 @@ int main(int argc, char** argv) {
             std::vector<od::Ball> ball_bboxes;
             fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
             
-            // Create map-view
-            cv::Mat map_view, field_frame = video_frames[j].clone();
-            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
+            // Overlay billiard mini-view balls trajectories
+            mm::overlay_map_view_trajectories(map_view, map_perspective, ball_bboxes);
+            // Overlay billiard mini-view balls
+            cv::Mat balls_map_view = map_view.clone();
+            mm::overlay_map_view_balls(balls_map_view, map_perspective, ball_bboxes);
+            // Overlay billiard mini-view background
+            mm::overlay_map_view_background(balls_map_view);
             // Overlay the map-view in the current frame
-            mm::overlay_map_view(video_game_frame_cv, map_view);
+            mm::overlay_map_view(video_game_frame_cv, balls_map_view);
 
             // TODO: trajectory tracking
             // NOTE: required to update minimap

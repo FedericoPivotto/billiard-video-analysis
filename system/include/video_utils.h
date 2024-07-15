@@ -25,7 +25,7 @@ namespace vu {
     void show_video_frames(const std::vector<cv::Mat> video_frames);
 
     // Save function declarations
-    void save_video(std::vector<cv::Mat>& video_frames, const double fps, const int width, const int height, const std::string video_path);
+    void save_video(std::vector<cv::Mat>& video_frames, const cv::VideoCapture capture, const std::string video_path);
 }
 
 #endif // VIDEO_UTILS_H

@@ -6,23 +6,17 @@
 // filesystem_utils: filesystem utilities
 #include <filesystem_utils.h>
 
-// edge_detection detection library
+// edge_detection library
 #include <edge_detection.h>
 
 // segmentation library
 #include <segmentation.h>
 
-// minimap detection library
+// minimap library
 #include <minimap.h>
 
-// Tracking libraries
-// TODO: move away
-
-// tracking: cv::TrackerKCF
+// tracking library
 #include <opencv2/tracking.hpp>
-
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/ocl.hpp>
 
 /* Computer vision system main */
 int main(int argc, char** argv) {
@@ -119,13 +113,13 @@ int main(int argc, char** argv) {
 
         // Assuming field corners of the first video frame
         
-        // Common variables for minimap and tracking
+        // 2D top-view minimap and tracking (Fabrizio)
+        
+        // Variables for minimap and tracking
         std::vector<cv::Mat> video_game_frames_cv;
         std::vector<od::Ball> ball_bboxes;
-
-        // 2D top-view minimap (Fabrizio)
-
-        // Create map-view
+        
+        // Create map-view base
         cv::Mat map_view, field_frame = video_frames[0].clone(), map_perspective;
         mm::compute_map_view(map_view, field_frame, map_perspective, first_borders, first_corners);
         
@@ -163,12 +157,8 @@ int main(int argc, char** argv) {
                 // For each ball create tracker
                 for(size_t k = 0; k < ball_bboxes.size(); ++k) {
                     // Get ball bbox rectangle
-                    cv::Rect bbox(ball_bboxes[k].x, ball_bboxes[k].y, ball_bboxes[k].width, ball_bboxes[k].height);
-                    // Create tracker
-                    // ALTERNATIVES:
-                    // 1. TrackerCSRT::create();
-                    // 2. TrackerKCF::create();
-                    // 3. TrackerMIL::create();
+                    cv::Rect bbox(ball_bboxes[k].get_rect_bbox());
+                    // Create CSRT tracker
                     trackers.push_back(cv::TrackerCSRT::create());
                     trackers[k]->init(video_game_frame_cv, bbox);
                 }
@@ -178,12 +168,8 @@ int main(int argc, char** argv) {
                     // Update tracker
                     cv::Rect bbox;
                     trackers[k]->update(video_game_frame_cv, bbox);
-                    
                     // Update ball bbox
-                    ball_bboxes[k].x = bbox.x;
-                    ball_bboxes[k].y = bbox.y;
-                    ball_bboxes[k].width = bbox.width;
-                    ball_bboxes[k].height = bbox.height;
+                    ball_bboxes[k].set_rect_bbox(bbox);
                 }
             }
 
@@ -207,12 +193,8 @@ int main(int argc, char** argv) {
         // Game video filename
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
-        // Video parameters
-        double fps = captures[i].get(cv::CAP_PROP_FPS);
-        int width  = captures[i].get(cv::CAP_PROP_FRAME_WIDTH);
-        int height = captures[i].get(cv::CAP_PROP_FRAME_HEIGHT);
         // Create and save video
-        vu::save_video(video_game_frames_cv, fps, width, height, result_video_path);
+        vu::save_video(video_game_frames_cv, captures[i], result_video_path);
     }
 
     return 0;

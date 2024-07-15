@@ -9,7 +9,7 @@
 #include <opencv2/highgui.hpp>
 
 /* User-defined libraries */
-#include<object_detection.h>
+#include <object_detection.h>
 
 /* Minimap namespace */
 namespace mm {

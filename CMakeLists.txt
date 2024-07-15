@@ -41,10 +41,6 @@ add_library(system_segmentation
 add_library(system_minimap
     system/include/minimap.h
     system/src/minimap.cpp)
-# tracking library
-add_library(system_tracking
-system/include/tracking.h
-system/src/tracking.cpp)
 
 # TODO: to remove
 # lourdes library
@@ -70,8 +66,9 @@ target_link_libraries(system
     system_object_detection
     system_edge_detection
     system_segmentation
-    system_minimap
-    system_tracking)
+    system_minimap)
+
+]===]
 
 ## Metrics executable
 add_executable(metrics metrics/src/main.cpp)
@@ -90,8 +87,7 @@ target_link_libraries(federico
     system_object_detection
     system_edge_detection
     system_segmentation
-    system_minimap
-    system_tracking)
+    system_minimap)
 
 ## Fabrizio system executable
 add_executable(fabrizio system/src/fabrizio.cpp)
@@ -102,10 +98,9 @@ target_link_libraries(fabrizio
     system_object_detection
     system_edge_detection
     system_segmentation
-    system_minimap
-    system_tracking)
+    system_minimap)
 
-]===]
+#[===[
 
 ## Leonardo system executable
 add_executable(leonardo system/src/leonardo.cpp)
@@ -116,8 +111,9 @@ target_link_libraries(leonardo
     system_object_detection
     system_edge_detection
     system_segmentation
-    system_minimap
-    system_tracking)
+    system_minimap)
+
+]===]
 
 #[===[
 
