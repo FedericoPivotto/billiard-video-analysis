@@ -2,18 +2,18 @@
 
 /* Librarires required in this source file and not already included in library.h */
 #include <iostream>
-#include <algorithm>
+// map: std::map
+#include <map>
 
 /* Distance function to compute the correspondences*/
-void bm::distance_function(const od::Ball &true_ball, std::vector<od::Ball> predicted_balls){
+double bm::distance_function(const od::Ball true_ball, const od::Ball predicted_ball){
 
     //for(od::Ball predicted_ball : predicted_balls) {
     //    std::cout << predicted_ball << " " << predicted_ball.confidence << std::endl;        
     //}
 
-    float min_distance = std::numeric_limits<float>::max();
+    /*float min_distance = std::numeric_limits<float>::max();
     od::Ball* closest_ball = nullptr;
-    std::vector<std::pair<od::Ball, od::Ball>> ball_pairs;
 
     for(od::Ball predicted_ball : predicted_balls) {
         if (predicted_ball.ball_class == true_ball.ball_class) {
@@ -21,18 +21,19 @@ void bm::distance_function(const od::Ball &true_ball, std::vector<od::Ball> pred
             if (distance < min_distance) {
                 min_distance = distance;
                 closest_ball = &predicted_ball;
-            }
-            ball_pairs.push_back(std::make_pair(true_ball, *closest_ball));
-        }       
-    }
 
-    for (const auto& pair : ball_pairs) {
-        std::cout << std::endl;
-        std::cout << "Pair: " << std::endl;
-        std::cout << pair.first << std::endl;
-        std::cout << pair.second << std::endl;
-        std::cout << " " << std::endl;
-    }
+                for (auto& pair : ball_pairs) {
+                    if (pair.first == true_ball) {
+                        pair.second = *closest_ball;  // Sostituisce il secondo membro della coppia esistente
+                        return;
+                    }
+                }
+                ball_pairs.push_back(std::make_pair(true_ball, *closest_ball));
+                //ball_pairs.push_back(std::make_pair(true_ball, *closest_ball));
+            }
+        }       
+    }*/
+   return 0;
 }
 
 /* Matches search */
@@ -44,11 +45,26 @@ void bm::matches_search(const std::vector<od::Ball>& predicted_balls, const std:
 
     // For each true bounding box:
     // 1. Associate true bounding box with the corresponding predicted bounding box according to the distance function
-    for (std::size_t i = 0; i < true_balls.size(); ++i) {
+    std::vector<std::pair<od::Ball, od::Ball>> ball_pairs;
+    std::vector<std::map<od::Ball, double>> ball_distances;
+    
+    for (size_t i = 0; i < true_balls.size(); ++i) {
         //std::cout << true_balls[i] << " ";
         //std::cout << std::endl;
-        distance_function(true_balls[i], predicted_balls);
+        std::map<od::Ball, double> ball_map;
+        ball_distances.push_back(ball_map);
+        for(size_t j = 0; i < predicted_balls.size(); ++j){
+            ball_map.insert(std::pair<od::Ball, double>(predicted_balls[j], distance_function(true_balls[i], predicted_balls[j])));
+        }
     }
+
+    /*for (const auto& pair : ball_pairs) {
+        std::cout << std::endl;
+        std::cout << "Pair: " << std::endl;
+        std::cout << pair.first << std::endl;
+        std::cout << pair.second << std::endl;
+        std::cout << " " << std::endl;
+    }*/
     // 2. Compute corresponding IoU
     //    * IoU = intersected area / union area
     // 3. Determine if TP (above IoU threshold 0.5) or TN (below IoU threshold 0.5) with IoU threshold 0.5

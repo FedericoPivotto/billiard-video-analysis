@@ -8,7 +8,7 @@
 /* Billiard metric namespace */
 namespace bm {
     // Auxiliary function declaration
-    void distance_function(const od::Ball &true_ball, std::vector<od::Ball> predicted_balls);
+    double distance_function(const od::Ball true_ball, const od::Ball predicted_ball);
     void matches_search(const std::vector<od::Ball>& predicted_balls, const std::vector<od::Ball>& true_balls);
 
     // Metric function declarations
