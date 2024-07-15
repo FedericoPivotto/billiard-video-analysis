@@ -391,7 +391,6 @@ static void mouseCallBack(int event, int x, int y, int flags, void* userdata){
     }
 }
 
-
 /* Balls detection in given a video frame */
 void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
     // Create frame bboxes text file
@@ -408,7 +407,7 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     // Frame preprocessing 
     cv::Mat preprocessed_video_frame;
     cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 25.0, 25.0);
-    
+
     // Mask image to consider only the billiard table
     cv::Mat mask = cv::Mat::zeros(frame.size(), CV_8UC3);
     std::vector<cv::Point> table_corners;
@@ -419,47 +418,81 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     cv::Mat frame_masked;
     cv::bitwise_and(preprocessed_video_frame, mask, frame_masked);
 
-    // Gray frame
-    cv::Mat frame_hsv;
-    cv::cvtColor(frame_masked, frame_hsv, cv::COLOR_BGR2HSV);
-
     // HSV parameters
-    int iLowH = 20, iHighH = 179, maxH = 179;
-    int iLowS = 15, iHighS = 160, maxS = 255;
-    int iLowV = 20, iHighV = 180, maxV = 255;
-
-    // Bilateral filter parameters
-    int max_th = 300;
-    int color_std = 100;
-    int space_std = 75;
-
-    // HSV window trackbars
-    // ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
-    ParameterHoughHSV hsvp = {"Control HSV", &frame_masked, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, color_std, space_std, max_th, maxH, maxS, maxV};
-    
-    // Control window
-    cv::namedWindow(hsvp.window_name);
-
-    // Create trackbar for Hue (0 - 179)
-    cv::createTrackbar("LowH", hsvp.window_name, &hsvp.iLowH, hsvp.maxH, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("HighH", hsvp.window_name, &hsvp.iHighH, hsvp.maxH, hsv_hough_callback, &hsvp);
-    // Create trackbar for Saturation (0 - 255)
-    cv::createTrackbar("LowS", hsvp.window_name, &hsvp.iLowS, hsvp.maxS, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("HighS", hsvp.window_name, &hsvp.iHighS, hsvp.maxS, hsv_hough_callback, &hsvp);
-    // Create trackbar for Value (0 - 255)
-    cv::createTrackbar("LowV", hsvp.window_name, &hsvp.iLowV, hsvp.maxV, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("HighV", hsvp.window_name, &hsvp.iHighV, hsvp.maxV, hsv_hough_callback, &hsvp);
-    // Create trackbar for color and space std
-    cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
+    //int iLowH = 20, iHighH = 179, maxH = 179;
+    //int iLowS = 15, iHighS = 160, maxS = 255;
+    //int iLowV = 20, iHighV = 180, maxV = 255;
+//
+    //// Bilateral filter parameters
+    //int max_th = 300;
+    //int color_std = 100;
+    //int space_std = 75;
+//
+    //// HSV window trackbars
+    //// ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
+    //ParameterHoughHSV hsvp = {"Control HSV", &frame_masked, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, color_std, space_std, max_th, maxH, maxS, maxV};
+    //
+    //// Control window
+    //cv::namedWindow(hsvp.window_name);
+//
+    //// Create trackbar for Hue (0 - 179)
+    //cv::createTrackbar("LowH", hsvp.window_name, &hsvp.iLowH, hsvp.maxH, hsv_hough_callback, &hsvp);
+    //cv::createTrackbar("HighH", hsvp.window_name, &hsvp.iHighH, hsvp.maxH, hsv_hough_callback, &hsvp);
+    //// Create trackbar for Saturation (0 - 255)
+    //cv::createTrackbar("LowS", hsvp.window_name, &hsvp.iLowS, hsvp.maxS, hsv_hough_callback, &hsvp);
+    //cv::createTrackbar("HighS", hsvp.window_name, &hsvp.iHighS, hsvp.maxS, hsv_hough_callback, &hsvp);
+    //// Create trackbar for Value (0 - 255)
+    //cv::createTrackbar("LowV", hsvp.window_name, &hsvp.iLowV, hsvp.maxV, hsv_hough_callback, &hsvp);
+    //cv::createTrackbar("HighV", hsvp.window_name, &hsvp.iHighV, hsvp.maxV, hsv_hough_callback, &hsvp);
+    //// Create trackbar for color and space std
+    //cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
+    //cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
     
     //cv::imshow("Frame", frame_hsv);
 
     /* Mouse callback */
-    //cv::imshow("HSV", frame_hsv);
-    //cv::setMouseCallback("HSV", mouseCallBack, (void*)&frame_hsv);
+    cv::imshow("HSV", frame_masked);
+    cv::setMouseCallback("HSV", mouseCallBack, (void*)&frame_masked);
 
     // Wait key
     cv::waitKey(0);
     cv::destroyAllWindows();
+}
+
+static void to_CMYK(const cv::Mat& frame_bgr, cv::Mat& frame_cmyk){
+    // To RGB
+    cv::Mat frame_rgb;
+    cv::cvtColor(frame_bgr, frame_rgb, cv::COLOR_BGR2RGB);
+
+    // Color normalization
+    frame_rgb.convertTo(frame_rgb, CV_32F, 1.0 / 255);
+
+    // Convert to CMY
+    cv::Mat frame_cmy = 1 - frame_rgb;
+
+    // Split in channels
+    std::vector<cv::Mat> channels_cmy;
+    cv::split(frame_cmy, channels_cmy);
+
+    // Compute additional channel K
+    cv::Mat k_cmyk = cv::min(channels_cmy[0], cv::min(channels_cmy[1], channels_cmy[2]));
+
+    // Compute channels and normalize
+    cv::Mat c_cmyk = (channels_cmy[0] - k_cmyk)/(1 - k_cmyk + 1e-10);
+    cv::Mat m_cmyk = (channels_cmy[1] - k_cmyk)/(1 - k_cmyk + 1e-10);
+    cv::Mat y_cmyk = (channels_cmy[2] - k_cmyk)/(1 - k_cmyk + 1e-10);
+
+    c_cmyk = cv::min(cv::max(c_cmyk, 0), 1);  
+    m_cmyk = cv::min(cv::max(m_cmyk, 0), 1); 
+    y_cmyk = cv::min(cv::max(y_cmyk, 0), 1); 
+    k_cmyk = cv::min(cv::max(k_cmyk, 0), 1);
+
+    c_cmyk.convertTo(c_cmyk, CV_8U, 255);
+    m_cmyk.convertTo(m_cmyk, CV_8U, 255);
+    y_cmyk.convertTo(y_cmyk, CV_8U, 255);
+    k_cmyk.convertTo(k_cmyk, CV_8U, 255);
+
+    // Merge into cmyk frame
+    std::vector<cv::Mat> channels_cmyk = {c_cmyk, m_cmyk, y_cmyk, k_cmyk};
+    cv::merge(channels_cmyk, frame_cmyk);
 }
