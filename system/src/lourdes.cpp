@@ -282,35 +282,35 @@ static void hsv_hough_callback(int pos, void* userdata) {
     // Threshold the image in hsv
     cv::cvtColor(frame_bilateral, frame_hsv, cv::COLOR_BGR2HSV);
 
-    int hbins = 30, sbins = 32;
-    int histSize[] = { hbins, sbins };
-    float hranges[] = { 0, 180 };
-    float sranges[] = { 0, 256 };
-    const float* ranges[] = { hranges, sranges };
-    cv::Mat hist;
-    int channels[] = { 0, 1 };
+    //int hbins = 30, sbins = 32;
+    //int histSize[] = { hbins, sbins };
+    //float hranges[] = { 0, 180 };
+    //float sranges[] = { 0, 256 };
+    //const float* ranges[] = { hranges, sranges };
+    //cv::Mat hist;
+    //int channels[] = { 0, 1 };
 
-    cv::calcHist(&frame_hsv, 1, channels, cv::Mat(), hist, 2, histSize, ranges, true, false);
-    cv::normalize(hist, hist, 0, 255, cv::NORM_MINMAX);
+    //cv::calcHist(&frame_hsv, 1, channels, cv::Mat(), hist, 2, histSize, ranges, true, false);
+    //cv::normalize(hist, hist, 0, 255, cv::NORM_MINMAX);
 
-    double maxVal = 0;
-    int maxIdx[] = { 0, 0 };
-    minMaxIdx(hist, 0, &maxVal, 0, maxIdx);
-    int dominantHue = maxIdx[0] * (180 / hbins); // Hue is in the range 0-180
-    int dominantSaturation = maxIdx[1] * (256 / sbins); 
+    //double maxVal = 0;
+    //int maxIdx[] = { 0, 0 };
+    //minMaxIdx(hist, 0, &maxVal, 0, maxIdx);
+    //int dominantHue = maxIdx[0] * (180 / hbins);
+    //int dominantSaturation = maxIdx[1] * (256 / sbins); 
 
-    int hueRange = 150; // Adjust as needed
-    cv::inRange(frame_hsv, 
-            cv::Scalar(dominantHue - hueRange, dominantSaturation - 150, 100),
-            cv::Scalar(dominantHue + hueRange, dominantSaturation + 100, 255), 
-            mask);
-    //cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
+    //int hueRange = 150;
+    //cv::inRange(frame_hsv, 
+    //        cv::Scalar(dominantHue - hueRange, dominantSaturation - 150, 100),
+    //        cv::Scalar(dominantHue + hueRange, dominantSaturation + 100, 255), 
+    //        mask);
+    cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
 
     // Dilate and erosion set operations on mask 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9));
     cv::dilate(mask, mask, kernel);
-    //cv::erode(mask, mask, kernel);
-    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::Mat(), cv::Point(-1, -1), 5);
+    cv::erode(mask, mask, kernel);
+    //cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::Mat(), cv::Point(-1, -1), 5);
     //cv::morphologyEx(mask, mask, cv::MORPH_OPEN, cv::Mat(), cv::Point(-1, -1), 3);
 
     std::vector<cv::Vec3f> circles;
@@ -337,6 +337,29 @@ static void hsv_hough_callback(int pos, void* userdata) {
     cv::imshow("Mask of change", mask);
 }
 
+static void mouseCallBack(int event, int x, int y, int flags, void* userdata){
+    cv::Mat image;
+    if(event == cv::EVENT_LBUTTONDOWN){
+        cv::Mat* imgPointer = (cv::Mat*)userdata;
+        image = *imgPointer;
+        int meanB = 0;
+        int meanG = 0;
+        int meanR = 0;
+        for(int i = x - 4; i <= x + 4; i++){
+            for(int j = y - 4; j <= y + 4; j++){
+                if((i <= image.cols - 1 && j <= image.rows -1) && (i >= 0 && j >= 0)){
+                    meanB += (int)image.at<cv::Vec3b>(j,i)[0];
+                    meanG += (int)image.at<cv::Vec3b>(j,i)[1];
+                    meanR += (int)image.at<cv::Vec3b>(j,i)[2];
+                }
+            }
+        }
+        std::cout<<"MeanB: "<<(meanB / 81)<<std::endl;
+        std::cout<<"MeanG: "<<(meanG / 81)<<std::endl;
+        std::cout<<"MeanR: "<<(meanR / 81)<<std::endl;
+    }
+}
+
 
 /* Balls detection in given a video frame */
 void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
@@ -353,7 +376,7 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
 
     // Frame preprocessing 
     cv::Mat preprocessed_video_frame;
-    cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 150.0, 75.0);
+    cv::bilateralFilter(video_frame, preprocessed_video_frame, 9, 25.0, 25.0);
     
     // Mask image to consider only the billiard table
     cv::Mat mask = cv::Mat::zeros(frame.size(), CV_8UC3);
@@ -367,12 +390,12 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
 
     // Gray frame
     cv::Mat frame_hsv;
-    cv::cvtColor(frame_masked, frame_hsv, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(frame_masked, frame_hsv, cv::COLOR_BGR2HSV);
 
     // HSV parameters
-    int iLowH = 30, iHighH = 110, maxH = 179;
-    int iLowS = 160, iHighS = 255, maxS = 255;
-    int iLowV = 140, iHighV = 255, maxV = 255;
+    int iLowH = 20, iHighH = 95, maxH = 179;
+    int iLowS = 15, iHighS = 100, maxS = 255;
+    int iLowV = 160, iHighV = 255, maxV = 255;
 
     // Bilateral filter parameters
     int max_th = 300;
@@ -398,8 +421,12 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     // Create trackbar for color and space std
     cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
     cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
+    
+    cv::imshow("Frame", frame_hsv);
 
-    // Haar cascade vs template matching
+    /* Mouse callback */
+    //cv::imshow("HSV", frame_hsv);
+    //cv::setMouseCallback("HSV", mouseCallBack, (void*)&frame_hsv);
 
     // Wait key
     cv::waitKey(0);
