@@ -41,11 +41,12 @@ add_library(system_segmentation
 add_library(system_minimap
     system/include/minimap.h
     system/src/minimap.cpp)
+
+# TODO: to remove
 # lourdes library
 add_library(system_lourdes
     system/include/lourdes.h
     system/src/lourdes.cpp)
-
 
 ## Metrics libraries
 
@@ -106,6 +107,7 @@ target_link_libraries(leonardo
     system_segmentation
     system_minimap)
 
+# TODO: to remove
 ## Lourdes system executable
 add_executable(main system/src/main_lourdes.cpp)
 target_link_libraries(main
@@ -117,4 +119,3 @@ target_link_libraries(main
     system_segmentation
     system_minimap
     system_lourdes)
-    

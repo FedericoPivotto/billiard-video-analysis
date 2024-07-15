@@ -23,6 +23,18 @@ unsigned int od::Ball::radius() const {
     return width < height ? width / 2 : height / 2;
 }
 
+cv::Rect od::Ball::get_rect_bbox() {
+    // Create bounding box cv::Rect
+    return cv::Rect(x, y, width, height);
+}
+
+void od::Ball::set_rect_bbox(cv::Rect bbox) {
+    x = bbox.x;
+    y = bbox.y;
+    width = bbox.width;
+    height = bbox.height;
+}
+
 /* Ball operator << overload */
 std::ostream& od::operator<<(std::ostream& os, const Ball& ball) {
     // Ball information string

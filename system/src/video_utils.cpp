@@ -48,9 +48,14 @@ void vu::show_video_frames(const std::vector<cv::Mat> video_frames) {
     }
 }
 
-void vu::save_video(std::vector<cv::Mat>& video_frames, const double fps, const int width, const int height, const std::string video_path) {
+void vu::save_video(std::vector<cv::Mat>& video_frames, const cv::VideoCapture capture, const std::string video_path) {
     // Video writer
     cv::VideoWriter video_writer;
+
+    // Video parameters
+    double fps = capture.get(cv::CAP_PROP_FPS);
+    int width  = capture.get(cv::CAP_PROP_FRAME_WIDTH);
+    int height = capture.get(cv::CAP_PROP_FRAME_HEIGHT);
     
     // Open video writer
     video_writer.open(video_path, cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, cv::Size(width, height));

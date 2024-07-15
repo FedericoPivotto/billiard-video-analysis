@@ -102,7 +102,7 @@ void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector
     bboxes_frame_file.close();
 }
 
-/* Get video result directory */
+/* Get video dataset directory */
 void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::string>& video_dataset_subdirs) {
     // Get dataset directory if not exists
     std::string dataset_path = "../dataset/";

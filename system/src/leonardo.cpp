@@ -6,14 +6,17 @@
 // filesystem_utils: filesystem utilities
 #include <filesystem_utils.h>
 
-// edge_detection detection library
+// edge_detection library
 #include <edge_detection.h>
 
 // segmentation library
 #include <segmentation.h>
 
-// minimap detection library
+// minimap library
 #include <minimap.h>
+
+// tracking library
+#include <opencv2/tracking.hpp>
 
 /* Computer vision system main */
 int main(int argc, char** argv) {
@@ -110,8 +113,20 @@ int main(int argc, char** argv) {
 
         // Assuming field corners of the first video frame
         
-        // For each video frame
+        // 2D top-view minimap and tracking (Fabrizio)
+        
+        // Variables for minimap and tracking
         std::vector<cv::Mat> video_game_frames_cv;
+        std::vector<od::Ball> ball_bboxes;
+        
+        // Create map-view base
+        cv::Mat map_view, field_frame = video_frames[0].clone(), map_perspective;
+        mm::compute_map_view(map_view, field_frame, map_perspective, first_borders, first_corners);
+        
+        // Create trackers for balls
+        std::vector<cv::Ptr<cv::Tracker>> trackers;
+
+        // For each video frame
         for(size_t j = 0; j < video_frames.size(); ++j) {
             // Skip game video frame if empty
             if(video_frames[j].empty())
@@ -125,26 +140,48 @@ int main(int argc, char** argv) {
             // TODO: change with result directory
             std::vector<std::string> video_dataset_subdirs;
             fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
-
-            // Get bounding box file path
-            // TODO: change with result directory
-            std::string bboxes_frame_file_path;
-            fsu::get_bboxes_frame_file_path(video_frames, j, video_dataset_subdirs[0], bboxes_frame_file_path);
-
-            // TODO: 2D top-view minimap (Fabrizio)
-
-            // Read balls from bounding box file
-            std::vector<od::Ball> ball_bboxes;
-            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
             
-            // Create map-view
-            cv::Mat map_view, field_frame = video_frames[j].clone();
-            mm::compute_map_view(map_view, field_frame, first_borders, first_corners, ball_bboxes);
-            // Overlay the map-view in the current frame
-            mm::overlay_map_view(video_game_frame_cv, map_view);
+            // TODO: trajectory tracking (Federico)
+            // OPTIONAL: frame resize for making tracking faster
 
-            // TODO: trajectory tracking
-            // NOTE: required to update minimap
+            // Read balls from bounding box file of first frame
+            if(j == 0) {
+                // Get bounding box file path
+                // TODO: change with result directory
+                std::string bboxes_frame_file_path;
+                fsu::get_bboxes_frame_file_path(video_frames, j, video_dataset_subdirs[0], bboxes_frame_file_path);
+
+                // Read balls from bounding box file
+                fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
+
+                // For each ball create tracker
+                for(size_t k = 0; k < ball_bboxes.size(); ++k) {
+                    // Get ball bbox rectangle
+                    cv::Rect bbox(ball_bboxes[k].get_rect_bbox());
+                    // Create CSRT tracker
+                    trackers.push_back(cv::TrackerCSRT::create());
+                    trackers[k]->init(video_game_frame_cv, bbox);
+                }
+            } else {
+                // For each ball update tracker
+                for(size_t k = 0; k < ball_bboxes.size(); ++k) {
+                    // Update tracker
+                    cv::Rect bbox;
+                    trackers[k]->update(video_game_frame_cv, bbox);
+                    // Update ball bbox
+                    ball_bboxes[k].set_rect_bbox(bbox);
+                }
+            }
+
+            // Overlay billiard mini-view balls trajectories
+            mm::overlay_map_view_trajectories(map_view, map_perspective, ball_bboxes);
+            // Overlay billiard mini-view balls
+            cv::Mat balls_map_view = map_view.clone();
+            mm::overlay_map_view_balls(balls_map_view, map_perspective, ball_bboxes);
+            // Overlay billiard mini-view background
+            mm::overlay_map_view_background(balls_map_view);
+            // Overlay the map-view in the current frame
+            mm::overlay_map_view(video_game_frame_cv, balls_map_view);
         }
         
         // Show computer vision video frames
@@ -156,12 +193,8 @@ int main(int argc, char** argv) {
         // Game video filename
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
-        // Video parameters
-        double fps = captures[i].get(cv::CAP_PROP_FPS);
-        int width  = captures[i].get(cv::CAP_PROP_FRAME_WIDTH);
-        int height = captures[i].get(cv::CAP_PROP_FRAME_HEIGHT);
         // Create and save video
-        vu::save_video(video_game_frames_cv, fps, width, height, result_video_path);
+        vu::save_video(video_game_frames_cv, captures[i], result_video_path);
     }
 
     return 0;
