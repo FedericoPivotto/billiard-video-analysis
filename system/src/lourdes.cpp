@@ -307,30 +307,61 @@ static void hsv_hough_callback(int pos, void* userdata) {
     cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
 
     // Dilate and erosion set operations on mask 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
     cv::dilate(mask, mask, kernel);
-    cv::erode(mask, mask, kernel);
-    //cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::Mat(), cv::Point(-1, -1), 5);
-    //cv::morphologyEx(mask, mask, cv::MORPH_OPEN, cv::Mat(), cv::Point(-1, -1), 3);
+    //cv::erode(mask, mask, kernel);
+    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
+    cv::morphologyEx(mask, mask, cv::MORPH_OPEN, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
 
-    std::vector<cv::Vec3f> circles;
-	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
-		10, // distance between circles
-		100, 9, // canny edge detector parameters and circles center detection 
-		3, 20); // min_radius & max_radius of circles to detect
-    
-    // Show detected circles
-    for(size_t i = 0; i < circles.size(); i++) {
-        // Circle data
-        cv::Vec3i c = circles[i];
-        cv::Point center(c[0], c[1]);
-        unsigned int radius = c[2];
+    //std::vector<cv::Vec3f> circles;
+	//cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
+	//	10, // distance between circles
+	//	100, 9, // canny edge detector parameters and circles center detection 
+	//	3, 20); // min_radius & max_radius of circles to detect
+    //
+    //// Show detected circles
+    //for(size_t i = 0; i < circles.size(); i++) {
+    //    // Circle data
+    //    cv::Vec3i c = circles[i];
+    //    cv::Point center(c[0], c[1]);
+    //    unsigned int radius = c[2];
+//
+    //    // Show circle center
+    //    cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+    //    // Show circle outline
+    //    cv::circle(frame, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+    //}
 
-        // Show circle center
-        cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // Show circle outline
-        cv::circle(frame, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+    // Compute edge map of the frame by canny edge detection
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::findContours(mask, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+    for (size_t i = 0; i < contours.size(); i++) {
+        double area = cv::contourArea(contours[i]);
+        if (area > 10) { 
+            //cv::Rect bounding_rect = cv::boundingRect(contours[i]);
+            //cv::rectangle(frame, bounding_rect, cv::Scalar(0, 255, 0), 2);
+
+            // Fit an ellipse and check the ratio of the axes
+            if (contours[i].size() >= 5) { 
+                cv::RotatedRect ellipse = cv::fitEllipse(contours[i]);
+                float aspect_ratio = (float)ellipse.size.width / (float)ellipse.size.height;
+                if (aspect_ratio > 0.9 && aspect_ratio < 1.1) { 
+                    cv::ellipse(frame, ellipse, cv::Scalar(0, 255, 0), 2);
+                }
+            }
+
+            cv::Point2f center;
+            float radius;
+            cv::minEnclosingCircle(contours[i], center, radius);
+            double circle_area = CV_PI * std::pow(radius, 2);
+            if (std::abs(circle_area - area) / area < 0.2) { // Allowable area difference
+                cv::circle(frame, center, radius, cv::Scalar(255, 0, 0), 2);
+            }
+        }
     }
+
 
     // Display our result
 	cv::imshow(params.window_name, frame);
@@ -393,9 +424,9 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     cv::cvtColor(frame_masked, frame_hsv, cv::COLOR_BGR2HSV);
 
     // HSV parameters
-    int iLowH = 20, iHighH = 95, maxH = 179;
-    int iLowS = 15, iHighS = 100, maxS = 255;
-    int iLowV = 160, iHighV = 255, maxV = 255;
+    int iLowH = 20, iHighH = 179, maxH = 179;
+    int iLowS = 15, iHighS = 160, maxS = 255;
+    int iLowV = 20, iHighV = 180, maxV = 255;
 
     // Bilateral filter parameters
     int max_th = 300;
@@ -422,7 +453,7 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
     cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
     
-    cv::imshow("Frame", frame_hsv);
+    //cv::imshow("Frame", frame_hsv);
 
     /* Mouse callback */
     //cv::imshow("HSV", frame_hsv);
