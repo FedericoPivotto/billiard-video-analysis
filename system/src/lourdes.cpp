@@ -63,7 +63,7 @@ void lrds::preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_vide
 }
 
 /* Suppress circles too close to billiard holes */
-void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& frame){
+void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted){
     // The ratio between billiard hole and a short border the table 
     const double ratio_hole_border = 0.08;
     std::vector<cv::Vec3f> circles_filtered;
@@ -84,7 +84,6 @@ void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::v
             // Checking circle closeness to corner holes
             bool is_close = false;
             for(size_t j = 0; j < corners.size(); j++){
-                cv::circle(frame, corners[j], ray, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
                 if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray){
                     is_close = true;
                 }
@@ -92,7 +91,6 @@ void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::v
 
             // Check holes in the long borders
             for(size_t j = 0; j < 2; j++){
-                cv::circle(frame, mid_holes[j], ray, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
                 if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray){
                     is_close = true;
                 }
@@ -106,21 +104,12 @@ void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::v
 
     } else {
         // Compute short borders lengths 
-        const int border_length_one = cv::norm(corners[0] - corners[1]);
-        const int border_length_two = cv::norm(corners[2] - corners[3]);
-        const int ray_one = border_length_one * ratio_hole_border;
-        const int ray_two = border_length_two * ratio_hole_border;
+        const int border_length_one = cv::norm(corners[0] - corners[1]), border_length_two = cv::norm(corners[2] - corners[3]);
+        const int ray_one = border_length_one * ratio_hole_border, ray_two = border_length_two * ratio_hole_border;
 
         // Check holes in the long borders
         const double border_length_ratio = static_cast<double>(border_length_one) / border_length_two;
-        double interpolation_weight = 0.0;
-        if(border_length_ratio >= 0.70){
-            interpolation_weight = 0.4; 
-        } else if(border_length_ratio >= 0.55){
-            interpolation_weight = 0.38; 
-        } else {
-            interpolation_weight = 0.3;
-        }
+        double interpolation_weight = (border_length_ratio >= 0.70) ? 0.40 : (border_length_ratio >= 0.55) ? 0.38 : 0.3;
 
         std::vector<cv::Point2f> mid_holes = {corners[1] + interpolation_weight * (corners[2] - corners[1]), corners[0] + interpolation_weight * (corners[3] - corners[0])};
 
@@ -130,12 +119,10 @@ void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::v
             bool is_close = false;
             for(size_t j = 0; j < corners.size(); j++){
                 if(j <= 1){
-                    cv::circle(frame, corners[j], ray_one, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
                     if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_one){
                         is_close = true;
                     }
                 } else {
-                    cv::circle(frame, corners[j], ray_two, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
                     if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_two){
                         is_close = true;
                     }
@@ -145,12 +132,10 @@ void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::v
             // Check holes in the long borders
             for(size_t j = 0; j < 2; j++){
                 if(j <= 1){
-                    cv::circle(frame, mid_holes[j], ray_one, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
                     if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_one){
                         is_close = true;
                     }
                 } else {
-                    cv::circle(frame, mid_holes[j], ray_two, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
                     if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_two){
                         is_close = true;
                     }
@@ -192,7 +177,7 @@ static void hsv_hough_callback(int pos, void* userdata) {
 		100, 9, // canny edge detector parameters and circles center detection 
 		3, 20); // min_radius & max_radius of circles to detect
     
-    lrds::suppress_billiard_holes(circles, params.corners, params.is_distorted, frame);
+    lrds::suppress_billiard_holes(circles, params.corners, params.is_distorted);
     
     // Show detected circles
     for(size_t i = 0; i < circles.size(); i++) {

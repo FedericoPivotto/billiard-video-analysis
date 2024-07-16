@@ -28,7 +28,7 @@ namespace lrds {
 
     void points_float_to_point(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& int_points);
 
-    void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& frame);
+    void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted);
 
     void preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame);
 }
