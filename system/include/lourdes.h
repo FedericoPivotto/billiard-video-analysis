@@ -18,7 +18,7 @@ namespace lrds {
 //
     //void lrds_template_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame);
 
-    void lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame);
+    void lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame, const bool is_distorted);
     
     //void frame_feature_extraction(cv::Mat frame, const std::vector<cv::Point2f>& corners, std::vector<cv::KeyPoint>& table_keypoints, cv::Mat& table_descriptors);
 //
@@ -28,7 +28,7 @@ namespace lrds {
 
     void points_float_to_point(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& int_points);
 
-    void lowpass_filtering(cv::Mat& channel, double sigma);
+    void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& frame);
 
     void preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame);
 }

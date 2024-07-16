@@ -79,6 +79,11 @@ int main(int argc, char** argv) {
             }
 
             // TODO: object detection (Federico)
+            // Distortion check (DUMMY)
+            bool is_distorted = false;
+            if(i > 0){
+                is_distorted = true;
+            }
 
             // Segmentation (Leonardo)
             // Get video dataset directory
@@ -87,7 +92,7 @@ int main(int argc, char** argv) {
             fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
 
             ed::sort_corners(first_corners);
-            lrds::lrds_object_detection(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv);
+            lrds::lrds_object_detection(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, is_distorted);
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
             //bool test_flag = true;

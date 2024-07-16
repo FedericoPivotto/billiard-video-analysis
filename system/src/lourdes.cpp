@@ -6,8 +6,7 @@
 #include <opencv2/imgproc.hpp>
 // filesystem_utils: fsu::create_bboxes_frame_file()
 #include <filesystem_utils.h>
-// SIFT
-#include <opencv2/features2d.hpp>
+
 
 typedef struct {
 	// Window name
@@ -33,6 +32,12 @@ typedef struct {
     int maxH;
     int maxS;
     int maxV;
+
+    // Corners
+    std::vector<cv::Point2f> corners;
+
+    // Distortion
+    bool is_distorted;
 } ParameterHoughHSV;
 
 
@@ -43,23 +48,123 @@ void lrds::points_float_to_point(const std::vector<cv::Point2f> float_points, st
         points.push_back(cv::Point(cvRound(point.x), cvRound(point.y)));
 }
 
-/* Low-pass filtering */
-void lrds::lowpass_filtering(cv::Mat& channel, double sigma){
-
-}
-
 /* Preprocessing of frame in bgr */
 void lrds::preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame){
-    // Apply median to slightly remove noise
-    cv::medianBlur(frame, preprocessed_video_frame, 3);
-    
-    // Frame sharpening 
-    cv::Mat gaussian_frame;
-    cv::GaussianBlur(preprocessed_video_frame, gaussian_frame, cv::Size(3,3), 1.0);
-    cv::addWeighted(preprocessed_video_frame, 1.5, gaussian_frame, -0.5, 0, preprocessed_video_frame);
+    //// Apply median to slightly remove noise
+    //cv::medianBlur(frame, preprocessed_video_frame, 3);
+    //
+    //// Frame sharpening 
+    //cv::Mat gaussian_frame;
+    //cv::GaussianBlur(preprocessed_video_frame, gaussian_frame, cv::Size(3,3), 1.0);
+    //cv::addWeighted(preprocessed_video_frame, 1.5, gaussian_frame, -0.5, 0, preprocessed_video_frame);
     
     // Keep color information 
-    cv::bilateralFilter(preprocessed_video_frame.clone(), preprocessed_video_frame, 9, 75.0, 50.0);
+    cv::bilateralFilter(frame.clone(), preprocessed_video_frame, 9, 75.0, 50.0);
+}
+
+/* Suppress circles too close to billiard holes */
+void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& frame){
+    // The ratio between billiard hole and a short border the table 
+    const double ratio_hole_border = 0.08;
+    std::vector<cv::Vec3f> circles_filtered;
+
+    // Check if billiard table is distorted
+    if(!is_distorted){
+        // Compute short border length 
+        const int border_length = cv::norm(corners[0] - corners[3]);
+        const int ray = border_length * ratio_hole_border;
+
+        // Compute holes positions along long borders
+        const float cx_one = (corners[0].x + corners[1].x) / 2, cx_two = (corners[2].x + corners[3].x) / 2;
+        const float cy_one = (corners[0].y + corners[1].y) / 2, cy_two = (corners[2].y + corners[3].y) / 2;
+        std::vector<cv::Point2f> mid_holes = {cv::Point2f(cx_one, cy_one), cv::Point2f(cx_two, cy_two)};
+        
+        // Check if hough circle is not too close to a billiard hole
+        for(size_t i = 0; i < circles.size(); i++){
+            // Checking circle closeness to corner holes
+            bool is_close = false;
+            for(size_t j = 0; j < corners.size(); j++){
+                cv::circle(frame, corners[j], ray, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+                if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray){
+                    is_close = true;
+                }
+            }
+
+            // Check holes in the long borders
+            for(size_t j = 0; j < 2; j++){
+                cv::circle(frame, mid_holes[j], ray, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+                if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray){
+                    is_close = true;
+                }
+            }
+
+            // Check if circle not too close to a billiard hole
+            if(!is_close){
+                circles_filtered.push_back(circles[i]);
+            }
+        }
+
+    } else {
+        // Compute short borders lengths 
+        const int border_length_one = cv::norm(corners[0] - corners[1]);
+        const int border_length_two = cv::norm(corners[2] - corners[3]);
+        const int ray_one = border_length_one * ratio_hole_border;
+        const int ray_two = border_length_two * ratio_hole_border;
+
+        // Check holes in the long borders
+        const double border_length_ratio = static_cast<double>(border_length_one) / border_length_two;
+        double interpolation_weight = 0.0;
+        if(border_length_ratio >= 0.70){
+            interpolation_weight = 0.4; 
+        } else if(border_length_ratio >= 0.55){
+            interpolation_weight = 0.38; 
+        } else {
+            interpolation_weight = 0.3;
+        }
+
+        std::vector<cv::Point2f> mid_holes = {corners[1] + interpolation_weight * (corners[2] - corners[1]), corners[0] + interpolation_weight * (corners[3] - corners[0])};
+
+        // Check if hough circle is not too close to a billiard hole
+        for(size_t i = 0; i < circles.size(); i++){
+            // Checking circle closeness to holes
+            bool is_close = false;
+            for(size_t j = 0; j < corners.size(); j++){
+                if(j <= 1){
+                    cv::circle(frame, corners[j], ray_one, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+                    if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_one){
+                        is_close = true;
+                    }
+                } else {
+                    cv::circle(frame, corners[j], ray_two, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+                    if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_two){
+                        is_close = true;
+                    }
+                }
+            }
+
+            // Check holes in the long borders
+            for(size_t j = 0; j < 2; j++){
+                if(j <= 1){
+                    cv::circle(frame, mid_holes[j], ray_one, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+                    if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_one){
+                        is_close = true;
+                    }
+                } else {
+                    cv::circle(frame, mid_holes[j], ray_two, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+                    if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= ray_two){
+                        is_close = true;
+                    }
+                }
+            }
+
+            // Check if circle not too close to a billiard hole
+            if(!is_close){
+                circles_filtered.push_back(circles[i]);
+            }
+        }
+    }
+
+    circles = circles_filtered;
 }
 
 /* Trackbars for hough circles */
@@ -87,6 +192,8 @@ static void hsv_hough_callback(int pos, void* userdata) {
 		100, 9, // canny edge detector parameters and circles center detection 
 		3, 20); // min_radius & max_radius of circles to detect
     
+    lrds::suppress_billiard_holes(circles, params.corners, params.is_distorted, frame);
+    
     // Show detected circles
     for(size_t i = 0; i < circles.size(); i++) {
         // Circle data
@@ -105,7 +212,7 @@ static void hsv_hough_callback(int pos, void* userdata) {
     cv::imshow("Mask of change", mask);
 }
 
-void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
+void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame, const bool is_distorted) {
     // Create frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
@@ -133,42 +240,37 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
 
     // Convert to HSV color space
     cv::Mat frame_hsv;
-    cv::cvtColor(frame_masked, frame_hsv, cv::COLOR_BGR2HSV);
-
-    // Filter in HSV space
-    
+    cv::cvtColor(preprocessed_video_frame, frame_hsv, cv::COLOR_BGR2HSV);
 
     // HSV parameters
-    //int iLowH = 60, iHighH = 120, maxH = 179;
-    //int iLowS = 150, iHighS = 255, maxS = 255;
-    //int iLowV = 115, iHighV = 255, maxV = 255;
-//
-//    //// Bilateral filter parameters
-//    //int max_th = 300;
-//    //int color_std = 100;
-//    //int space_std = 75;
-//
-//    //// HSV window trackbars
-//    //// ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
-//    //ParameterHoughHSV hsvp = {"Control HSV", &frame_masked, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, color_std, space_std, max_th, maxH, maxS, maxV};
-//    //
-//    //// Control window
-//    //cv::namedWindow(hsvp.window_name);
-//
-    //// Create trackbar for Hue (0 - 179)
-    //cv::createTrackbar("LowH", hsvp.window_name, &hsvp.iLowH, hsvp.maxH, hsv_hough_callback, &hsvp);
-    //cv::createTrackbar("HighH", hsvp.window_name, &hsvp.iHighH, hsvp.maxH, hsv_hough_callback, &hsvp);
-    //// Create trackbar for Saturation (0 - 255)
-    //cv::createTrackbar("LowS", hsvp.window_name, &hsvp.iLowS, hsvp.maxS, hsv_hough_callback, &hsvp);
-    //cv::createTrackbar("HighS", hsvp.window_name, &hsvp.iHighS, hsvp.maxS, hsv_hough_callback, &hsvp);
-    //// Create trackbar for Value (0 - 255)
-    //cv::createTrackbar("LowV", hsvp.window_name, &hsvp.iLowV, hsvp.maxV, hsv_hough_callback, &hsvp);
-    //cv::createTrackbar("HighV", hsvp.window_name, &hsvp.iHighV, hsvp.maxV, hsv_hough_callback, &hsvp);
-    //// Create trackbar for color and space std
-    //cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
-    //cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
+    int iLowH = 60, iHighH = 120, maxH = 179;
+    int iLowS = 150, iHighS = 255, maxS = 255;
+    int iLowV = 115, iHighV = 255, maxV = 255;
+
+    // Bilateral filter parameters
+    int max_th = 300;
+    int color_std = 100;
+    int space_std = 75;
+
+    // HSV window trackbars
+    // ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
+    ParameterHoughHSV hsvp = {"Control HSV", &frame_hsv, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, color_std, space_std, max_th, maxH, maxS, maxV, corners, is_distorted};
     
-    cv::imshow("Frame", preprocessed_video_frame);
+    // Control window
+    cv::namedWindow(hsvp.window_name);
+
+    // Create trackbar for Hue (0 - 179)
+    cv::createTrackbar("LowH", hsvp.window_name, &hsvp.iLowH, hsvp.maxH, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("HighH", hsvp.window_name, &hsvp.iHighH, hsvp.maxH, hsv_hough_callback, &hsvp);
+    // Create trackbar for Saturation (0 - 255)
+    cv::createTrackbar("LowS", hsvp.window_name, &hsvp.iLowS, hsvp.maxS, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("HighS", hsvp.window_name, &hsvp.iHighS, hsvp.maxS, hsv_hough_callback, &hsvp);
+    // Create trackbar for Value (0 - 255)
+    cv::createTrackbar("LowV", hsvp.window_name, &hsvp.iLowV, hsvp.maxV, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("HighV", hsvp.window_name, &hsvp.iHighV, hsvp.maxV, hsv_hough_callback, &hsvp);
+    // Create trackbar for color and space std
+    cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
+    cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
 
     // Wait key
     cv::waitKey(0);
