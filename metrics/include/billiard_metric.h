@@ -23,7 +23,7 @@ namespace bm {
             State state;
 
             // Constructor
-            BallMatch(od::Ball true_ball, od::Ball predicted_ball);
+            BallMatch(const od::Ball true_ball, const od::Ball predicted_ball);
 
             // Operator overload declarations
             friend std::ostream& operator<<(std::ostream& os, const bm::BallMatch& ball_match);
@@ -39,10 +39,10 @@ namespace bm {
     std::ostream& operator<<(std::ostream& os, const BallMatch& ball_match);
 
     // Auxiliary function declarations
-    void matches_search(std::vector<od::Ball>& true_balls, std::vector<od::Ball>& predicted_balls);
+    void matches_search(const std::vector<od::Ball>& true_balls, const std::vector<od::Ball>& predicted_balls, std::vector<bm::BallMatch>& best_ball_matches);
 
     // Metric function declarations
-    void localization_metric();
+    void localization_metric(std::vector<bm::BallMatch>& ball_matches);
     void segmentation_metric();
 }
 

@@ -29,6 +29,17 @@ std::ostream& od::operator<<(std::ostream& os, const Ball& ball) {
     return os << ball.x << " " << ball.y << " " << ball.width << " " << ball.height << " " << ball.ball_class;
 }
 
+/* Ball operator == overload */
+bool od::operator==(const Ball& ball1, const Ball& ball2) {
+    // Ball comparison
+    return  ball1.x == ball2.x && 
+            ball1.y == ball2.y && 
+            ball1.width == ball2.width &&
+            ball1.height == ball2.height && 
+            ball1.ball_class == ball2.ball_class &&
+            ball1.confidence == ball2.confidence;
+}
+
 /* Ball class detection */
 void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // TODO: remove background

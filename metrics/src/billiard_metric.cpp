@@ -6,7 +6,7 @@
 #include <iostream>
 
 /* Ball match class */
-bm::BallMatch::BallMatch(od::Ball true_ball, od::Ball predicted_ball) : true_ball(true_ball), predicted_ball(predicted_ball) {
+bm::BallMatch::BallMatch(const od::Ball true_ball, const od::Ball predicted_ball) : true_ball(true_ball), predicted_ball(predicted_ball) {
     // Set values
     set_distance();
     set_iou();
@@ -18,38 +18,38 @@ bm::BallMatch::BallMatch(od::Ball true_ball, od::Ball predicted_ball) : true_bal
 // NOTE: define the distance function between two bounding boxes rows (x, y, width, height, ball class)
 void bm::BallMatch::set_distance() {
     // Distance value
-    double distance = 0;
+    distance = std::numeric_limits<double>::infinity();
     
     // Check ball class
     if(true_ball.ball_class != predicted_ball.ball_class)
         return;
-
+    
     // Compute ball distance contribute
     double geometric_distance = std::sqrt(std::pow(true_ball.center().first - predicted_ball.center().first, 2) + std::pow(true_ball.center().second - predicted_ball.center().second, 2));
 
     // Compute bounding box difference contribute
-    int width_diff = std::abs(static_cast<int>(true_ball.width - predicted_ball.width));
-    int height_diff = std::abs(static_cast<int>(true_ball.height - predicted_ball.height));
+    int width_diff = true_ball.width - predicted_ball.width;
+    int height_diff = true_ball.height - predicted_ball.height;
 
     // Compute distance as sum of all contributes
-    distance = geometric_distance + width_diff + height_diff;
+    distance = geometric_distance + std::abs(width_diff) + std::abs(height_diff);
 }
 
 /* Set IoU of true and predicted bounding boxes */
 void bm::BallMatch::set_iou() {
     // True ball top-left corner
-    int true_tl_x = true_ball.center().first - (true_ball.width / 2);
-    int true_tl_y = true_ball.center().second - (true_ball.height / 2);
+    int true_tl_x = true_ball.center().first - std::round(true_ball.width / 2.0);
+    int true_tl_y = true_ball.center().second - (true_ball.height / 2.0);
     // True ball bottom-right corner
-    int true_br_x = true_ball.center().first + (true_ball.width / 2);
-    int true_br_y = true_ball.center().second + (true_ball.height / 2);
+    int true_br_x = true_ball.center().first + (true_ball.width / 2.0);
+    int true_br_y = true_ball.center().second + (true_ball.height / 2.0);
 
     // Predicted ball top-left corner
-    int predicted_tl_x = predicted_ball.center().first - (predicted_ball.width / 2);
-    int predicted_tl_y = predicted_ball.center().second - (predicted_ball.height / 2);
+    int predicted_tl_x = predicted_ball.center().first - (predicted_ball.width / 2.0);
+    int predicted_tl_y = predicted_ball.center().second - (predicted_ball.height / 2.0);
     // Predicted ball bottom-right corner
-    int predicted_br_x = predicted_ball.center().first + (predicted_ball.width / 2);
-    int predicted_br_y = predicted_ball.center().second + (predicted_ball.height / 2);
+    int predicted_br_x = predicted_ball.center().first + (predicted_ball.width / 2.0);
+    int predicted_br_y = predicted_ball.center().second + (predicted_ball.height / 2.0);
 
     // Intersection top-left corner
     int intersection_tl_x = std::max(true_tl_x, predicted_tl_x);
@@ -84,32 +84,83 @@ void bm::BallMatch::set_state() {
 /* Ball match operator << overload */
 std::ostream& bm::operator<<(std::ostream& os, const bm::BallMatch& ball_match) {
     // Ball match information string
-    return os << "(" << ball_match.true_ball << ", " << ball_match.predicted_ball << "), " << ball_match.state << ", IoU(" << ball_match.iou << "), Distance(" << ball_match.distance << ")";
+    return os << "(" << ball_match.true_ball << " | " << ball_match.predicted_ball << "), " << ball_match.state << ", IoU(" << ball_match.iou << "), Distance(" << ball_match.distance << ")";
 }
 
 /* Ball matches search */
-void bm::matches_search(std::vector<od::Ball>& true_balls, std::vector<od::Ball>& predicted_balls) {
-    // For each true bounding box:
-    // 1. Associate true bounding box with the corresponding predicted bounding box according to the distance function
-    // 2. Compute corresponding IoU
-    //    * IoU = intersected area / union area
-    // 3. Determine if TP (above IoU threshold 0.5) or TN (below IoU threshold 0.5) with IoU threshold 0.5
-    
-    // For each true bounding box not matched, assign IoU=0 (below IoU threshold 0.5) since FP (does not exist a corresponding predicted bounding box)
+void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vector<od::Ball>& predicted_balls, std::vector<bm::BallMatch>& best_ball_matches) {
+    // For each true bounding box associate predicted bounding box according to distance function
+    for(size_t i = 0; i < true_balls.size(); ++i) {
+        // Possible true ball matches
+        std::vector<bm::BallMatch> ball_matches;
+        for(size_t j = 0; j < predicted_balls.size(); ++j) {
+            // Create and store ball match
+            bm::BallMatch ball_match(true_balls[i], predicted_balls[j]);
+            ball_matches.push_back(ball_match);
+        }
 
-    // For each predicted bounding box not matched, assign IoU=0 since FP (does not exist a corresponding true bounding box)
+        // Sort ball matches in ascending order of the distance value
+        std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.distance < bm2.distance; });
 
-    // NOTE: for each predicted bounding box store label it if TP, TN, FP, FN
-    
-    // Sort the matches found in descending order of the confidence value
+        // Select the match with minimum distance if predicted ball is not in a best match
+        for(bm::BallMatch ball_match : ball_matches) {
+            // Check if predicted ball is in a best match
+            bool is_predicted_ball_present = false;
+            for(bm::BallMatch best_ball_match : best_ball_matches) {
+                is_predicted_ball_present = ball_match.predicted_ball == best_ball_match.predicted_ball;
+                if(is_predicted_ball_present)
+                    break;
+            }
 
-    // Output: sorted matches
+            // Add ball if predicted ball is not in a best match
+            if(! is_predicted_ball_present) {
+                best_ball_matches.push_back(ball_match);
+                break;
+            }
+        }
+    }
+
+    /*// Collect true bounding box not matched, with IoU=0 (below IoU threshold 0.5) since FN (does not exist a corresponding predicted bounding box)
+    std::vector<od::Ball> true_balls_not_matched;
+    for(od::Ball true_ball : true_balls) {
+        bool is_true_ball_matched = false;
+        for(bm::BallMatch best_ball_match : best_ball_matches) {
+            is_true_ball_matched = true_ball == best_ball_match.true_ball;
+            if(is_true_ball_matched)
+                break;
+        }
+
+        if(! is_true_ball_matched)
+            true_balls_not_matched.push_back(true_ball);
+    }
+
+    // Collect predicted bounding box not matched, with IoU=0 since FP (does not exist a corresponding true bounding box)
+    std::vector<od::Ball> predicted_balls_not_matched;
+    for(od::Ball predicted_ball : predicted_balls) {
+        bool is_predicted_ball_matched = false;
+        for(bm::BallMatch best_ball_match : best_ball_matches) {
+            is_predicted_ball_matched = predicted_ball == best_ball_match.predicted_ball;
+            if(is_predicted_ball_matched)
+                break;
+        }
+
+        if(! is_predicted_ball_matched)
+            predicted_balls_not_matched.push_back(predicted_ball);
+    }
+
+    // Number of TP, FP, FN
+    unsigned int TP = 0, FP = 0, FN = 0;
+    for(bm::BallMatch best_ball_match : best_ball_matches)
+        best_ball_match.state == bm::TP ? ++TP : ++FP;
+    FP += predicted_balls_not_matched.size();
+    FN = true_balls_not_matched.size();*/
 }
 
 /* Localization metric */
-void bm::localization_metric() {
-    // Input: sorted matches
-    
+void bm::localization_metric(std::vector<bm::BallMatch>& ball_matches) {
+    // Sort ball matches in descending order of the confidence value
+    std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.predicted_ball.confidence > bm2.predicted_ball.confidence; });
+
     // Initialize to 0 cumulative TP and cumulative FP
 
     // For each bounding box matched in the sorted vector:

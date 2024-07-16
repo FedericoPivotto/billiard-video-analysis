@@ -47,13 +47,19 @@ int main(int argc, char** argv) {
     // Dummy print
     std::cout << std::endl;
 
-    // TODO: matches search
-    bm::matches_search(true_balls, predicted_balls);
+    // Best matches search
+    std::vector<bm::BallMatch> best_ball_matches;
+    bm::matches_search(true_balls, predicted_balls, best_ball_matches);
 
-    // TODO: localization metric
-    bm::localization_metric();
+    // Print best ball matches
+    std::cout << "Best ball matches: " << std::endl;
+    for(bm::BallMatch ball_match : best_ball_matches)
+        std::cout << ball_match << std::endl;
 
-    // TODO: segmentation metric
+    // TODO: Localization metric
+    bm::localization_metric(best_ball_matches);
+
+    // TODO: Segmentation metric
     bm::segmentation_metric();
 
     return 0;
