@@ -110,23 +110,32 @@ void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vect
 }
 
 /* Localization metric */
-void bm::localization_metric(std::vector<bm::BallMatch>& ball_matches) {
+void bm::localization_metric(int total_ground_truths, std::vector<bm::BallMatch>& ball_matches) {
     // Sort ball matches in descending order of the confidence value
     std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.predicted_ball.confidence > bm2.predicted_ball.confidence; });
 
-    // Initialize to 0 cumulative TP and cumulative FP
+    // Initialize cumulative TP and cumulative FP
+    int cumulative_tp = 0, cumulative_fp = 0;
 
-    // For each bounding box matched in the sorted vector:
-    // 1. Update cumulative TP and cumulative FP according to the current match
-    // 2. Compute and store cumulative precision and cumulative recall:
-    //    * Cumulative precision = cumulative TP / (cumulative TP + cumulative FP)
-    //    * Cumulative recall = cumulative TP / (cumulative TP + cumulative FN)
+    // Cumulative precision and recall vectors
+    std::vector<double> cumulative_precision, cumulative_recall;
+
+    // For each predicted bounding box in ball matches
+    for(bm::BallMatch ball_match : ball_matches) {
+        // Update cumulative TP and cumulative FP according to ball match
+        ball_match.state == bm::TP ? ++cumulative_tp : ++cumulative_fp;
+
+        // Compute and store cumulative precision and cumulative recall:
+        cumulative_precision.push_back(static_cast<double>(cumulative_tp) / (cumulative_tp + cumulative_fp));
+        cumulative_recall.push_back(static_cast<double>(cumulative_tp) / total_ground_truths);
+    }
 
     // Sort cumulative precision values
-
+    std::sort(cumulative_precision.begin(), cumulative_precision.end());
     // Sort cumulative recall values
+    std::sort(cumulative_recall.begin(), cumulative_recall.end());
 
-    // For each class:
+    // For each ball class
     // 1. Compute Average Precision (AP) according to PASCAL VOC 11 point interpolation
     //    * Create a vector of 11 double number (in order, each cell is associated to the recall values 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
     //    * Assign to each element of the vector the highest cumulative precision value between those with the a higher or equal value to the sorted cumulative recall values

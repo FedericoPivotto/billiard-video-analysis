@@ -47,6 +47,9 @@ int main(int argc, char** argv) {
     // Dummy print
     std::cout << std::endl;
 
+    // For each ball class
+    // TODO: to be continued
+
     // Best matches search
     std::vector<bm::BallMatch> best_ball_matches;
     bm::matches_search(true_balls, predicted_balls, best_ball_matches);
@@ -57,7 +60,7 @@ int main(int argc, char** argv) {
         std::cout << ball_match << std::endl;
 
     // TODO: Localization metric
-    bm::localization_metric(best_ball_matches);
+    bm::localization_metric(true_balls.size(), best_ball_matches);
 
     // TODO: Segmentation metric
     bm::segmentation_metric();
