@@ -37,38 +37,26 @@ void bm::BallMatch::set_distance() {
 
 /* Set IoU of true and predicted bounding boxes */
 void bm::BallMatch::set_iou() {
-    // True ball top-left corner
-    int true_tl_x = true_ball.center().first - std::round(true_ball.width / 2.0);
-    int true_tl_y = true_ball.center().second - (true_ball.height / 2.0);
-    // True ball bottom-right corner
-    int true_br_x = true_ball.center().first + (true_ball.width / 2.0);
-    int true_br_y = true_ball.center().second + (true_ball.height / 2.0);
+    // True ball top-left corner and bottom-right corner
+    std::pair<double, double> true_tl(true_ball.center().first - true_ball.width / 2.0, true_ball.center().second - true_ball.height / 2.0);
+    std::pair<double, double> true_br(true_ball.center().first + true_ball.width / 2.0, true_ball.center().second + true_ball.height / 2.0);
 
-    // Predicted ball top-left corner
-    int predicted_tl_x = predicted_ball.center().first - (predicted_ball.width / 2.0);
-    int predicted_tl_y = predicted_ball.center().second - (predicted_ball.height / 2.0);
-    // Predicted ball bottom-right corner
-    int predicted_br_x = predicted_ball.center().first + (predicted_ball.width / 2.0);
-    int predicted_br_y = predicted_ball.center().second + (predicted_ball.height / 2.0);
+    // Predicted ball top-left corner and bottom-right corner
+    std::pair<double, double> predicted_tl(predicted_ball.center().first - predicted_ball.width / 2.0, predicted_ball.center().second - predicted_ball.height / 2.0);
+    std::pair<double, double> predicted_br(predicted_ball.center().first + predicted_ball.width / 2.0, predicted_ball.center().second + predicted_ball.height / 2.0);
 
-    // Intersection top-left corner
-    int intersection_tl_x = std::max(true_tl_x, predicted_tl_x);
-    int intersection_tl_y = std::max(true_tl_y, predicted_tl_y);
-    // Intersection bottom-right corner
-    int intersection_br_x = std::min(true_br_x, predicted_br_x);
-    int intersection_br_y = std::min(true_br_y, predicted_br_y);
-
-    // Bounding boxes area
-    int true_area = true_ball.width * true_ball.height;
-    int predicted_area = predicted_ball.width * predicted_ball.height;
-
-    // Intersection width and height
-    unsigned int intersection_width = std::max(0, intersection_br_x - intersection_tl_x);
-    unsigned int intersection_height = std::max(0, intersection_br_y - intersection_tl_y);
+    // Intersection top-left corner and bottom-right corner
+    std::pair<double, double> intersection_tl(std::max(true_tl.first, predicted_tl.first), std::max(true_tl.second, predicted_tl.second));
+    std::pair<double, double> intersection_br(std::min(true_br.first, predicted_br.first), std::min(true_br.second, predicted_br.second));
 
     // Intersection area
+    double intersection_width = std::max(0.0, intersection_br.first - intersection_tl.first);
+    double intersection_height = std::max(0.0, intersection_br.second - intersection_tl.second);
     double intersection_area = intersection_width * intersection_height;
+    
     // Union area
+    double true_area = true_ball.width * true_ball.height;
+    double predicted_area = predicted_ball.width * predicted_ball.height;
     double union_area = true_area + predicted_area - intersection_area;
 
     // Compute IoU
