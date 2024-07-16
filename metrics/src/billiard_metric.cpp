@@ -43,9 +43,6 @@ void bm::matches_search(std::vector<od::Ball>& true_balls, std::vector<od::Ball>
             // Compute distance function
             balls_distances[i].push_back(bm::distance_function(true_balls[i], predicted_balls[j]));
         }
-
-        // Sort in ascending order
-        std::sort(balls_distances[i].begin(), balls_distances[i].end());
     }
 
     // For each true bounding box find minimum distance predicted ball
