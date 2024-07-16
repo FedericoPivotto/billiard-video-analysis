@@ -23,12 +23,12 @@ int main(int argc, char** argv) {
 
     // Print true balls
     // TODO: to be removed
-    // for(od::Ball ball : true_balls)
-    //    std::cout << "True ball: " << ball << std::endl;
+    for(od::Ball ball : true_balls)
+        std::cout << "True ball: " << ball << std::endl;
     std::cout << "Number of true balls: " << true_balls.size() << std::endl;
 
     // Dummy print
-    // std::cout << std::endl;
+    std::cout << std::endl;
 
     // Read predicted bounding boxes
     // NOTE: it will come from result directory
@@ -40,9 +40,12 @@ int main(int argc, char** argv) {
 
     // Print predicted balls
     // TODO: to be removed
-    // for(od::Ball ball : predicted_balls)
-    //    std::cout << "Predicted ball: " << ball << " " << ball.confidence << std::endl;
-    std::cout << "Number of predicted balls: " << predicted_balls.size() << std::endl << std::endl;
+    for(od::Ball ball : predicted_balls)
+        std::cout << "Predicted ball: " << ball << " " << ball.confidence << std::endl;
+    std::cout << "Number of predicted balls: " << predicted_balls.size() << std::endl;
+    
+    // Dummy print
+    std::cout << std::endl;
 
     // TODO: matches search
     bm::matches_search(true_balls, predicted_balls);
