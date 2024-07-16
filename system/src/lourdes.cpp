@@ -200,8 +200,8 @@ void lrds::lrds_template_object_detection(const std::vector<cv::Mat>& video_fram
             cv::Mat ball_scaled;
             cv::resize(ball_gray, ball_scaled, cv::Size(), scale, scale);
             
-            for(size_t i = 0; i < 2; i++){
-                if(i == 1){
+            for(size_t i = 0; i < 4; i++){
+                if(i >= 1){
                     cv::rotate(ball_scaled, ball_scaled, cv::ROTATE_90_COUNTERCLOCKWISE);
                 }
                 // Matching
@@ -216,7 +216,7 @@ void lrds::lrds_template_object_detection(const std::vector<cv::Mat>& video_fram
                 std::vector<cv::Rect> boxes;
                 std::vector<double> scores;
     
-                const double max_th = 0.8;
+                const double max_th = 0.82;
     
                 for(size_t i = 0; i < matching.rows; i++){
                     for(size_t j = 0; j < matching.cols; j++){
