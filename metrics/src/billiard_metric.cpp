@@ -119,41 +119,6 @@ void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vect
             }
         }
     }
-
-    /*// Collect true bounding box not matched, with IoU=0 (below IoU threshold 0.5) since FN (does not exist a corresponding predicted bounding box)
-    std::vector<od::Ball> true_balls_not_matched;
-    for(od::Ball true_ball : true_balls) {
-        bool is_true_ball_matched = false;
-        for(bm::BallMatch best_ball_match : best_ball_matches) {
-            is_true_ball_matched = true_ball == best_ball_match.true_ball;
-            if(is_true_ball_matched)
-                break;
-        }
-
-        if(! is_true_ball_matched)
-            true_balls_not_matched.push_back(true_ball);
-    }
-
-    // Collect predicted bounding box not matched, with IoU=0 since FP (does not exist a corresponding true bounding box)
-    std::vector<od::Ball> predicted_balls_not_matched;
-    for(od::Ball predicted_ball : predicted_balls) {
-        bool is_predicted_ball_matched = false;
-        for(bm::BallMatch best_ball_match : best_ball_matches) {
-            is_predicted_ball_matched = predicted_ball == best_ball_match.predicted_ball;
-            if(is_predicted_ball_matched)
-                break;
-        }
-
-        if(! is_predicted_ball_matched)
-            predicted_balls_not_matched.push_back(predicted_ball);
-    }
-
-    // Number of TP, FP, FN
-    unsigned int TP = 0, FP = 0, FN = 0;
-    for(bm::BallMatch best_ball_match : best_ball_matches)
-        best_ball_match.state == bm::TP ? ++TP : ++FP;
-    FP += predicted_balls_not_matched.size();
-    FN = true_balls_not_matched.size();*/
 }
 
 /* Localization metric */
