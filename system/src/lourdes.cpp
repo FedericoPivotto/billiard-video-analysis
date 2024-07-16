@@ -152,6 +152,49 @@ void lrds::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::v
     circles = circles_filtered;
 }
 
+/* Suppress too much close circles */
+void lrds::suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big){
+    const float min_distance = 15.0;
+    std::vector<cv::Vec3f> circles_filtered;
+    std::vector<bool> visited(circles.size(), false);
+
+    // Suppress close circles and keep big circles
+    for(size_t i = 0; i < circles.size(); i++){
+        int count = 1;
+        float sum_radius = circles[i][2];
+        cv::Point2f center_i(circles[i][0], circles[i][1]);
+
+        if(!visited[i] && circles[i][2] <= 14.0){
+            visited[i] = true;
+
+            for(size_t j = i + 1; j < circles.size(); j++){
+                if(!visited[j]){    
+                    // Compute distance between centers of circle i and circle j
+                    cv::Point2f center_j(circles[j][0], circles[j][1]);
+                    float distance = cv::norm(center_i - center_j);
+
+                    if(distance <= min_distance){
+                        count++;
+                        sum_radius += circles[j][2];
+                        visited[j] = true;
+                    }
+                }
+            }
+
+            // Compute circle to represent the ball
+            float avg_radius = sum_radius / count;
+            cv::Vec3f circle_i(center_i.x, center_i.y, avg_radius);
+            circles_filtered.push_back(circle_i);
+
+        } else if(!visited[i] && circles[i][2] >= 15.0){
+            visited[i] = true;
+            circles_big.push_back(circles[i]);
+        }
+    }
+
+    circles = circles_filtered;
+}
+
 /* Trackbars for hough circles */
 static void hsv_hough_callback(int pos, void* userdata) {
     // Get Canny parameters from userdata
@@ -171,13 +214,15 @@ static void hsv_hough_callback(int pos, void* userdata) {
     //cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
     //cv::morphologyEx(mask, mask, cv::MORPH_OPEN, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
 
-    std::vector<cv::Vec3f> circles;
+    std::vector<cv::Vec3f> circles, circles_big;
 	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
 		6, // distance between circles
 		100, 9, // canny edge detector parameters and circles center detection 
 		3, 20); // min_radius & max_radius of circles to detect
     
+    // Suppress circles
     lrds::suppress_billiard_holes(circles, params.corners, params.is_distorted);
+    lrds::suppress_close_circles(circles, circles_big);
     
     // Show detected circles
     for(size_t i = 0; i < circles.size(); i++) {

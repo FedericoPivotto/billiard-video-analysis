@@ -30,6 +30,8 @@ namespace lrds {
 
     void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted);
 
+    void suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big);
+    
     void preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame);
 }
 
