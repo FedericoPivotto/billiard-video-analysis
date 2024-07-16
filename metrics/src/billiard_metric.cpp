@@ -4,6 +4,10 @@
 
 // iostream: std::cout
 #include <iostream>
+// numeric: std::accumulate
+#include <numeric>
+// algorithm: std::max_element
+#include <algorithm>
 
 /* Ball match class */
 bm::BallMatch::BallMatch(const od::Ball true_ball, const od::Ball predicted_ball) : true_ball(true_ball), predicted_ball(predicted_ball) {
@@ -109,8 +113,8 @@ void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vect
     }
 }
 
-/* Localization metric */
-void bm::localization_metric(int total_ground_truths, std::vector<bm::BallMatch>& ball_matches) {
+/* Compute class mean Average Precision */
+double bm::average_precision(int total_ground_truths, std::vector<bm::BallMatch>& ball_matches) {
     // Sort ball matches in descending order of the confidence value
     std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.predicted_ball.confidence > bm2.predicted_ball.confidence; });
 
@@ -123,6 +127,7 @@ void bm::localization_metric(int total_ground_truths, std::vector<bm::BallMatch>
     // For each predicted bounding box in ball matches
     for(bm::BallMatch ball_match : ball_matches) {
         // Update cumulative TP and cumulative FP according to ball match
+        // TODO: add predicted balls non matched to FP?
         ball_match.state == bm::TP ? ++cumulative_tp : ++cumulative_fp;
 
         // Compute and store cumulative precision and cumulative recall:
@@ -130,22 +135,52 @@ void bm::localization_metric(int total_ground_truths, std::vector<bm::BallMatch>
         cumulative_recall.push_back(static_cast<double>(cumulative_tp) / total_ground_truths);
     }
 
-    // Sort cumulative precision values
-    std::sort(cumulative_precision.begin(), cumulative_precision.end());
-    // Sort cumulative recall values
-    std::sort(cumulative_recall.begin(), cumulative_recall.end());
+    // Vector of precision and recall values
+    std::vector<std::pair<double, double>> recall_sorted_precision;
+    for(size_t i = 0; i < cumulative_recall.size(); ++i)
+        recall_sorted_precision.push_back(std::pair(cumulative_recall[i], cumulative_precision[i]));
+    // Sort recall sorted_precision according to recall values
+    std::sort(recall_sorted_precision.begin(), recall_sorted_precision.end(), [](std::pair<double, double> &p1, std::pair<double, double> &p2) { return p1.first < p2.first; });
 
-    // For each ball class
-    // 1. Compute Average Precision (AP) according to PASCAL VOC 11 point interpolation
-    //    * Create a vector of 11 double number (in order, each cell is associated to the recall values 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
-    //    * Assign to each element of the vector the highest cumulative precision value between those with the a higher or equal value to the sorted cumulative recall values
-    //    * Compute interpolated_precision as the sum of the values of this resulting vector (11 values in total)
-    //    * AP = 1 / (11 * interpolated_precision)
+    // Print recall sorted_precision
+    // TODO: to remove
+    /*for(std::pair<double, double> p : recall_sorted_precision)
+        std::cout << p.first << " " << p.second << std::endl;*/
 
+    // Vector of 11 double number associated to recalla values
+    std::vector<double> interpolated_precisions(11, 0.0);
+    for(size_t i = 0; i < interpolated_precisions.size(); ++i) {
+        // Recall value to consider
+        double recall = i / 10.0;
+
+        // Assign the highest cumulative precision next to recall
+        // QUESTION: PASCAL VOC 11 wants < or <= 
+        size_t j = 0; for(; j < cumulative_recall.size() && cumulative_recall[j] < recall; ++j);
+        interpolated_precisions[i] = j < cumulative_recall.size() ? *std::max_element(cumulative_precision.begin() + j, cumulative_precision.end()) : 0;
+    }
+
+    // Print interpolated precisions
+    // TODO: to remove
+    /*std::cout << std::endl;
+    double rec = 0.0;
+    for(double inter : interpolated_precisions) {
+        std::cout << rec << " " << inter << std::endl;
+        rec += 0.1;
+    }*/
+
+    // Compute interpolated precision
+    double interpolated_precision = std::accumulate(interpolated_precisions.begin(), interpolated_precisions.end(), 0.0);
+
+    // Compute Average Precision (AP)
+    double ap = interpolated_precision / 11;
+
+    return ap;
+}
+
+/* Localization metric */
+double bm::localization_metric(std::vector<double>& aps, int num_classes) {
     // Compute the mean Average Precision (mAP):
-    //    * mAP = (sum of the computed AP's) / number_of_classes
-
-    // Output: computed mAP
+    return std::accumulate(aps.begin(), aps.end(), 0.0) / num_classes;
 }
 
 /* Segmentation metric */

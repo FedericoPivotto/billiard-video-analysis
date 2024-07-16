@@ -23,12 +23,12 @@ int main(int argc, char** argv) {
 
     // Print true balls
     // TODO: to be removed
-    for(od::Ball ball : true_balls)
-        std::cout << "True ball: " << ball << std::endl;
-    std::cout << "Number of true balls: " << true_balls.size() << std::endl;
+    // for(od::Ball ball : true_balls)
+    //     std::cout << "True ball: " << ball << std::endl;
+    // std::cout << "Number of true balls: " << true_balls.size() << std::endl;
 
     // Dummy print
-    std::cout << std::endl;
+    // std::cout << std::endl;
 
     // Read predicted bounding boxes
     // NOTE: it will come from result directory
@@ -40,27 +40,56 @@ int main(int argc, char** argv) {
 
     // Print predicted balls
     // TODO: to be removed
-    for(od::Ball ball : predicted_balls)
-        std::cout << "Predicted ball: " << ball << " " << ball.confidence << std::endl;
-    std::cout << "Number of predicted balls: " << predicted_balls.size() << std::endl;
+    // for(od::Ball ball : predicted_balls)
+    //     std::cout << "Predicted ball: " << ball << " " << ball.confidence << std::endl;
+    // std::cout << "Number of predicted balls: " << predicted_balls.size() << std::endl;
     
     // Dummy print
-    std::cout << std::endl;
+    // std::cout << std::endl;
+
+    // Average precision vector
+    std::vector<double> aps;
 
     // For each ball class
-    // TODO: to be continued
+    int num_classes = 4;
+    for(size_t i = 1; i <= num_classes; ++i) {
+        // Extract true balls of the current class
+        std::vector<od::Ball> true_balls_class;
+        for(od::Ball ball : true_balls)
+            if(ball.ball_class == i)
+                true_balls_class.push_back(ball);
 
-    // Best matches search
-    std::vector<bm::BallMatch> best_ball_matches;
-    bm::matches_search(true_balls, predicted_balls, best_ball_matches);
+        // Extract predicted balls of the current class
+        std::vector<od::Ball> predicted_balls_class;
+        for(od::Ball ball : predicted_balls)
+            if(ball.ball_class == i)
+                predicted_balls_class.push_back(ball);
 
-    // Print best ball matches
-    std::cout << "Best ball matches: " << std::endl;
-    for(bm::BallMatch ball_match : best_ball_matches)
-        std::cout << ball_match << std::endl;
+        // Best matches search
+        std::vector<bm::BallMatch> best_ball_matches;
+        bm::matches_search(true_balls_class, predicted_balls_class, best_ball_matches);
+        
+        // Print best ball matches
+        // TODO: to remove
+        /*std::cout << "Best ball matches: " << std::endl;
+        for(bm::BallMatch ball_match : best_ball_matches)
+            std::cout << ball_match << std::endl;
+        std::cout << "Average_precision:" << std::endl;*/
+
+        // Class average precision
+        aps.push_back(bm::average_precision(true_balls_class.size(), best_ball_matches));
+
+        // Dummy print
+        // TODO: to remove
+        /*std::cout << std::endl;*/
+    }
 
     // TODO: Localization metric
-    bm::localization_metric(true_balls.size(), best_ball_matches);
+    // BUG: to fix calculation
+    double map = bm::localization_metric(aps, num_classes);
+
+    // Print mean average precision
+    std::cout << "Mean Average Precision (mAP): " << map << std::endl;
 
     // TODO: Segmentation metric
     bm::segmentation_metric();
