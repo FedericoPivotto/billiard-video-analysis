@@ -89,15 +89,15 @@ int main(int argc, char** argv) {
 
     // Print mean average precision
     // TODO: to remove and replace with writing in a text file
-    std::cout << "Mean Average Precision (mAP): " << map << std::endl;
+    std::cout << "Mean Average Precision (mAP): " << map*100 << "%" << std::endl;
 
     // Dummy print
     std::cout << std::endl;
 
     // Read true mask
     // TODO: it will come from result directory
-    // std::string true_mask_path = "../metrics/data/true_mask_frame_first.png";
-    std::string true_mask_path = "../metrics/data/wrong_mask.png";
+    std::string true_mask_path = "../metrics/data/true_mask_frame_first.png";
+    // std::string true_mask_path = "../metrics/data/wrong_mask.png";
     cv::Mat true_mask = cv::imread(true_mask_path, cv::IMREAD_GRAYSCALE);
     // safety check on true mask
 	if(true_mask.data == NULL) {
@@ -108,6 +108,7 @@ int main(int argc, char** argv) {
     // Read predicted mask
     // TODO: it will come from result directory
     std::string predicted_mask_path = "../metrics/data/predicted_mask_frame_first.png";
+    // std::string predicted_mask_path = "../metrics/data/true_mask_frame_first.png";
     cv::Mat predicted_mask = cv::imread(predicted_mask_path, cv::IMREAD_GRAYSCALE);
     // safety check on predicted mask
 	if(predicted_mask.data == NULL) {
@@ -126,8 +127,8 @@ int main(int argc, char** argv) {
     // TODO: Segmentation metric
     // TODO: to fix
     // For each ball class
-    num_classes = 5;
-    for(size_t i = 1; i <= num_classes; ++i) {
+    num_classes = 6;
+    for(size_t i = 0; i < num_classes; ++i) {
         // Class IoU
         double class_iou = bm::iou_class(true_mask, predicted_mask, i);
 
@@ -140,11 +141,11 @@ int main(int argc, char** argv) {
     }
 
     // Compute mIoU
-    double miou = bm::segmentation_metric(ious);
+    double miou = bm::segmentation_metric(ious, num_classes);
 
     // Print mIoU
     // TODO: to remove and replace with writing in a text file
-    std::cout << "Mean Intersection over Union (mIoU): " << miou << std::endl;
+    std::cout << "Mean Intersection over Union (mIoU): " << miou*100 << "%" << std::endl;
 
     return 0;
 }

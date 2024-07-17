@@ -47,7 +47,7 @@ namespace bm {
 
     // Metric function declarations
     double localization_metric(const std::vector<double>& aps, const int num_classes);
-    double segmentation_metric(std::vector<double> ious);
+    double segmentation_metric(std::vector<double> ious, const int num_classes);
 }
 
 #endif // BILLIARD_METRIC_H

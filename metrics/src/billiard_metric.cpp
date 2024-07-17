@@ -186,7 +186,7 @@ double bm::iou_class(cv::Mat& true_mask, cv::Mat& predicted_mask, int class_id) 
 }
 
 /* Segmentation metric */
-double bm::segmentation_metric(std::vector<double> ious) {
+double bm::segmentation_metric(std::vector<double> ious, const int num_classes) {
     // Compute average of given IoU
-    return std::accumulate(ious.begin(), ious.end(), 0.0) / ious.size();
+    return std::accumulate(ious.begin(), ious.end(), 0.0) / num_classes;
 }
