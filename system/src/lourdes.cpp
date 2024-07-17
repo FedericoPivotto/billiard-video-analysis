@@ -195,6 +195,82 @@ void lrds::suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<c
     circles = circles_filtered;
 }
 
+/* Suppress too much small circles */
+void lrds::suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_small){
+    const float radius_min = 5.0;
+    std::vector<cv::Vec3f> circles_filtered;
+    
+    for(size_t i = 0; i < circles.size(); i++){
+        if(circles[i][2] >= radius_min){
+            circles_filtered.push_back(circles[i]);
+        } else {
+            circles_small.push_back(circles[i]);
+        }
+    }
+
+    circles = circles_filtered;
+}
+
+/* Normalize too much small or large circles */
+void lrds::normalize_circles_radius(std::vector<cv::Vec3f>& circles){
+    float radius_sum = 0.0, radius_avg = 0.0;
+    std::vector<cv::Vec3f> circles_filtered;
+    
+    // Compute average radius only on not large circles
+    for(size_t i = 0; i < circles.size(); i++){
+        radius_sum += circles[i][2];
+    }
+
+    radius_avg = radius_sum / circles.size();
+
+    // Resize small circles
+    for(size_t i = 0; i < circles.size(); i++){
+        if(circles[i][2] <= 10.0){
+            circles[i][2] = radius_avg;
+        }
+    }
+}
+
+/*
+void lrds::select_circles(std::vector<cv::Vec4f>& circles){
+    const float votes_th = 10.0; 
+    std::vector<cv::Vec4f> circles_filtered;
+    
+    // Compute average radius only on not large circles
+    for(size_t i = 0; i < circles.size(); i++){
+        if(circles[i][3] > votes_th){
+            circles_filtered.push_back(circles[i]);
+        }
+    }
+
+    circles = circles_filtered;
+}*/
+
+/* Perform color segmentation based on dominant hue and saturation */
+void lrds::find_dominant_colors(const cv::Mat& frame, const cv::Mat& mask, int& dominant_hue, int& dominant_saturation){
+    // Settings of hsv histogram
+    int hbins = 30, sbins = 32;
+    float hranges[] = {0, 180};
+    float sranges[] = {0, 256};
+
+    const int hist_size[] = {hbins, sbins};
+    const float* hist_ranges[] = {hranges, sranges};
+    int channels[] = {0, 1};
+    
+    // Compute hsv histogram only on H and S channels
+    cv::Mat histogram;
+    cv::calcHist(&frame, 1, channels, mask, histogram, 2, hist_size, hist_ranges, true, false);
+    cv::normalize(histogram, histogram, 0, 255, cv::NORM_MINMAX);
+
+    // Find dominant hue and saturation by the max value of the histogram
+    double max_hist = 0.0; 
+    int max_index[] = {0, 0};
+    cv::minMaxIdx(histogram, 0, &max_hist, 0, max_index);
+
+    dominant_hue = max_index[0] * (180 / hbins);
+    dominant_saturation = max_index[1] * (256 / sbins);
+}
+
 /* Trackbars for hough circles */
 static void hsv_hough_callback(int pos, void* userdata) {
     // Get Canny parameters from userdata
@@ -202,19 +278,49 @@ static void hsv_hough_callback(int pos, void* userdata) {
 
     // Dereference images
     cv::Mat frame = (*params.src).clone();
-	cv::Mat mask;
+	cv::Mat mask, hand_mask, glove_mask, frame_bgr;
+
+    // Compute bgr frame
+    cv::cvtColor(frame, frame_bgr, cv::COLOR_HSV2BGR);
 
     // Color hsv segmentation
+    //int hue_range = 50;
+    //int dominant_hue = 0, dominant_saturation = 0;
+    //std::vector<cv::Point> table_corners;
+    //cv::Mat hist_mask = cv::Mat::zeros(frame.size(), CV_8UC1);
+    //
+    //lrds::points_float_to_point(params.corners, table_corners);
+    //cv::fillConvexPoly(hist_mask, table_corners, cv::Scalar(255));
+    //
+    //lrds::find_dominant_colors(frame, hist_mask, dominant_hue, dominant_saturation);
+    //cv::inRange(frame, cv::Scalar(dominant_hue - params.iLowH, dominant_saturation - params.iLowS, params.iLowV), 
+    //                   cv::Scalar(dominant_hue + params.iHighH, dominant_saturation + params.iHighS, params.iHighV), mask);
     cv::inRange(frame, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
+    cv::inRange(frame_bgr, cv::Scalar(110, 130, 110), cv::Scalar(140, 185, 215), hand_mask);
+    cv::inRange(frame_bgr, cv::Scalar(5, 5, 5), cv::Scalar(50, 50, 50), glove_mask);
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(15, 15));
+    cv::erode(hand_mask, hand_mask, kernel);
+    cv::dilate(hand_mask, hand_mask, kernel);
+    cv::erode(glove_mask, glove_mask, kernel);
+    cv::dilate(glove_mask, glove_mask, kernel);
+    
 
     // Dilate and erosion set operations on mask 
     //cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-    //cv::dilate(mask, mask, kernel);
     //cv::erode(mask, mask, kernel);
+    //cv::dilate(mask, mask, kernel);
     //cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
     //cv::morphologyEx(mask, mask, cv::MORPH_OPEN, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
 
-    std::vector<cv::Vec3f> circles, circles_big;
+    // Perform canny on mask
+    cv::Mat edge_map;
+    double upper_th = 100.0;
+    double lower_th = 10.0;
+    cv::Canny(mask, edge_map, lower_th, upper_th);
+    //cv::dilate(edge_map, edge_map, kernel);
+    //cv::erode(edge_map, edge_map, kernel);
+
+    std::vector<cv::Vec3f> circles, circles_big, circles_small;
 	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
 		6, // distance between circles
 		100, 9, // canny edge detector parameters and circles center detection 
@@ -223,6 +329,11 @@ static void hsv_hough_callback(int pos, void* userdata) {
     // Suppress circles
     lrds::suppress_billiard_holes(circles, params.corners, params.is_distorted);
     lrds::suppress_close_circles(circles, circles_big);
+    lrds::suppress_small_circles(circles, circles_small);
+    lrds::normalize_circles_radius(circles);
+    
+    // Get circles
+    circles.insert(circles.end(), circles_big.begin(), circles_big.end());
     
     // Show detected circles
     for(size_t i = 0; i < circles.size(); i++) {
@@ -239,8 +350,10 @@ static void hsv_hough_callback(int pos, void* userdata) {
 
     // Display our result
 	cv::imshow(params.window_name, frame);
-    cv::imshow("Mask of change", mask);
+    cv::imshow("Mask of change", glove_mask);
 }
+
+
 
 void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame, const bool is_distorted) {
     // Create frame bboxes text file
@@ -273,6 +386,9 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     cv::cvtColor(preprocessed_video_frame, frame_hsv, cv::COLOR_BGR2HSV);
 
     // HSV parameters
+    /*FULL int iLowH = 60, iHighH = 255, maxH = 255;
+    int iLowS = 150, iHighS = 255, maxS = 255;
+    int iLowV = 115, iHighV = 255, maxV = 255;*/
     int iLowH = 60, iHighH = 120, maxH = 179;
     int iLowS = 150, iHighS = 255, maxS = 255;
     int iLowV = 115, iHighV = 255, maxV = 255;
