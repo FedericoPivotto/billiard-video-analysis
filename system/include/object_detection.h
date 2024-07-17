@@ -51,10 +51,19 @@ namespace od {
     void set_ball_bbox_confidence(od::Ball& ball);
 
     // Object detection main declaration
-    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame);
+    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& video_frame);
 
-    // Check function declaration
-    bool is_ball_inside_field(const std::vector<cv::Point2f> corners, cv::Point center, unsigned int radius);
+    // Circle filters declarations
+    void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted);
+    void suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big);
+    void suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_small);
+    void suppress_black_circles(std::vector<cv::Vec3f>& circles, cv::Mat mask);
+    void normalize_circles_radius(std::vector<cv::Vec3f>& circles);
+
+    // Object detection auxiliary functions
+    void points_float_to_int(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& points);
+    void preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame);
+    void morpho_pre_process(cv::Mat& mask);
 }
 
 #endif // OBJECT_DETECTION_H

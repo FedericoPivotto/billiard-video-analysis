@@ -210,6 +210,22 @@ void lrds::suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<c
     circles = circles_filtered;
 }
 
+/* Suppress circles with black center */
+void lrds::suppress_black_circles(std::vector<cv::Vec3f>& circles, cv::Mat mask) {
+    // Suppress circles with black center
+    std::vector<cv::Vec3f> circles_filtered;
+
+    for(size_t i = 0; i < circles.size(); i++){
+        unsigned char pixel = mask.at<unsigned char>(circles[i][1], circles[i][0]);
+        if(pixel != 0) {
+            circles_filtered.push_back(circles[i]);
+        }
+    }
+
+    // Update circles
+    circles = circles_filtered;
+}
+
 /* Normalize too much small or large circles */
 void lrds::normalize_circles_radius(std::vector<cv::Vec3f>& circles){
     float radius_sum = 0.0, radius_avg = 0.0;
@@ -224,7 +240,7 @@ void lrds::normalize_circles_radius(std::vector<cv::Vec3f>& circles){
 
     // Resize small circles
     for(size_t i = 0; i < circles.size(); i++){
-        if(circles[i][2] <= 10.0){
+        if(circles[i][2] <= 15.0){
             circles[i][2] = radius_avg;
         }
     }
@@ -252,14 +268,38 @@ static void hsv_hough_callback(int pos, void* userdata) {
     //cv::inRange(frame, cv::Scalar(dominant_hue - params.iLowH, dominant_saturation - params.iLowS, params.iLowV), 
     //                   cv::Scalar(dominant_hue + params.iHighH, dominant_saturation + params.iHighS, params.iHighV), mask);
     cv::inRange(frame, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
+    cv::bitwise_not(mask, mask);
 
+
+    std::vector<cv::Point> corners;
+    lrds::points_float_to_point(params.corners, corners);
+    cv::Mat mask_roi = cv::Mat::zeros(frame.size(), CV_8UC1);
+    cv::fillConvexPoly(mask_roi, corners, cv::Scalar(255, 255, 255));
+
+    cv::bitwise_and(mask, mask_roi, mask);
 
     // Dilate and erosion set operations on mask 
-    //cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-    //cv::erode(mask, mask, kernel);
-    //cv::dilate(mask, mask, kernel);
     //cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
     //cv::morphologyEx(mask, mask, cv::MORPH_OPEN, cv::MORPH_ELLIPSE, cv::Point(-1, -1), 5);
+
+    cv::Mat kernel1 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::erode(mask, mask, kernel1);
+    // cv::dilate(mask, mask, kernel1);
+
+    cv::Mat kernel2 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+    cv::dilate(mask, mask, kernel2);
+
+    cv::Mat kernel3 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::erode(mask, mask, kernel3);
+
+    cv::Mat kernel4 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::dilate(mask, mask, kernel4);
+
+    cv::Mat kernel5 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::erode(mask, mask, kernel5);
+
+    cv::imshow("FRAME", mask);
+    cv::waitKey(0);
 
     // Perform canny on mask
     cv::Mat edge_map;
@@ -273,16 +313,17 @@ static void hsv_hough_callback(int pos, void* userdata) {
 	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
 		7, // distance between circles
 		100, 9, // canny edge detector parameters and circles center detection 
-		3, 22); // min_radius & max_radius of circles to detect
+		3, 22); // min_radius & max_radius of circles to detect // 22
     
     // Suppress circles
     lrds::suppress_billiard_holes(circles, params.corners, params.is_distorted);
     lrds::suppress_close_circles(circles, circles_big);
     lrds::suppress_small_circles(circles, circles_small);
+    lrds::suppress_black_circles(circles, mask);
     lrds::normalize_circles_radius(circles);
     
     // Get circles
-    //circles.insert(circles.end(), circles_big.begin(), circles_big.end());
+    // circles.insert(circles.end(), circles_big.begin(), circles_big.end());
     
     // Show detected circles
     for(size_t i = 0; i < circles.size(); i++) {
@@ -372,64 +413,3 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     cv::waitKey(0);
     cv::destroyAllWindows();
 }
-
-
-
-
-
-
-//-------------------------------------------------------
-
-    // Compute edge map of the frame by canny edge detection
-    //std::vector<std::vector<cv::Point>> contours;
-    //std::vector<cv::Vec4i> hierarchy;
-    //cv::findContours(mask, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-//
-    //for (size_t i = 0; i < contours.size(); i++) {
-    //    double area = cv::contourArea(contours[i]);
-    //    if (area > 10) { 
-    //        //cv::Rect bounding_rect = cv::boundingRect(contours[i]);
-    //        //cv::rectangle(frame, bounding_rect, cv::Scalar(0, 255, 0), 2);
-//
-    //        // Fit an ellipse and check the ratio of the axes
-    //        if (contours[i].size() >= 5) { 
-    //            cv::RotatedRect ellipse = cv::fitEllipse(contours[i]);
-    //            float aspect_ratio = (float)ellipse.size.width / (float)ellipse.size.height;
-    //            if (aspect_ratio > 0.9 && aspect_ratio < 1.1) { 
-    //                cv::ellipse(frame, ellipse, cv::Scalar(0, 255, 0), 2);
-    //            }
-    //        }
-//
-    //        cv::Point2f center;
-    //        float radius;
-    //        cv::minEnclosingCircle(contours[i], center, radius);
-    //        double circle_area = CV_PI * std::pow(radius, 2);
-    //        if (std::abs(circle_area - area) / area < 0.2) { // Allowable area difference
-    //            cv::circle(frame, center, radius, cv::Scalar(255, 0, 0), 2);
-    //        }
-    //    }
-    //}
-//
-
-    //// Get gray image
-    //cv::Mat gray_image;
-    //cv::cvtColor(preprocessed_video_frame, gray_image, cv::COLOR_BGR2GRAY);
-    //
-    //// Frame sharpening 
-    //cv::Mat grad_x, grad_y, gradient;
-    //cv::Sobel(gray_image, grad_x, CV_16S, 0, 1, 3);
-    //cv::Sobel(gray_image, grad_y, CV_16S, 1, 0, 3);
-    //cv::convertScaleAbs(grad_x, grad_x);
-    //cv::convertScaleAbs(grad_y, grad_y);
-    //cv::addWeighted(grad_x, 0.5, grad_y, 0.5, 0, gradient);
-//
-    //// Convert gradient to a 3-channel image for addition to the original BGR image
-    //cv::Mat gradient_bgr;
-    //cv::cvtColor(gradient, gradient_bgr, cv::COLOR_GRAY2BGR);
-//
-    //// Sharpen the original image by adding the gradient to it
-    //preprocessed_video_frame = preprocessed_video_frame + gradient_bgr;
-//
-    //// Clip values to ensure valid pixel range [0, 255]
-    //cv::threshold(preprocessed_video_frame, preprocessed_video_frame, 0, 255, cv::THRESH_TOZERO);
-    //cv::threshold(preprocessed_video_frame, preprocessed_video_frame, 255, 255, cv::THRESH_TRUNC);

@@ -59,6 +59,322 @@ bool od::operator==(const Ball& ball1, const Ball& ball2) {
             ball1.confidence == ball2.confidence;
 }
 
+/* Convert points from float to int */
+void od::points_float_to_int(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& points) {
+    // Convert points from float to int
+    for (cv::Point2f point : float_points)
+        points.push_back(cv::Point(cvRound(point.x), cvRound(point.y)));
+}
+
+/* Preprocessing of frame in bgr */
+void od::preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame) {
+    // Apply median to slightly remove noise
+    cv::medianBlur(frame, preprocessed_video_frame, 3);
+
+    cv::Mat gaussian_frame;
+    cv::GaussianBlur(preprocessed_video_frame, gaussian_frame, cv::Size(3,3), 1.0);
+    cv::addWeighted(preprocessed_video_frame, 1.5, gaussian_frame, -0.4, 0, preprocessed_video_frame);
+    
+    // Keep color information 
+    cv::bilateralFilter(preprocessed_video_frame.clone(), preprocessed_video_frame, 9, 125.0, 50.0);
+}
+
+/* Morphological operations on mask */
+void od::morpho_pre_process(cv::Mat& mask) {
+    cv::Mat kernel1 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::erode(mask, mask, kernel1);
+
+    cv::Mat kernel2 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+    cv::dilate(mask, mask, kernel2);
+
+    cv::Mat kernel3 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::erode(mask, mask, kernel3);
+
+    cv::Mat kernel4 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::dilate(mask, mask, kernel4);
+
+    cv::Mat kernel5 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+    cv::erode(mask, mask, kernel5);
+}
+
+/* Suppress circles too close to billiard holes */
+void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted) {
+    // The ratio between billiard hole and a short border the table 
+    const double ratio_hole_border = 0.08;
+    std::vector<cv::Vec3f> circles_filtered;
+
+    // Check if billiard table is distorted
+    if(!is_distorted) {
+        // Compute short border length 
+        const int border_length = cv::norm(corners[0] - corners[3]);
+        const int radius = border_length * ratio_hole_border;
+
+        // Compute holes positions along long borders
+        const float cx_one = (corners[0].x + corners[1].x) / 2, cx_two = (corners[2].x + corners[3].x) / 2;
+        const float cy_one = (corners[0].y + corners[1].y) / 2, cy_two = (corners[2].y + corners[3].y) / 2;
+        std::vector<cv::Point2f> mid_holes = {cv::Point2f(cx_one, cy_one), cv::Point2f(cx_two, cy_two)};
+        
+        // Check if hough circle is not too close to a billiard hole
+        for(size_t i = 0; i < circles.size(); i++) {
+            // Checking circle closeness to corner holes
+            bool is_close = false;
+            for(size_t j = 0; j < corners.size(); j++) {
+                if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius)
+                    is_close = true;
+            }
+
+            // Check holes in the long borders
+            for(size_t j = 0; j < 2; j++) {
+                if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius) {
+                    is_close = true;
+                }
+            }
+
+            // Check if circle not too close to a billiard hole
+            if(!is_close) {
+                circles_filtered.push_back(circles[i]);
+            }
+        }
+
+    } else {
+        // Compute short borders lengths 
+        const int border_length_one = cv::norm(corners[0] - corners[1]), border_length_two = cv::norm(corners[2] - corners[3]);
+        const int radius_one = border_length_one * ratio_hole_border, radius_two = border_length_two * ratio_hole_border;
+
+        // Check holes in the long borders
+        const double border_length_ratio = static_cast<double>(border_length_one) / border_length_two;
+        double interpolation_weight = (border_length_ratio >= 0.70) ? 0.40 : (border_length_ratio >= 0.55) ? 0.38 : 0.3;
+
+        std::vector<cv::Point2f> mid_holes = {corners[1] + interpolation_weight * (corners[2] - corners[1]), corners[0] + interpolation_weight * (corners[3] - corners[0])};
+
+        // Check if hough circle is not too close to a billiard hole
+        for(size_t i = 0; i < circles.size(); i++) {
+            // Checking circle closeness to holes
+            bool is_close = false;
+            for(size_t j = 0; j < corners.size(); j++) {
+                if(j <= 1) {
+                    if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius_one)
+                        is_close = true;
+                } else {
+                    if(cv::norm(corners[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius_two)
+                        is_close = true;
+                }
+            }
+
+            // Check holes in the long borders
+            for(size_t j = 0; j < 2; j++) {
+                if(j <= 1){
+                    if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius_one)
+                        is_close = true;
+                } else {
+                    if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius_two)
+                        is_close = true;
+                }
+            }
+
+            // Check if circle not too close to a billiard hole
+            if(!is_close)
+                circles_filtered.push_back(circles[i]);
+        }
+    }
+
+    // Update circles
+    circles = circles_filtered;
+}
+
+/* Suppress too much close circles */
+void od::suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big) {
+    const float min_distance = 15.0;
+    std::vector<cv::Vec3f> circles_filtered;
+    std::vector<bool> visited(circles.size(), false);
+
+    // Suppress close circles and keep big circles
+    for(size_t i = 0; i < circles.size(); i++) {
+        int count = 1;
+        float sum_radius = circles[i][2];
+        cv::Point2f center_i(circles[i][0], circles[i][1]);
+
+        if(!visited[i] && circles[i][2] <= 14.0) {
+            visited[i] = true;
+
+            for(size_t j = i + 1; j < circles.size(); j++) {
+                if(!visited[j]) {    
+                    // Compute distance between centers of circle i and circle j
+                    cv::Point2f center_j(circles[j][0], circles[j][1]);
+                    float distance = cv::norm(center_i - center_j);
+
+                    if(distance <= min_distance) {
+                        count++;
+                        sum_radius += circles[j][2];
+                        visited[j] = true;
+                    }
+                }
+            }
+
+            // Compute circle to represent the ball
+            float avg_radius = sum_radius / count;
+            cv::Vec3f circle_i(center_i.x, center_i.y, avg_radius);
+            circles_filtered.push_back(circle_i);
+
+        } else if(!visited[i] && circles[i][2] >= 15.0) {
+            visited[i] = true;
+            circles_big.push_back(circles[i]);
+        }
+    }
+
+    // Update circles
+    circles = circles_filtered;
+}
+
+/* Suppress too much small circles */
+void od::suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_small) {
+    const float radius_min = 5.0;
+    std::vector<cv::Vec3f> circles_filtered;
+    
+    for(size_t i = 0; i < circles.size(); i++){
+        if(circles[i][2] >= radius_min){
+            circles_filtered.push_back(circles[i]);
+        } else {
+            circles_small.push_back(circles[i]);
+        }
+    }
+
+    // Update circles
+    circles = circles_filtered;
+}
+
+/* Suppress circles with black center */
+void od::suppress_black_circles(std::vector<cv::Vec3f>& circles, cv::Mat mask) {
+    // Suppress circles with black center
+    std::vector<cv::Vec3f> circles_filtered;
+
+    for(size_t i = 0; i < circles.size(); i++) {
+        unsigned char pixel = mask.at<unsigned char>(circles[i][1], circles[i][0]);
+        if(pixel != 0)
+            circles_filtered.push_back(circles[i]);
+    }
+
+    // Update circles
+    circles = circles_filtered;
+}
+
+/* Normalize too much small or large circles */
+void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
+    float radius_sum = 0.0, radius_avg = 0.0;
+    std::vector<cv::Vec3f> circles_filtered;
+    
+    // Compute average radius only on not large circles
+    for(size_t i = 0; i < circles.size(); i++)
+        radius_sum += circles[i][2];
+
+    radius_avg = radius_sum / circles.size();
+
+    // Resize small circles
+    for(size_t i = 0; i < circles.size(); i++) {
+        if(circles[i][2] <= 15.0)
+            circles[i][2] = radius_avg;
+    }
+}
+
+/* Balls detection in given a video frame */
+void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& video_frame) {
+    // Vector of bounding boxes
+    std::vector<od::Ball> ball_bboxes;
+
+    // Mask image to consider only the billiard table
+    cv::Mat mask = cv::Mat::zeros(video_frames[n_frame].size(), CV_8UC3);
+    std::vector<cv::Point> table_corners;
+    od::points_float_to_int(corners, table_corners);
+    cv::fillConvexPoly(mask, table_corners, cv::Scalar(255, 255, 255));
+
+    // Filter out the background of the billiard table
+    cv::Mat frame_masked;
+    cv::bitwise_and(video_frames[n_frame], mask, frame_masked);
+
+    // Masked frame preprocessing 
+    cv::Mat preprocessed_video_frame;
+    od::preprocess_bgr_frame(frame_masked, preprocessed_video_frame);
+
+    // Convert to HSV color space
+    cv::Mat frame_hsv;
+    cv::cvtColor(preprocessed_video_frame, frame_hsv, cv::COLOR_BGR2HSV);
+
+    // Mask on billiard balls
+    cv::Mat mask_balls;
+    cv::inRange(frame_hsv, cv::Scalar(60, 150, 115), cv::Scalar(120, 255, 255), mask_balls);
+    cv::bitwise_not(mask_balls, mask_balls);
+    cv::Mat mask_balls_roi = cv::Mat::zeros(frame_hsv.size(), CV_8UC1);
+    cv::fillConvexPoly(mask_balls_roi, table_corners, cv::Scalar(255, 255, 255));
+    cv::bitwise_and(mask_balls, mask_balls_roi, mask_balls);
+
+    // Morphological operations on mask
+    od::morpho_pre_process(mask_balls);
+
+    // Circle Hough transform
+    std::vector<cv::Vec3f> circles, circles_big, circles_small;
+	cv::HoughCircles(mask_balls, circles, cv::HOUGH_GRADIENT, 1,
+		7,      // Distance between circles
+		100, 9, // Canny edge detector parameters and circles center detection 
+		3, 22); // Min-radius and max-radius of circles to detect
+
+    // Suppress circles
+    od::suppress_billiard_holes(circles, corners, is_distorted);
+    od::suppress_close_circles(circles, circles_big);
+    od::suppress_small_circles(circles, circles_small);
+    od::suppress_black_circles(circles, mask_balls);
+    od::normalize_circles_radius(circles);
+
+    // Get circles
+    // TODO: check threholds radius big
+    circles.insert(circles.end(), circles_big.begin(), circles_big.end());
+    circles.insert(circles.end(), circles_small.begin(), circles_small.end());
+    
+    // Show detected circles
+    // TODO: to be removed
+    /*cv::Mat frame = video_frames[n_frame].clone();
+    for(size_t i = 0; i < circles.size(); i++) {
+        // Circle data
+        cv::Vec3i c = circles[i];
+        cv::Point center(c[0], c[1]);
+        unsigned int radius = c[2];
+
+        // Show circle center
+        cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
+        // Show circle outline
+        cv::circle(frame, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
+    }
+
+    // Display our result
+    // TODO: to be removed
+	cv::imshow("Frame with detection", frame);
+    cv::imshow("Mask of change", mask_balls);
+    cv::waitKey(0);*/
+
+    // TODO: fill balls vector according to circles
+    
+    // Create frame bboxes text file
+    std::string bboxes_frame_file_path;
+    fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
+
+    // Bounding box frame file to write
+    std::ofstream bboxes_frame_file(bboxes_frame_file_path);
+
+    // Scan each ball bounding box
+    for(od::Ball ball_bbox : ball_bboxes) {
+        // TODO: Ball class detection
+        od::detect_ball_class(ball_bbox, video_frames[n_frame]);
+
+        // TODO: Compute confidence value
+        od::set_ball_bbox_confidence(ball_bbox);
+
+        // Write Ball bounding box in frame bboxes text file
+        fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
+    }
+
+    // Close frame bboxes text file
+    bboxes_frame_file.close();
+}
+
 /* Ball class detection */
 void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // TODO: remove background
@@ -75,378 +391,8 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     ball_bbox.ball_class = std::rand() % (max - min + 1) + min;
 }
 
-/* hsv_callback function parameters */
-typedef struct {
-	// Window name
-	const char* window_name;
-
-	// Pointers to images
-	cv::Mat* src;
-	cv::Mat* dst;
-
-    // HSV parameters
-    int iLowH;
-    int iHighH;
-    int iLowS;
-    int iHighS;
-    int iLowV;
-    int iHighV;
-
-    // Max threshold
-    int maxH;
-    int maxS;
-    int maxV;
-} ParameterHSV;
-
-/* hsv_hough_callback function parameters */
-typedef struct {
-	// Window name
-	const char* window_name;
-
-	// Pointers to images
-	cv::Mat* src;
-
-    // HSV parameters
-    int iLowH;
-    int iHighH;
-    int iLowS;
-    int iHighS;
-    int iLowV;
-    int iHighV;
-
-    // Bilateral filter
-    int color_std;
-    int space_std;
-    int max_th;
-
-    // Max threshold
-    int maxH;
-    int maxS;
-    int maxV;
-} ParameterHoughHSV;
-
-/* hough_circle_callback function parameters */
-typedef struct {
-	// Window name
-	const char* window_name;
-
-	// Pointers to images
-	cv::Mat* src;
-	cv::Mat* dst;
-
-    // Hough circle parameters
-    int min_dist;
-    int param1;
-    int param2;
-    int min_radius;
-    int max_radius;
-
-    // Max threshold
-    int maxD;
-    int maxP1;
-    int maxP2;
-    int maxMinR;
-    int maxMaxR;
-} ParameterHoughCircle;
-
-/* Callback function */
-static void hsv_callback(int pos, void* userdata) {
-    // Get Canny parameters from userdata
-	ParameterHSV params = *((ParameterHSV*) userdata);
-
-    // Dereference images
-    cv::Mat frame_hsv = *params.src;
-	cv::Mat mask = *params.dst;
-
-    // Threshold the image
-    cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
-    
-    cv::Mat edge_map;
-    cv::Canny(mask, edge_map, 10, 100);
-
-    std::vector<cv::Vec3f> circles;
-	cv::HoughCircles(edge_map, circles, cv::HOUGH_GRADIENT, 1,
-		10, // distance between circles
-		90, 9, // canny edge detector parameters and circles center detection 
-		1, 20); // min_radius & max_radius of circles to detect
-    
-    // Show detected circles
-    for(size_t i = 0; i < circles.size(); i++) {
-        // Circle data
-        cv::Vec3i c = circles[i];
-        cv::Point center(c[0], c[1]);
-        unsigned int radius = c[2];
-
-        // Show circle center
-        cv::circle(frame_hsv, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // Show circle outline
-        cv::circle(frame_hsv, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
-    }
-
-    // Display our result
-	cv::imshow(params.window_name, frame_hsv);
-}
-
-/* Callback function */
-static void hough_circle_callback(int pos, void* userdata) {
-    // Get Hough circle parameters from userdata
-    ParameterHoughCircle params = *((ParameterHoughCircle*) userdata);
-
-    // Dereference images
-    cv::Mat mask = *params.src;
-    cv::Mat detected_edges = (*params.dst).clone();
-
-    // Hough circle transform
-    std::vector<cv::Vec3f> circles;
-    cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1, params.min_dist, params.param1, params.param2, params.min_radius, params.max_radius);
-
-    // Show detected circles
-    for(size_t i = 0; i < circles.size(); i++) {
-        // Circle data
-        cv::Vec3i c = circles[i];
-        cv::Point center(c[0], c[1]);
-        unsigned int radius = c[2];
-
-        // Show circle center
-        cv::circle(detected_edges, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // Show circle outline
-        cv::circle(detected_edges, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
-    }
-
-    // Show the detected circles
-    cv::imshow(params.window_name, detected_edges);
-}
-
-/* Callback function */
-static void hsv_hough_callback(int pos, void* userdata) {
-    // Get Canny parameters from userdata
-	ParameterHoughHSV params = *((ParameterHoughHSV*) userdata);
-
-    // Dereference images
-    cv::Mat frame = (*params.src).clone();
-	cv::Mat frame_hsv, frame_bilateral, mask;
-    cv::bilateralFilter(frame, frame_bilateral, 9, params.color_std, params.space_std);
-
-    // Threshold the image in hsv
-    cv::cvtColor(frame_bilateral, frame_hsv, cv::COLOR_BGR2HSV);
-    cv::inRange(frame_hsv, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
-
-    // Dilate and erosion set operations on mask 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-    cv::dilate(mask, mask, kernel);
-    cv::erode(mask, mask, kernel);
-
-    std::vector<cv::Vec3f> circles;
-	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
-		10, // distance between circles
-		100, 9, // canny edge detector parameters and circles center detection 
-		5, 20); // min_radius & max_radius of circles to detect
-    
-    // Show detected circles
-    for(size_t i = 0; i < circles.size(); i++) {
-        // Circle data
-        cv::Vec3i c = circles[i];
-        cv::Point center(c[0], c[1]);
-        unsigned int radius = c[2];
-
-        // Show circle center
-        cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // Show circle outline
-        cv::circle(frame, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
-    }
-
-    // Display our result
-	cv::imshow(params.window_name, frame);
-    cv::imshow("Mask of change", mask);
-}
-
-
-/* Balls detection in given a video frame */
-void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, cv::Mat& video_frame) {
-    // Create frame bboxes text file
-    std::string bboxes_frame_file_path;
-    fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
-
-    // Vector of bounding boxes
-    std::vector<od::Ball> ball_bboxes;
-    fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
-
-    // Video frame clone
-    cv::Mat frame(video_frames[n_frame].clone());
-    cv::Mat frame_gray;
-
-    //// CLAHE
-    //cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
-    //cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-    //clahe->setClipLimit(4);
-    //cv::Mat frame_clahe;
-    //clahe->apply(frame_gray, frame_clahe);
-    //cv::imshow("CLAHE", frame_clahe);
-
-    // Image frame pre-processing       
-    //cv::Mat frame_hsv, frame_bilateral;
-    //cv::bilateralFilter(frame, frame_bilateral, 9, 100.0, 75.0);
-    //cv::cvtColor(frame_bilateral, frame_hsv, cv::COLOR_BGR2HSV);
-    
-    // HSV channels
-    //cv::Mat hsv_channels[3];
-    //cv::split(frame_hsv, hsv_channels);
-    // Apply histogram equalization to each channel
-    // cv::equalizeHist(hsv_channels[0], hsv_channels[0]);
-    // cv::equalizeHist(hsv_channels[1], hsv_channels[1]);
-    // cv::equalizeHist(hsv_channels[2], hsv_channels[2]);
-
-    // Merge the equalized channels back
-    //cv::Mat frame_hsv_equalized;
-    //cv::merge(hsv_channels, 3, frame_hsv_equalized);
-
-    // Show the frame HSV channels
-    // cv::imshow("Hue", hsv_channels[0]);
-    // cv::imshow("Saturation", hsv_channels[1]);
-    // cv::imshow("Value", hsv_channels[2]);
-
-    // Show the frame BRG
-    // cv::imshow("Frame BGR bilateral", frame_bilateral);
-
-    // Show the frame HSV
-    // cv::imshow("Frame HSV", frame_hsv);
-    // Show the frame HSV equalized
-    // cv::imshow("Frame HSV equalized", frame_hsv_equalized);
-
-    // HSV parameters
-    int iLowH = 60, iHighH = 120, maxH = 179;
-    int iLowS = 150, iHighS = 255, maxS = 255;
-    int iLowV = 110, iHighV = 255, maxV = 255;
-
-    // Bilateral filter parameters
-    int max_th = 300;
-    int color_std = 100;
-    int space_std = 75;
-
-    // HSV window trackbars
-    //cv::Mat mask;
-    // ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
-    ParameterHoughHSV hsvp = {"Control HSV", &frame, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, color_std, space_std, max_th, maxH, maxS, maxV};
-    
-    // Control window
-    cv::namedWindow(hsvp.window_name);
-
-    // Create trackbar for Hue (0 - 179)
-    cv::createTrackbar("LowH", hsvp.window_name, &hsvp.iLowH, hsvp.maxH, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("HighH", hsvp.window_name, &hsvp.iHighH, hsvp.maxH, hsv_hough_callback, &hsvp);
-    // Create trackbar for Saturation (0 - 255)
-    cv::createTrackbar("LowS", hsvp.window_name, &hsvp.iLowS, hsvp.maxS, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("HighS", hsvp.window_name, &hsvp.iHighS, hsvp.maxS, hsv_hough_callback, &hsvp);
-    // Create trackbar for Value (0 - 255)
-    cv::createTrackbar("LowV", hsvp.window_name, &hsvp.iLowV, hsvp.maxV, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("HighV", hsvp.window_name, &hsvp.iHighV, hsvp.maxV, hsv_hough_callback, &hsvp);
-    // Create trackbar for color and space std
-    cv::createTrackbar("Color std", hsvp.window_name, &hsvp.color_std, hsvp.max_th, hsv_hough_callback, &hsvp);
-    cv::createTrackbar("Space std", hsvp.window_name, &hsvp.space_std, hsvp.max_th, hsv_hough_callback, &hsvp);
-
-    // Wait key
-    cv::waitKey(0);
-    cv::destroyAllWindows();
-
-    //// Mask generation by ranged HSV
-    //cv::Mat mask;
-    //cv::Scalar lower_hsv(60, 150, 110), upper_hsv(120, 255, 255);
-    //cv::inRange(frame_hsv_equalized, lower_hsv, upper_hsv, mask);
-    //
-    //// Dilate and erode mask
-    //cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
-    //cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
-
-    // Show frame and mask
-    // cv::imshow("Mask", mask);
-
-    /*// Hough circle parameters
-	cv::Mat detected_edges = frame.clone();
-    ParameterHoughCircle hcp = {"Hough circle", &mask, &detected_edges, 10, 90, 9, 1, 20, 100, 100, 100, 100, 100};
-
-    // Control window
-    cv::namedWindow(hcp.window_name);
-
-    // Create trackbar for min distance
-    cv::createTrackbar("Min distance", hcp.window_name, &hcp.min_dist, hcp.maxD, hough_circle_callback, &hcp);
-    // Create trackbar for canny edge detector parameter 1
-    cv::createTrackbar("Param 1", hcp.window_name, &hcp.param1, hcp.maxP1, hough_circle_callback, &hcp);
-    // Create trackbar for canny edge detector parameter 2
-    cv::createTrackbar("Param 2", hcp.window_name, &hcp.param2, hcp.maxP2, hough_circle_callback, &hcp);
-    // Create trackbar for min radius
-    cv::createTrackbar("Min radius", hcp.window_name, &hcp.min_radius, hcp.maxMinR, hough_circle_callback, &hcp);
-    // Create trackbar for max radius
-    cv::createTrackbar("Max radius", hcp.window_name, &hcp.max_radius, hcp.maxMaxR, hough_circle_callback, &hcp);
-
-    // Wait key
-    cv::waitKey(0);
-    cv::destroyAllWindows();*/
-/*
-    // Hough circle transform
-    // TODO: tune parameters using trackbars
-    std::vector<cv::Vec3f> circles;
-	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
-		10, // distance between circles
-		90, 9, // canny edge detector parameters and circles center detection 
-		1, 20); // min_radius & max_radius of circles to detect
-    
-    // Show detected circles
-	for(size_t i = 0; i < circles.size(); i++) {
-		// Circle data
-        cv::Vec3i c = circles[i];
-		cv::Point center(c[0], c[1]);
-		unsigned int radius = c[2];
-
-        // Check if ball is inside the field
-        if(! od::is_ball_inside_field(corners, center, radius)) {
-            std::cout << "Center: (" << center.x << ", " << center.y << ") - Radius: " << radius << std::endl;
-            continue;
-        }
-
-        // Ball creation
-        od::Ball detected_ball(center.x-radius, center.y-radius, radius*2, radius*2, 0);
-
-        // Circle ball
-        ball_bboxes.push_back(detected_ball);
-        
-		// Show circle center
-		cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-		// Show circle outline
-		cv::circle(frame, center, radius, cv::Scalar(255, 0, 255), 3, cv::LINE_AA);
-	}
-
-	// Show the detected circles
-	cv::imshow("Detected circles", frame);
-	
-    // Wait key
-    cv::waitKey(0);
-    cv::destroyAllWindows();
-*/
-    /*// TODO: detect ball bounding boxes using Viola and Jones approach
-    // TODO: update ball vector with bounding box x, y, width, height
-    // SEE: notes p.122 for extract ball image
-
-    // scan each ball bounding box
-    for(od::Ball ball_bbox : ball_bboxes) {
-        // TODO: ball class detection
-        od::detect_ball_class(ball_bbox, video_frames[n_frame]);
-
-        // TODO: compute confidence value
-        od::set_ball_bbox_confidence(ball_bbox);
-
-        // Write ball bounding box in frame bboxes text file
-        fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
-    }
-
-    // Close frame bboxes text file
-    bboxes_frame_file.close();*/
-}
-
 // TODO: define ball bbox confidence
 void od::set_ball_bbox_confidence(od::Ball& ball) {
+    // TODO: to alter
     ball.confidence = 1;
-}
-
-bool od::is_ball_inside_field(const std::vector<cv::Point2f> corners, cv::Point center, unsigned int radius) {
-    return true;
 }

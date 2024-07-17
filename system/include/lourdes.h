@@ -35,6 +35,8 @@ namespace lrds {
     void suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big);
 
     void suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_small);
+
+    void suppress_black_circles(std::vector<cv::Vec3f>& circles, cv::Mat mask);
     
     void normalize_circles_radius(std::vector<cv::Vec3f>& circles);
 

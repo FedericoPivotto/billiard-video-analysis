@@ -93,6 +93,15 @@ int main(int argc, char** argv) {
             std::vector<std::string> video_dataset_subdirs;
             fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
 
+            // Distortion check
+            bool is_distorted;
+            mm::check_perspective_distortion(borders, is_distorted);
+
+            // Balls detection and classification
+            ed::sort_corners(corners);
+            cv::Mat object_video_frame_cv = video_frames[k].clone();
+            od::object_detection(video_frames, k, video_dataset_subdirs[0], corners, is_distorted, object_video_frame_cv);
+
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
             bool test_flag = true;
@@ -111,7 +120,7 @@ int main(int argc, char** argv) {
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[6]);
         }
 
-        // Assuming field corners of the first video frame
+        /*// Assuming field corners of the first video frame
         
         // 2D top-view minimap and tracking (Fabrizio)
         
@@ -194,7 +203,7 @@ int main(int argc, char** argv) {
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
         // Create and save video
-        // vu::save_video(video_game_frames_cv, captures[i], result_video_path);
+        // vu::save_video(video_game_frames_cv, captures[i], result_video_path);*/
     }
 
     return 0;
