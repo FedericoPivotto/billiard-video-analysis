@@ -84,10 +84,6 @@ int main(int argc, char** argv) {
         // Print average precision
         // TODO: to remove
         std::cout << "Average Precision (AP) for class " << i << ": " << aps[i - 1] << std::endl;
-
-        // Dummy print
-        // TODO: to remove
-        std::cout << std::endl;
     }
 
     // TODO: Localization metric

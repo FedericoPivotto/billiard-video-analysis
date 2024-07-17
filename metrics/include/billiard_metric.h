@@ -42,7 +42,7 @@ namespace bm {
     double average_precision(std::vector<bm::BallMatch>& ball_matches, std::vector<od::Ball>& predicted_balls, int total_ground_truths);
 
     // Metric function declarations
-    double localization_metric(std::vector<double>& aps, int num_classes);
+    double localization_metric(const std::vector<double>& aps, const int num_classes);
     void segmentation_metric();
 }
 
