@@ -12,12 +12,20 @@
 namespace od {
     // Classes declaration
     class Ball {
+        private:
+            // Static id declaration
+            static int current_id;
+
         public:
+            // Ball unique id
+            int id;
+
             // Ball bounding box
             unsigned int x, y, width, height, ball_class;
             double confidence;
 
-            // Constructor
+            // Constructors
+            Ball();
             Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence = 0);
 
             // Function declarations
@@ -28,10 +36,13 @@ namespace od {
     
             // Operator overload declarations
             friend std::ostream& operator<<(std::ostream& os, const Ball& ball);
+            friend bool operator==(const Ball& ball1, const Ball& ball2);
     };
 
     // Definition of the operator<< function outside the class
     std::ostream& operator<<(std::ostream& os, const Ball& ball);
+    // Definition of the operator== function outside the class
+    bool operator==(const Ball& ball1, const Ball& ball2);
 
     // Detect function declarations
     void detect_ball_class(Ball& ball_bbox, cv::Mat frame);
