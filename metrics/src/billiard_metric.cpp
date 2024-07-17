@@ -8,6 +8,8 @@
 #include <numeric>
 // algorithm: std::max_element
 #include <algorithm>
+// imgproc: cv::threshold
+#include <opencv2/imgproc.hpp>
 
 /* Ball match class */
 bm::BallMatch::BallMatch(const od::Ball true_ball, const od::Ball predicted_ball) : true_ball(true_ball), predicted_ball(predicted_ball) {
@@ -156,23 +158,35 @@ double bm::localization_metric(const std::vector<double>& aps, const int num_cla
     return std::accumulate(aps.begin(), aps.end(), 0.0) / num_classes;
 }
 
+/* Compute IoU of given class */
+double bm::iou_class(cv::Mat& true_mask, cv::Mat& predicted_mask, int class_id) {
+    // Binary true and predicted masks for class id
+    cv::Mat mask1, mask2;
+    cv::inRange(true_mask, class_id, class_id, mask1);
+    cv::inRange(predicted_mask, class_id, class_id, mask2);
+
+    // Intersection mask between true and predicted masks
+    cv::Mat intersection_mask, union_mask;
+    cv::bitwise_and(mask1, mask2, intersection_mask);
+    cv::bitwise_or(mask1, mask2, union_mask);
+    
+    // Show masks
+    /*cv::imshow("True mask", mask1);
+    cv::imshow("Predicted mask", mask2);
+    cv::imshow("Intersection mask", intersection_mask);
+    cv::imshow("Union mask", union_mask);
+    cv::waitKey(0);*/
+
+    // Compute IoU as ratio of intersection area to union area
+    double intersection_area = cv::countNonZero(intersection_mask);
+    double union_area = cv::countNonZero(union_mask);
+    double iou = union_area != 0 ? intersection_area / union_area : 0;
+
+    return iou;
+}
+
 /* Segmentation metric */
-void bm::segmentation_metric() {
-    // Input: sorted matches
-
-    // For each class:
-    // 1. For each match:
-    //    * Compute the IoU considering the areas of the inscribed circle in the true bounding box and in the predicted bounding box
-    // 2. Compute the average of the computed IoU's
-
-    // Consider the corresponding segmentation mask frame from the directory ../system/result generate by our system by assigning to each class the greyscale level of the id od the class itself (reason why we were not able to se nothing... i understood this while writing, lol)
-    
-    // Gather the corresponding ground truth mask from the dataset
-    
-    // Compute the intersection area between the two table areas identified by the grayscale level 5
-    // Compute the union area between the two table areas identified by the grayscale level 5
-
-    // Compute the table IoU considered these two area values
-
-    // Output: ball mIoU, table IoU
+double bm::segmentation_metric(std::vector<double> ious) {
+    // Compute average of given IoU
+    return std::accumulate(ious.begin(), ious.end(), 0.0) / ious.size();
 }

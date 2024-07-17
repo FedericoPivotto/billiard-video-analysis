@@ -8,7 +8,10 @@
 
 /* Billiard metric namespace */
 namespace bm {
-    // Constant declaration
+    // Error constant declaration
+    const int IMAGE_READ_ERROR = -1;
+
+    // Constant declarations
     const double IOU_THRESHOLD = 0.5;
     enum State {TP, TN, FP, FN};
 
@@ -40,10 +43,11 @@ namespace bm {
     // Auxiliary function declarations
     void matches_search(const std::vector<od::Ball>& true_balls, const std::vector<od::Ball>& predicted_balls, std::vector<bm::BallMatch>& best_ball_matches);
     double average_precision(std::vector<bm::BallMatch>& ball_matches, std::vector<od::Ball>& predicted_balls, int total_ground_truths);
+    double iou_class(cv::Mat& true_mask, cv::Mat& predicted_mask, int class_id);
 
     // Metric function declarations
     double localization_metric(const std::vector<double>& aps, const int num_classes);
-    void segmentation_metric();
+    double segmentation_metric(std::vector<double> ious);
 }
 
 #endif // BILLIARD_METRIC_H

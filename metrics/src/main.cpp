@@ -15,8 +15,7 @@ int main(int argc, char** argv) {
     // NOTE: fix this only after all metrics are fine, substituting this part extracting correctly data from the provide video filename as input parameter
 
     // Read true bounding boxes
-    // NOTE: it will come from dataset directory
-    // ATTENTION: Federico will take care of this part
+    // TODO: it will come from dataset directory
     std::vector<od::Ball> true_balls;
     std::string true_bboxes_frame_file_path = "../metrics/data/true_frame_first_bbox.txt";
     fsu::read_ball_bboxes(true_bboxes_frame_file_path, true_balls);
@@ -31,8 +30,7 @@ int main(int argc, char** argv) {
     // std::cout << std::endl;
 
     // Read predicted bounding boxes
-    // NOTE: it will come from result directory
-    // ATTENTION: Federico will take care of this part
+    // TODO: it will come from result directory
     std::vector<od::Ball> predicted_balls;
     std::string predicted_bboxes_frame_file_path = "../metrics/data/predicted_frame_first_bbox.txt";
     bool confidence_flag = true;
@@ -51,7 +49,6 @@ int main(int argc, char** argv) {
     std::vector<double> aps;
 
     // For each ball class
-    // TODO: to adjust
     int num_classes = 4;
     for(size_t i = 1; i <= num_classes; ++i) {
         // Extract true balls of the current class
@@ -94,8 +91,60 @@ int main(int argc, char** argv) {
     // TODO: to remove and replace with writing in a text file
     std::cout << "Mean Average Precision (mAP): " << map << std::endl;
 
+    // Dummy print
+    std::cout << std::endl;
+
+    // Read true mask
+    // TODO: it will come from result directory
+    // std::string true_mask_path = "../metrics/data/true_mask_frame_first.png";
+    std::string true_mask_path = "../metrics/data/wrong_mask.png";
+    cv::Mat true_mask = cv::imread(true_mask_path, cv::IMREAD_GRAYSCALE);
+    // safety check on true mask
+	if(true_mask.data == NULL) {
+		std::cout << "Error: The image cannot be read." << std::endl;
+		exit(bm::IMAGE_READ_ERROR);
+	}
+
+    // Read predicted mask
+    // TODO: it will come from result directory
+    std::string predicted_mask_path = "../metrics/data/predicted_mask_frame_first.png";
+    cv::Mat predicted_mask = cv::imread(predicted_mask_path, cv::IMREAD_GRAYSCALE);
+    // safety check on predicted mask
+	if(predicted_mask.data == NULL) {
+		std::cout << "Error: The image cannot be read." << std::endl;
+		exit(bm::IMAGE_READ_ERROR);
+	}
+
+    // Show true and predicted mask
+    /*cv::imshow("True mask", true_mask);
+    cv::imshow("Predicted mask", predicted_mask);
+    cv::waitKey(0);*/
+
+    // Vectore of IoU values
+    std::vector<double> ious;
+
     // TODO: Segmentation metric
-    bm::segmentation_metric();
+    // TODO: to fix
+    // For each ball class
+    num_classes = 5;
+    for(size_t i = 1; i <= num_classes; ++i) {
+        // Class IoU
+        double class_iou = bm::iou_class(true_mask, predicted_mask, i);
+
+        // Add class IoU
+        ious.push_back(class_iou);
+
+        // Print result
+        // TODO: to remove
+        std::cout << "IoU for class " << i << ": " << class_iou << std::endl;
+    }
+
+    // Compute mIoU
+    double miou = bm::segmentation_metric(ious);
+
+    // Print mIoU
+    // TODO: to remove and replace with writing in a text file
+    std::cout << "Mean Intersection over Union (mIoU): " << miou << std::endl;
 
     return 0;
 }
