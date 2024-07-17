@@ -50,16 +50,15 @@ void lrds::points_float_to_point(const std::vector<cv::Point2f> float_points, st
 
 /* Preprocessing of frame in bgr */
 void lrds::preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame){
-    //// Apply median to slightly remove noise
-    //cv::medianBlur(frame, preprocessed_video_frame, 3);
-    //
-    //// Frame sharpening 
-    //cv::Mat gaussian_frame;
-    //cv::GaussianBlur(preprocessed_video_frame, gaussian_frame, cv::Size(3,3), 1.0);
-    //cv::addWeighted(preprocessed_video_frame, 1.5, gaussian_frame, -0.5, 0, preprocessed_video_frame);
+    // Apply median to slightly remove noise
+    cv::medianBlur(frame, preprocessed_video_frame, 3);
+
+    cv::Mat gaussian_frame;
+    cv::GaussianBlur(preprocessed_video_frame, gaussian_frame, cv::Size(3,3), 1.0);
+    cv::addWeighted(preprocessed_video_frame, 1.5, gaussian_frame, -0.4, 0, preprocessed_video_frame);
     
     // Keep color information 
-    cv::bilateralFilter(frame.clone(), preprocessed_video_frame, 9, 75.0, 50.0);
+    cv::bilateralFilter(preprocessed_video_frame.clone(), preprocessed_video_frame, 9, 125.0, 50.0);
 }
 
 /* Suppress circles too close to billiard holes */
@@ -231,46 +230,6 @@ void lrds::normalize_circles_radius(std::vector<cv::Vec3f>& circles){
     }
 }
 
-/*
-void lrds::select_circles(std::vector<cv::Vec4f>& circles){
-    const float votes_th = 10.0; 
-    std::vector<cv::Vec4f> circles_filtered;
-    
-    // Compute average radius only on not large circles
-    for(size_t i = 0; i < circles.size(); i++){
-        if(circles[i][3] > votes_th){
-            circles_filtered.push_back(circles[i]);
-        }
-    }
-
-    circles = circles_filtered;
-}*/
-
-/* Perform color segmentation based on dominant hue and saturation */
-void lrds::find_dominant_colors(const cv::Mat& frame, const cv::Mat& mask, int& dominant_hue, int& dominant_saturation){
-    // Settings of hsv histogram
-    int hbins = 30, sbins = 32;
-    float hranges[] = {0, 180};
-    float sranges[] = {0, 256};
-
-    const int hist_size[] = {hbins, sbins};
-    const float* hist_ranges[] = {hranges, sranges};
-    int channels[] = {0, 1};
-    
-    // Compute hsv histogram only on H and S channels
-    cv::Mat histogram;
-    cv::calcHist(&frame, 1, channels, mask, histogram, 2, hist_size, hist_ranges, true, false);
-    cv::normalize(histogram, histogram, 0, 255, cv::NORM_MINMAX);
-
-    // Find dominant hue and saturation by the max value of the histogram
-    double max_hist = 0.0; 
-    int max_index[] = {0, 0};
-    cv::minMaxIdx(histogram, 0, &max_hist, 0, max_index);
-
-    dominant_hue = max_index[0] * (180 / hbins);
-    dominant_saturation = max_index[1] * (256 / sbins);
-}
-
 /* Trackbars for hough circles */
 static void hsv_hough_callback(int pos, void* userdata) {
     // Get Canny parameters from userdata
@@ -278,10 +237,7 @@ static void hsv_hough_callback(int pos, void* userdata) {
 
     // Dereference images
     cv::Mat frame = (*params.src).clone();
-	cv::Mat mask, hand_mask, glove_mask, frame_bgr;
-
-    // Compute bgr frame
-    cv::cvtColor(frame, frame_bgr, cv::COLOR_HSV2BGR);
+	cv::Mat mask;
 
     // Color hsv segmentation
     //int hue_range = 50;
@@ -296,14 +252,7 @@ static void hsv_hough_callback(int pos, void* userdata) {
     //cv::inRange(frame, cv::Scalar(dominant_hue - params.iLowH, dominant_saturation - params.iLowS, params.iLowV), 
     //                   cv::Scalar(dominant_hue + params.iHighH, dominant_saturation + params.iHighS, params.iHighV), mask);
     cv::inRange(frame, cv::Scalar(params.iLowH, params.iLowS, params.iLowV), cv::Scalar(params.iHighH, params.iHighS, params.iHighV), mask);
-    cv::inRange(frame_bgr, cv::Scalar(110, 130, 110), cv::Scalar(140, 185, 215), hand_mask);
-    cv::inRange(frame_bgr, cv::Scalar(5, 5, 5), cv::Scalar(50, 50, 50), glove_mask);
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(15, 15));
-    cv::erode(hand_mask, hand_mask, kernel);
-    cv::dilate(hand_mask, hand_mask, kernel);
-    cv::erode(glove_mask, glove_mask, kernel);
-    cv::dilate(glove_mask, glove_mask, kernel);
-    
+
 
     // Dilate and erosion set operations on mask 
     //cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
@@ -322,9 +271,9 @@ static void hsv_hough_callback(int pos, void* userdata) {
 
     std::vector<cv::Vec3f> circles, circles_big, circles_small;
 	cv::HoughCircles(mask, circles, cv::HOUGH_GRADIENT, 1,
-		6, // distance between circles
+		7, // distance between circles
 		100, 9, // canny edge detector parameters and circles center detection 
-		3, 20); // min_radius & max_radius of circles to detect
+		3, 22); // min_radius & max_radius of circles to detect
     
     // Suppress circles
     lrds::suppress_billiard_holes(circles, params.corners, params.is_distorted);
@@ -333,7 +282,7 @@ static void hsv_hough_callback(int pos, void* userdata) {
     lrds::normalize_circles_radius(circles);
     
     // Get circles
-    circles.insert(circles.end(), circles_big.begin(), circles_big.end());
+    //circles.insert(circles.end(), circles_big.begin(), circles_big.end());
     
     // Show detected circles
     for(size_t i = 0; i < circles.size(); i++) {
@@ -350,7 +299,7 @@ static void hsv_hough_callback(int pos, void* userdata) {
 
     // Display our result
 	cv::imshow(params.window_name, frame);
-    cv::imshow("Mask of change", glove_mask);
+    cv::imshow("Mask of change", mask);
 }
 
 
@@ -397,6 +346,7 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     int max_th = 300;
     int color_std = 100;
     int space_std = 75;
+    //cv::imshow("F", preprocessed_video_frame);
 
     // HSV window trackbars
     // ParameterHSV hsvp = {"Control HSV", &frame_hsv, &mask, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV, maxH, maxS, maxV};
@@ -460,3 +410,26 @@ void lrds::lrds_object_detection(const std::vector<cv::Mat>& video_frames, const
     //    }
     //}
 //
+
+    //// Get gray image
+    //cv::Mat gray_image;
+    //cv::cvtColor(preprocessed_video_frame, gray_image, cv::COLOR_BGR2GRAY);
+    //
+    //// Frame sharpening 
+    //cv::Mat grad_x, grad_y, gradient;
+    //cv::Sobel(gray_image, grad_x, CV_16S, 0, 1, 3);
+    //cv::Sobel(gray_image, grad_y, CV_16S, 1, 0, 3);
+    //cv::convertScaleAbs(grad_x, grad_x);
+    //cv::convertScaleAbs(grad_y, grad_y);
+    //cv::addWeighted(grad_x, 0.5, grad_y, 0.5, 0, gradient);
+//
+    //// Convert gradient to a 3-channel image for addition to the original BGR image
+    //cv::Mat gradient_bgr;
+    //cv::cvtColor(gradient, gradient_bgr, cv::COLOR_GRAY2BGR);
+//
+    //// Sharpen the original image by adding the gradient to it
+    //preprocessed_video_frame = preprocessed_video_frame + gradient_bgr;
+//
+    //// Clip values to ensure valid pixel range [0, 255]
+    //cv::threshold(preprocessed_video_frame, preprocessed_video_frame, 0, 255, cv::THRESH_TOZERO);
+    //cv::threshold(preprocessed_video_frame, preprocessed_video_frame, 255, 255, cv::THRESH_TRUNC);
