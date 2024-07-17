@@ -12,12 +12,20 @@
 namespace od {
     // Classes declaration
     class Ball {
+        private:
+            // Static id declaration
+            static int current_id;
+
         public:
+            // Ball unique id
+            int id;
+
             // Ball bounding box
             unsigned int x, y, width, height, ball_class;
             double confidence;
 
-            // Constructor
+            // Constructors
+            Ball();
             Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence = 0);
 
             // Function declarations

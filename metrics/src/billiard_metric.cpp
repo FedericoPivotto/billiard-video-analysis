@@ -20,6 +20,7 @@ bm::BallMatch::BallMatch(const od::Ball true_ball, const od::Ball predicted_ball
 /* Set distance of true and predicted bounding boxes */
 // TODO: alter to get it independent from the order of true balls and predicted balls vectors
 // NOTE: define the distance function between two bounding boxes rows (x, y, width, height, ball class)
+// TODO: bounding boxes have to be coupled selecting the maximum IoU
 void bm::BallMatch::set_distance() {
     // Distance value
     distance = std::numeric_limits<double>::infinity();
@@ -91,6 +92,8 @@ void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vect
             ball_matches.push_back(ball_match);
         }
 
+        // TODO: altern the code selecting matches according to max IoU above IoU threshold
+
         // Sort ball matches in ascending order of the distance value
         std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.distance < bm2.distance; });
 
@@ -114,25 +117,54 @@ void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vect
 }
 
 /* Compute class mean Average Precision */
-double bm::average_precision(int total_ground_truths, std::vector<bm::BallMatch>& ball_matches) {
-    // Sort ball matches in descending order of the confidence value
-    std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.predicted_ball.confidence > bm2.predicted_ball.confidence; });
+double bm::average_precision(std::vector<bm::BallMatch>& ball_matches, std::vector<od::Ball>& predicted_balls, int total_ground_truths) {
+    // Collect predicted balls not matched which are FP
+    std::vector<od::Ball> predicted_balls_not_matched;
+    for(od::Ball predicted_ball : predicted_balls) {
+        bool is_predicted_ball_matched = false;
+        for(bm::BallMatch ball_match : ball_matches) {
+            is_predicted_ball_matched = predicted_ball.id == ball_match.predicted_ball.id;
+            if(is_predicted_ball_matched)
+                break;
+        }
 
-    // Initialize cumulative TP and cumulative FP
-    int cumulative_tp = 0, cumulative_fp = 0;
+        if(! is_predicted_ball_matched)
+            predicted_balls_not_matched.push_back(predicted_ball);
+    }
+
+    // Print predicted balls not matched
+    /*for(od::Ball predicted_ball : predicted_balls_not_matched)
+        std::cout << "Predicted ball not matched: " << predicted_ball << std::endl;*/
+
+    // For each predicted bounding box not matched add a FP ball match
+    std::vector<bm::BallMatch> ball_matches_copy(ball_matches);
+    for(od::Ball predicted_ball : predicted_balls_not_matched) {
+        // Create ball not matched
+        bm::BallMatch ball_match(od::Ball(), predicted_ball);
+        // Force false positive
+        ball_match.state = bm::FP;
+        // Add ball not matched
+        ball_matches_copy.push_back(ball_match);
+    }
+
+    // Sort ball matches in descending order of the confidence value
+    std::sort(ball_matches_copy.begin(), ball_matches_copy.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.predicted_ball.confidence > bm2.predicted_ball.confidence; });
 
     // Cumulative precision and recall vectors
+    int cumulative_tp = 0, cumulative_fp = 0;
     std::vector<double> cumulative_precision, cumulative_recall;
 
     // For each predicted bounding box in ball matches
-    for(bm::BallMatch ball_match : ball_matches) {
+    for(bm::BallMatch ball_match_copy : ball_matches_copy) {
         // Update cumulative TP and cumulative FP according to ball match
-        // TODO: add predicted balls non matched to FP?
-        ball_match.state == bm::TP ? ++cumulative_tp : ++cumulative_fp;
+        ball_match_copy.state == bm::TP ? ++cumulative_tp : ++cumulative_fp;
 
         // Compute and store cumulative precision and cumulative recall:
         cumulative_precision.push_back(static_cast<double>(cumulative_tp) / (cumulative_tp + cumulative_fp));
         cumulative_recall.push_back(static_cast<double>(cumulative_tp) / total_ground_truths);
+
+        // Print cumulative_tp and total_ground_truths
+        /* std::cout << cumulative_tp << " " << total_ground_truths << std::endl;*/
     }
 
     // Vector of precision and recall values
@@ -141,6 +173,11 @@ double bm::average_precision(int total_ground_truths, std::vector<bm::BallMatch>
         recall_sorted_precision.push_back(std::pair(cumulative_recall[i], cumulative_precision[i]));
     // Sort recall sorted_precision according to recall values
     std::sort(recall_sorted_precision.begin(), recall_sorted_precision.end(), [](std::pair<double, double> &p1, std::pair<double, double> &p2) { return p1.first < p2.first; });
+
+    // Print confidence, precision and recall of each predicted ball
+    // TODO: to remove
+    /*for(size_t i = 0; i < cumulative_precision.size(); ++i)
+        std::cout << ball_matches_copy[i].predicted_ball.confidence << " P: " << cumulative_precision[i] << " R: " << cumulative_recall[i] << std::endl;*/
 
     // Print recall sorted_precision
     // TODO: to remove
@@ -154,7 +191,7 @@ double bm::average_precision(int total_ground_truths, std::vector<bm::BallMatch>
         double recall = i / 10.0;
 
         // Assign the highest cumulative precision next to recall
-        // QUESTION: PASCAL VOC 11 wants < or <= 
+        // TODO: understand if PASCAL VOC 11 wants < or <=
         size_t j = 0; for(; j < cumulative_recall.size() && cumulative_recall[j] < recall; ++j);
         interpolated_precisions[i] = j < cumulative_recall.size() ? *std::max_element(cumulative_precision.begin() + j, cumulative_precision.end()) : 0;
     }
@@ -164,14 +201,12 @@ double bm::average_precision(int total_ground_truths, std::vector<bm::BallMatch>
     /*std::cout << std::endl;
     double rec = 0.0;
     for(double inter : interpolated_precisions) {
-        std::cout << rec << " " << inter << std::endl;
+        std::cout << "P: " << inter << " R:" << rec << std::endl;
         rec += 0.1;
     }*/
 
-    // Compute interpolated precision
-    double interpolated_precision = std::accumulate(interpolated_precisions.begin(), interpolated_precisions.end(), 0.0);
-
     // Compute Average Precision (AP)
+    double interpolated_precision = std::accumulate(interpolated_precisions.begin(), interpolated_precisions.end(), 0.0);
     double ap = interpolated_precision / 11;
 
     return ap;
@@ -179,7 +214,7 @@ double bm::average_precision(int total_ground_truths, std::vector<bm::BallMatch>
 
 /* Localization metric */
 double bm::localization_metric(std::vector<double>& aps, int num_classes) {
-    // Compute the mean Average Precision (mAP):
+    // Compute the mean Average Precision (mAP)
     return std::accumulate(aps.begin(), aps.end(), 0.0) / num_classes;
 }
 

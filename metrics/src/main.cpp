@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
     std::vector<double> aps;
 
     // For each ball class
+    // TODO: to adjust
     int num_classes = 4;
     for(size_t i = 1; i <= num_classes; ++i) {
         // Extract true balls of the current class
@@ -77,7 +78,12 @@ int main(int argc, char** argv) {
         std::cout << "Average_precision:" << std::endl;*/
 
         // Class average precision
-        aps.push_back(bm::average_precision(true_balls_class.size(), best_ball_matches));
+        // CHECK: is ground truth per class
+        aps.push_back(bm::average_precision(best_ball_matches, predicted_balls_class, true_balls_class.size()));
+
+        // Print average precision
+        // TODO: to remove
+        std::cout << "Average Precision (AP) for class " << i << ": " << aps[i - 1] << std::endl;
 
         // Dummy print
         // TODO: to remove
@@ -89,6 +95,7 @@ int main(int argc, char** argv) {
     double map = bm::localization_metric(aps, num_classes);
 
     // Print mean average precision
+    // TODO: to remove and replace with writing in a text file
     std::cout << "Mean Average Precision (mAP): " << map << std::endl;
 
     // TODO: Segmentation metric

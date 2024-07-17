@@ -7,8 +7,15 @@
 // filesystem_utils: fsu::create_bboxes_frame_file()
 #include <filesystem_utils.h>
 
-/* Ball class */
-od::Ball::Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence) : x(x), y(y), width(width), height(height), ball_class(ball_class), confidence(confidence) {
+/* Static id definition */
+int od::Ball::current_id = 0;
+
+/* Ball empty constructor */
+od::Ball::Ball() : id(++current_id), x(0), y(0), width(0), height(0), ball_class(0), confidence(0) {
+}
+
+/* Ball full constructor */
+od::Ball::Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence) : id(++current_id), x(x), y(y), width(width), height(height), ball_class(ball_class), confidence(confidence) {
 }
 
 /* Get ball center */

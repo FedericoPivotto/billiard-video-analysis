@@ -40,7 +40,7 @@ namespace bm {
 
     // Auxiliary function declarations
     void matches_search(const std::vector<od::Ball>& true_balls, const std::vector<od::Ball>& predicted_balls, std::vector<bm::BallMatch>& best_ball_matches);
-    double average_precision(int total_ground_truths, std::vector<bm::BallMatch>& ball_matches);
+    double average_precision(std::vector<bm::BallMatch>& ball_matches, std::vector<od::Ball>& predicted_balls, int total_ground_truths);
 
     // Metric function declarations
     double localization_metric(std::vector<double>& aps, int num_classes);
