@@ -10,7 +10,7 @@
 #include <edge_detection.h>
 
 // object detection library
-#include <object_detection.h>
+#include <lourdes.h>
 
 // segmentation library
 #include <segmentation.h>
@@ -79,62 +79,31 @@ int main(int argc, char** argv) {
             }
 
             // TODO: object detection (Federico)
-            // od::object_detection(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
+            // Distortion check (DUMMY)
+            bool is_distorted = false;
+            if(i > 0){
+                is_distorted = true;
+            }
 
             // Segmentation (Leonardo)
-            sg::segmentation(video_frames, k, video_result_subdirs[0], first_corners, video_frame_cv);
+            // Get video dataset directory
+            // TODO: change with result directory
+            std::vector<std::string> video_dataset_subdirs;
+            fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
+
+            ed::sort_corners(first_corners);
+            lrds::lrds_object_detection(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, is_distorted);
+            // TODO: when object detection is fine, the flag must be sat to false
+            // ATTENTION: test_flag is used just to do test with a dataset bounding box file
+            //bool test_flag = true;
+            //sg::segmentation(video_frames, k, video_dataset_subdirs[0], first_corners, video_frame_cv, test_flag);
+            
             // Draw field borders
             ed::draw_borders(video_frame_cv, first_borders, first_corners);
         }
 
-        // Assuming field corners of the first video frame
-
-        // 2D top-view minimap and tracking (Fabrizio)
-
-        // Create map-view base
-        cv::Mat map_view, field_frame = video_frames[0].clone(), map_perspective;
-        mm::compute_map_view(map_view, field_frame, map_perspective, first_borders, first_corners);
-        
-        // For each video frame
-        std::vector<cv::Mat> video_game_frames_cv;
-        for(size_t j = 0; j < video_frames.size(); ++j) {
-            // Skip game video frame if empty
-            if(video_frames[j].empty())
-                continue;
-
-            // Video game frame clone
-            cv::Mat video_game_frame_cv = video_frames[j].clone();
-            video_game_frames_cv.push_back(video_game_frame_cv);
-
-            // Get bounding box file path
-            std::string bboxes_frame_file_path;
-            fsu::get_bboxes_frame_file_path(video_frames, j, video_result_subdirs[0], bboxes_frame_file_path);
-
-            // 2D top-view minimap (Fabrizio)
-
-            // Read balls from bounding box file
-            std::vector<od::Ball> ball_bboxes;
-            fsu::read_ball_bboxes(bboxes_frame_file_path, ball_bboxes);
-            
-            // Overlay billiard mini-view balls trajectories
-            mm::overlay_map_view_trajectories(map_view, map_perspective, ball_bboxes);
-            // Overlay billiard mini-view balls
-            cv::Mat balls_map_view = map_view.clone();
-            mm::overlay_map_view_balls(balls_map_view, map_perspective, ball_bboxes);
-            // Overlay billiard mini-view background
-            mm::overlay_map_view_background(balls_map_view);
-            // Overlay the map-view in the current frame
-            mm::overlay_map_view(video_game_frame_cv, balls_map_view);
-
-            // TODO: trajectory tracking
-            // NOTE: required to update minimap
-        }
-
         // Show computer vision video frames
-        vu::show_video_frames(video_frames_cv);
-
-        // Show video game frames
-        vu::show_video_frames(video_game_frames_cv);
+        //vu::show_video_frames(video_frames_cv);
     }
 
     return 0;
