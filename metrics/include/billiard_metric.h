@@ -17,7 +17,7 @@ namespace bm {
         public:
             // Ball match attributes
             od::Ball true_ball, predicted_ball;
-            double distance, iou;
+            double iou;
 
             // Ball match state
             State state;
@@ -30,7 +30,6 @@ namespace bm {
         
         private:
             // Function declarations
-            void set_distance();
             void set_iou();
             void set_state();
     };

@@ -12,32 +12,8 @@
 /* Ball match class */
 bm::BallMatch::BallMatch(const od::Ball true_ball, const od::Ball predicted_ball) : true_ball(true_ball), predicted_ball(predicted_ball) {
     // Set values
-    set_distance();
     set_iou();
     set_state();
-}
-
-/* Set distance of true and predicted bounding boxes */
-// TODO: alter to get it independent from the order of true balls and predicted balls vectors
-// NOTE: define the distance function between two bounding boxes rows (x, y, width, height, ball class)
-// TODO: bounding boxes have to be coupled selecting the maximum IoU
-void bm::BallMatch::set_distance() {
-    // Distance value
-    distance = std::numeric_limits<double>::infinity();
-    
-    // Check ball class
-    if(true_ball.ball_class != predicted_ball.ball_class)
-        return;
-    
-    // Compute ball distance contribute
-    double geometric_distance = std::sqrt(std::pow(true_ball.center().first - predicted_ball.center().first, 2) + std::pow(true_ball.center().second - predicted_ball.center().second, 2));
-
-    // Compute bounding box difference contribute
-    int width_diff = true_ball.width - predicted_ball.width;
-    int height_diff = true_ball.height - predicted_ball.height;
-
-    // Compute distance as sum of all contributes
-    distance = geometric_distance + std::abs(width_diff) + std::abs(height_diff);
 }
 
 /* Set IoU of true and predicted bounding boxes */
@@ -77,12 +53,12 @@ void bm::BallMatch::set_state() {
 /* Ball match operator << overload */
 std::ostream& bm::operator<<(std::ostream& os, const bm::BallMatch& ball_match) {
     // Ball match information string
-    return os << "(" << ball_match.true_ball << " | " << ball_match.predicted_ball << "), " << ball_match.state << ", IoU(" << ball_match.iou << "), Distance(" << ball_match.distance << ")";
+    return os << "(" << ball_match.true_ball << " | " << ball_match.predicted_ball << "), " << ball_match.state << ", IoU(" << ball_match.iou << ")";
 }
 
 /* Ball matches search */
 void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vector<od::Ball>& predicted_balls, std::vector<bm::BallMatch>& best_ball_matches) {
-    // For each true bounding box associate predicted bounding box according to distance function
+    // For each true bounding box associate predicted bounding box according to IoU
     for(size_t i = 0; i < true_balls.size(); ++i) {
         // Possible true ball matches
         std::vector<bm::BallMatch> ball_matches;
@@ -92,12 +68,10 @@ void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vect
             ball_matches.push_back(ball_match);
         }
 
-        // TODO: altern the code selecting matches according to max IoU above IoU threshold
+        // Sort ball matches in descending order of IoU
+        std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.iou > bm2.iou; });
 
-        // Sort ball matches in ascending order of the distance value
-        std::sort(ball_matches.begin(), ball_matches.end(), [](const bm::BallMatch& bm1, const bm::BallMatch& bm2) { return bm1.distance < bm2.distance; });
-
-        // Select the match with minimum distance if predicted ball is not in a best match
+        // Select the match with maximum IoU if predicted ball is not in a best match
         for(bm::BallMatch ball_match : ball_matches) {
             // Check if predicted ball is in a best match
             bool is_predicted_ball_present = false;
@@ -108,7 +82,7 @@ void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vect
             }
 
             // Add ball if predicted ball is not in a best match
-            if(! is_predicted_ball_present) {
+            if(! is_predicted_ball_present && ball_match.state == bm::TP) {
                 best_ball_matches.push_back(ball_match);
                 break;
             }
@@ -133,15 +107,14 @@ double bm::average_precision(std::vector<bm::BallMatch>& ball_matches, std::vect
     }
 
     // Print predicted balls not matched
-    /*for(od::Ball predicted_ball : predicted_balls_not_matched)
-        std::cout << "Predicted ball not matched: " << predicted_ball << std::endl;*/
+    for(od::Ball predicted_ball : predicted_balls_not_matched)
+        std::cout << "Predicted ball not matched: " << predicted_ball << std::endl;
 
     // For each predicted bounding box not matched add a FP ball match
     std::vector<bm::BallMatch> ball_matches_copy(ball_matches);
     for(od::Ball predicted_ball : predicted_balls_not_matched) {
-        // Create ball not matched
+        // Create ball not matched forced to FP
         bm::BallMatch ball_match(od::Ball(), predicted_ball);
-        // Force false positive
         ball_match.state = bm::FP;
         // Add ball not matched
         ball_matches_copy.push_back(ball_match);
@@ -171,6 +144,7 @@ double bm::average_precision(std::vector<bm::BallMatch>& ball_matches, std::vect
     std::vector<std::pair<double, double>> recall_sorted_precision;
     for(size_t i = 0; i < cumulative_recall.size(); ++i)
         recall_sorted_precision.push_back(std::pair(cumulative_recall[i], cumulative_precision[i]));
+
     // Sort recall sorted_precision according to recall values
     std::sort(recall_sorted_precision.begin(), recall_sorted_precision.end(), [](std::pair<double, double> &p1, std::pair<double, double> &p2) { return p1.first < p2.first; });
 

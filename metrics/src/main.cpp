@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
 
         // Dummy print
         // TODO: to remove
-        /*std::cout << std::endl;*/
+        std::cout << std::endl;
     }
 
     // TODO: Localization metric
