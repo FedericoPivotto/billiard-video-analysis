@@ -349,6 +349,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     cv::waitKey(0);*/
 
     // Ball bounding boxes from circles
+    // TODO: review which circles
     std::vector<od::Ball> ball_bboxes;
     for(cv::Vec3f circle : circles) {
         // Circle data
@@ -363,6 +364,12 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     std::string bboxes_frame_file_path;
     fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
     std::ofstream bboxes_frame_file(bboxes_frame_file_path);
+
+    // Compute magnitude on grayscale frame
+    // TODO: to review
+    // cv::Mat frame_gray, magnitude;
+    // cv::cvtColor(preprocessed_video_frame, frame_gray, cv::COLOR_BGR2GRAY);
+    // od::compute_gradient_magnitude(frame_gray, magnitude);
 
     // Scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
@@ -390,6 +397,34 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // - 3:solid ball - color, except white and black, is the predominant color
     // - 4:stripe ball - both white and color are predominant colors
 
+    // Get bounding box center and radius
+    cv::Point box_center = cv::Point(ball_bbox.x, ball_bbox.y);
+    unsigned int radius = ball_bbox.radius();
+
+    // Get ball mask
+    cv::Mat mask_ball = cv::Mat::zeros(frame.size(), CV_8UC3);
+    cv::circle(mask_ball, box_center, radius, cv::Scalar(255, 255, 255), cv::FILLED);
+
+    // Get ball region
+    // TODO: issue to fix for having circular ball mask
+    cv::Mat frame_roi = frame(mask_ball);
+
+    // Get grayscale frame
+    cv::Mat frame_gray;
+    cv::cvtColor(frame_roi, frame_gray, cv::COLOR_BGR2GRAY);
+
+    // Compute ball gradient magnitude    
+    cv::Mat magnitude;
+    od::compute_gradient_magnitude(frame_gray, magnitude);
+    double grad_score = cv::countNonZero(magnitude);
+
+    // Compute ball color ratio w.r.t. white
+    double ratio;
+    od::compute_color_white_ratio(frame_roi, ratio);
+
+    // Classify according to ratio and gradient magnitude
+    double ball_score = ratio + 0.5 * grad_score;
+
     // TODO: to modify
     // Set ball class
     ball_bbox.ball_class = -2;
@@ -401,4 +436,20 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
 
     // TODO: to modify
     ball.confidence = -3;
+}
+
+/* Compute gradient of grayscale image */
+void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude){
+    // Apply Sobel to get gradient magnitude
+    cv::Mat grad_x, grad_y;
+    cv::Sobel(frame, grad_x, 1, 0, 3);
+    cv::Sobel(frame, grad_y, 0, 1, 3);
+    cv::magnitude(grad_x, grad_y, magnitude);
+
+    // Normalize magnitude
+    cv::normalize(magnitude, magnitude, 0, 255, cv::NORM_MINMAX, CV_8U);
+}
+
+void od::compute_color_white_ratio(const cv::Mat& ball, double& ratio){
+    double color_ratio, white_ratio;
 }

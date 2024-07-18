@@ -64,6 +64,10 @@ namespace od {
     void points_float_to_int(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& points);
     void preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_frame);
     void morpho_pre_process(cv::Mat& mask);
+
+    // Object classification auxiliary functions
+    void compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& gradient);
+    void compute_color_white_ratio(const cv::Mat& ball, double& ratio);
 }
 
 #endif // OBJECT_DETECTION_H
