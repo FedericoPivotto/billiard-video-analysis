@@ -51,7 +51,7 @@ namespace od {
     void set_ball_bbox_confidence(od::Ball& ball);
 
     // Object detection main declaration
-    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& video_frame);
+    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path = "", const bool test_flag = false);
 
     // Circle filters declarations
     void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted);

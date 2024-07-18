@@ -6,6 +6,8 @@
 #include <opencv2/imgproc.hpp>
 // filesystem_utils: fsu::create_bboxes_frame_file()
 #include <filesystem_utils.h>
+// edge_detection: ed::sort_corners()
+#include <edge_detection.h>
 
 /* Static id definition */
 int od::Ball::current_id = 0;
@@ -277,7 +279,10 @@ void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
 }
 
 /* Balls detection in given a video frame */
-void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& video_frame) {
+void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path, const bool test_flag) {
+    // Sorted float corners
+    std::vector<cv::Point2f> corners(corners_float);
+    ed::sort_corners(corners);
 
     // Mask image to consider only the billiard table
     cv::Mat mask = cv::Mat::zeros(video_frames[n_frame].size(), CV_8UC3);
@@ -358,6 +363,21 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         // Ball bounding box
         od::Ball ball_bbox(center.x - radius, center.y - radius, 2*radius, 2*radius);
         ball_bboxes.push_back(ball_bbox);
+    }
+
+    // In case of test, read ball bboxes from dataset
+    if(test_flag) {
+        // Read true frame bboxes text file
+        std::string test_bboxes_frame_file_path;
+        fsu::get_bboxes_frame_file_path(video_frames, n_frame, test_bboxes_video_path, test_bboxes_frame_file_path);
+
+        // Read ball bounding box from frame bboxes text file
+        std::vector<od::Ball> test_ball_bboxes;
+        bool confidence_flag = ! test_flag;
+        fsu::read_ball_bboxes(test_bboxes_frame_file_path, test_ball_bboxes, confidence_flag);
+
+        // Replace detected ball bboxes with dataset ones
+        ball_bboxes = test_ball_bboxes;
     }
     
     // Create frame bboxes text file
