@@ -391,12 +391,11 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Compute magnitude on grayscale frame
     // TODO: to review
-    // cv::Mat frame_gray, magnitude;
-    // cv::cvtColor(preprocessed_video_frame, frame_gray, cv::COLOR_BGR2GRAY);
-    // od::compute_gradient_magnitude(frame_gray, magnitude);
+    std::vector<double> gradient_scores, gradient_magnitudes;
+    od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_scores, gradient_magnitudes);
 
     // Scan each ball bounding box
-    for(od::Ball ball_bbox : ball_bboxes) {
+    /*for(od::Ball ball_bbox : ball_bboxes) {
         // TODO: Ball class detection
         od::detect_ball_class(ball_bbox, video_frames[n_frame]);
 
@@ -405,14 +404,14 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
         // Write ball bounding box in frame bboxes text file
         fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
-    }
+    }*/
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
 }
 
 /* Ball class detection */
-void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
+void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame) {
     // TODO: remove background
 
     // TODO: detect ball class
@@ -465,7 +464,8 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
         ball_bbox.ball_class = 3;
     }
 
-    //std::cout<<magnitude_count<<std::endl;
+    std::cout<<"COUNT: "<<magnitude_count<<std::endl;
+    std::cout<<"SCORE: "<<magnitude_score<<std::endl;
     cv::imshow("Grad", magnitude);
     cv::waitKey();
 }
@@ -478,8 +478,59 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
     ball.confidence = -3;
 }
 
+/* Compute gradient magnitude of the ball and the number of pixels with non-zero gradient */
+void od::compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball>& ball_bboxes, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts) {
+    // Scan all bounding boxes
+    for(od::Ball ball_bbox : ball_bboxes) {
+        // Get bounding box center and radius
+        cv::Point box_center = cv::Point(ball_bbox.x + (ball_bbox.width / 2), ball_bbox.y + (ball_bbox.height / 2));
+        unsigned int radius = ball_bbox.radius();
+
+        // Get ball masks
+        cv::Mat mask_ball = cv::Mat::zeros(frame.size(), CV_8UC1);
+        cv::Mat mask_grad_ball = cv::Mat::zeros(frame.size(), CV_8UC1);
+        cv::circle(mask_ball, box_center, radius, cv::Scalar(255), cv::FILLED);
+        cv::circle(mask_grad_ball, box_center, radius - 2, cv::Scalar(255), cv::FILLED);
+
+        // Get gray ball region
+        cv::Mat frame_roi;
+        frame.copyTo(frame_roi, mask_ball);
+
+        // Get grayscale frame
+        cv::Mat frame_gray;
+        cv::cvtColor(frame_roi, frame_gray, cv::COLOR_BGR2GRAY);
+
+        // Compute ball gradient magnitude    
+        cv::Mat magnitude;
+        od::compute_gradient_magnitude(frame_gray, magnitude);
+        magnitude.setTo(0, ~mask_grad_ball);
+
+        // Compute gradient score (balls with >=0.1 magnitude, then they are stripes)
+        cv::Scalar magnitude_score = cv::sum(magnitude);
+        double magnitude_count = static_cast<double> (cv::countNonZero(magnitude)) / cv::countNonZero(mask_grad_ball);
+   
+        // Store magnitude information
+        magnitude_counts.push_back(magnitude_count);
+        magnitude_scores.push_back(magnitude_score[0]);
+
+
+        //std::cout<<"COUNT: "<<magnitude_count<<std::endl;
+        std::cout<<"SCORE: "<<magnitude_score<<std::endl;
+        //cv::imshow("Grad", magnitude);
+        //cv::waitKey();
+    }
+    
+    //od::normalize_vector(magnitude_scores);
+    //for(const double& score : magnitude_scores){
+    //    std::cout<<"SCORE: "<<score<<std::endl;
+    //}
+    
+    cv::imshow("Grad", frame);
+    cv::waitKey();
+}
+
 /* Compute gradient of grayscale image */
-void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude){
+void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude) {
     // Apply Sobel to get gradient magnitude
     cv::Mat grad_x, grad_y;
     cv::Sobel(frame, grad_x, CV_32F, 1, 0, 3);
@@ -493,7 +544,7 @@ void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude){
     cv::threshold(magnitude, magnitude, 100, 0, cv::THRESH_TOZERO);
 }
 
-void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio){
+void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio) {
     double color_count, white_count;
     
     // Define color thresholds
@@ -515,4 +566,26 @@ void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio){
     ratio = color_count / white_count;
     double white_ratio = white_count / cv::countNonZero(ball_region);
     double color_ratio = 1 - white_ratio; 
+}
+
+void od::normalize_vector(std::vector<double>& vec) {
+    // Check for empty vector
+    if(vec.empty()) {
+        return;
+    }
+    
+    // Compute norm
+    double norm = 0, sum = 0;
+    for(const double& elem : vec) {
+        sum += (elem * elem);
+    }
+    norm = std::sqrt(sum);
+
+    // Compute normalized vector
+    std::vector<double> norm_vector;
+    for(const double& elem : vec){
+        norm_vector.push_back(elem / norm);
+    }
+
+    vec = norm_vector;
 }
