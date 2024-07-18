@@ -8,6 +8,8 @@
 #include <filesystem_utils.h>
 // edge_detection: ed::sort_corners()
 #include <edge_detection.h>
+// segmentation: ball color constans
+#include <segmentation.h>
 
 /* Static id definition */
 int od::Ball::current_id = 0;
@@ -405,10 +407,17 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
         // Write ball bounding box in frame bboxes text file
         fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
+
+        // Overlay ball bounding box
+        od::overlay_ball_bounding_bbox(video_frame, ball_bbox);
     }
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
+
+    // Show video fram with classification
+    cv::imshow("Frame with ball classification", video_frame);
+    cv::waitKey(0);
 }
 
 /* Ball class detection */
@@ -466,8 +475,8 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     }
 
     //std::cout<<magnitude_count<<std::endl;
-    cv::imshow("Grad", magnitude);
-    cv::waitKey();
+    // cv::imshow("Grad", magnitude);
+    // cv::waitKey();
 }
 
 // TODO: define ball bbox confidence
@@ -515,4 +524,27 @@ void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio){
     ratio = color_count / white_count;
     double white_ratio = white_count / cv::countNonZero(ball_region);
     double color_ratio = 1 - white_ratio; 
+}
+
+/* Show ball bounding boxes according to class color */
+void od::overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox) {
+    // Ball bounding box corners offset
+    unsigned int offset = 1;
+
+    // Ball bounding box corners with offset
+    cv::Point tl_corner(ball_bbox.x - offset, ball_bbox.y - offset);
+    cv::Point br_corner(ball_bbox.x + ball_bbox.width + offset, ball_bbox.y + ball_bbox.height + offset);
+    
+    // Ball class colors
+    std::vector<cv::Scalar> ball_colors = {sg::WHITE_BALL_BGR.second, sg::BLACK_BALL_BGR.second, sg::SOLID_BALL_BGR.second, sg::STRIPE_BALL_BGR.second};
+
+    // Create a transparent rectangle
+    cv::Mat ball_roi = video_frame(cv::Rect(tl_corner.x, tl_corner.y, br_corner.x - tl_corner.x , br_corner.y - tl_corner.y));
+    cv::Mat color(ball_roi.size(), CV_8UC3, ball_colors[ball_bbox.ball_class-1]); 
+    double alpha = 0.3;
+    cv::addWeighted(color, alpha, ball_roi, 1.0 - alpha , 0, ball_roi); 
+
+    // Draw ball bounding box
+    int line_thickness = 2;
+    cv::rectangle(video_frame, tl_corner, br_corner, ball_colors[ball_bbox.ball_class-1], line_thickness);
 }

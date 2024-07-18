@@ -68,6 +68,7 @@ namespace od {
     // Object classification auxiliary functions
     void compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& gradient);
     void compute_color_white_ratio(const cv::Mat& ball, double& ratio);
+    void overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox);
 }
 
 #endif // OBJECT_DETECTION_H
