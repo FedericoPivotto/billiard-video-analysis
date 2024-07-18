@@ -454,29 +454,34 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat&
     double magnitude_count = magnitude_counts[ball_index];
 
     // Compute ball color ratio w.r.t. white
-    double ratio, white_ratio, color_ratio;
-    od::compute_color_white_ratio(frame_roi, ratio, white_ratio, color_ratio);
+    double white_ratio, black_ratio;
+    od::compute_color_white_ratio(frame_roi, white_ratio, black_ratio);
 
     // TODO: Classify according to ratio and gradient magnitude
     // Stripe ball features: high gradient (more important when few color or few white is shown), white and color
     // Solid ball features: low gradient, few white and more color, gradient is less important
     
-    double white_th = 0.4, grad_score_th = 0.18, grad_count_th = 0.1;
+    double white_th = 0.2, grad_score_th = 0.13, grad_count_th = 0.1;
     if(white_ratio > white_th && magnitude_count > grad_count_th) {
         if(magnitude_score > grad_score_th)
             ball_bbox.ball_class = 4; // Stripe
-        else if(magnitude_count > 1.2*grad_count_th)
+        else if(magnitude_count >= 1.1 * grad_count_th && magnitude_score >= 0.8 * grad_score_th)
             ball_bbox.ball_class = 4; // Stripe
-        else
+        else 
             ball_bbox.ball_class = 3; // Solid
-    } else if (white_ratio > white_th && magnitude_count > 0.5*grad_count_th && magnitude_score > 0.8*grad_score_th) {
+    } else if (white_ratio > 0.9 * white_th && magnitude_count > 0.5 * grad_count_th && magnitude_score > 0.8 * grad_score_th) {
         ball_bbox.ball_class = 4; // Stripe
+    } else if(white_ratio >= 0.45){
+        ball_bbox.ball_class = 1; // White
+    } else if(white_ratio < 0.2 && black_ratio >= 0.2){
+        ball_bbox.ball_class = 2; // Black
     } else {
         ball_bbox.ball_class = 3; // Solid
     }
 
     // std::cout<<"SCORE: " << magnitude_score << std::endl;
-    std::cout << "COUNT: " << magnitude_count << std::endl;
+    //std::cout << "COUNT: " << magnitude_count << std::endl;
+    std::cout << "WHITE: " << white_ratio << std::endl;
     // cv::imshow("Grad", magnitude);
     // cv::waitKey();
 }
@@ -570,28 +575,29 @@ void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude) {
 }
 
 /* Compute ratio color-white ratio */
-void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio, double& white_ratio, double& color_ratio) {
-    double color_count, white_count;
+void od::compute_color_white_ratio(const cv::Mat& ball_region, double& white_ratio, double& black_ratio) {
+    double color_count, white_count, black_count;
     
     // Define color thresholds
-    cv::Scalar lower_th = cv::Scalar(200, 200, 200);
+    cv::Scalar lower_th = cv::Scalar(100, 100, 100);
     cv::Scalar upper_th = cv::Scalar(255, 255, 255);
 
     // Count color and white pixels
-    cv::Mat mask_color, mask_white;
+    cv::Mat mask_color, mask_white, mask_black;
     cv::inRange(ball_region, lower_th, upper_th, mask_white);
-    cv::inRange(ball_region, cv::Scalar(0, 0, 0), upper_th, mask_color);
+    cv::inRange(ball_region, cv::Scalar(1, 1, 1), upper_th, mask_color);
+    cv::inRange(ball_region, cv::Scalar(1, 1, 1), cv::Scalar(50, 50, 50), mask_black);
     
     white_count = cv::countNonZero(mask_white);
+    black_count = cv::countNonZero(mask_black);
     color_count = cv::countNonZero(mask_color);
     
     // Compute ratio
     // Close to 0 if white is predominant
     // Close to 1 if color and white are similar quantity
     // Greater than 1 if color is predominant
-    ratio = color_count / white_count;
     white_ratio = white_count / (white_count + color_count);
-    color_ratio = 1 - white_ratio; 
+    black_ratio = black_count / (white_count + color_count);
 }
 
 /* Normalize given vector */
