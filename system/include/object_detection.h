@@ -45,7 +45,7 @@ namespace od {
     bool operator==(const Ball& ball1, const Ball& ball2);
 
     // Detect function declarations
-    void detect_ball_class(Ball& ball_bbox, const cv::Mat& frame);
+    void detect_ball_class(Ball& ball_bbox, const cv::Mat& frame, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
 
     // Ball bounding box confidence function declaration
     void set_ball_bbox_confidence(od::Ball& ball);

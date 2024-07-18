@@ -378,6 +378,9 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         bool confidence_flag = ! test_flag;
         fsu::read_ball_bboxes(test_bboxes_frame_file_path, test_ball_bboxes, confidence_flag);
 
+        for(od::Ball& ball : test_ball_bboxes){
+            ball.ball_class = 6;
+        }
         // Replace detected ball bboxes with dataset ones
         ball_bboxes = test_ball_bboxes;
     }
@@ -393,31 +396,34 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Compute magnitude on grayscale frame
     // TODO: to review
-    std::vector<double> gradient_scores, gradient_magnitudes;
-    //od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_scores, gradient_magnitudes);
+    std::vector<double> gradient_scores, gradient_counts;
+    od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_scores, gradient_counts);
 
     // Scan each ball bounding box
     for(od::Ball ball_bbox : ball_bboxes) {
         // TODO: Ball class detection
-        od::detect_ball_class(ball_bbox, video_frames[n_frame]);
+        od::detect_ball_class(ball_bbox, video_frames[n_frame], gradient_scores, gradient_counts);
 
         // TODO: Compute confidence value
         od::set_ball_bbox_confidence(ball_bbox);
 
         // Write ball bounding box in frame bboxes text file
         fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
+
+        // Apply ball classification to video frame
+        od::overlay_ball_bounding_bbox(video_frame, ball_bbox);
     }
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
 
     // Show video fram with classification
-    /*cv::imshow("Frame with ball classification", video_frame);
-    cv::waitKey(0);*/
+    cv::imshow("Frame with ball classification", video_frame);
+    cv::waitKey(0);
 }
 
 /* Ball class detection */
-void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame) {
+void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts) {
     // TODO: remove background
 
     // TODO: detect ball class
@@ -472,8 +478,8 @@ void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame) {
 
     std::cout<<"COUNT: "<<magnitude_count<<std::endl;
     std::cout<<"SCORE: "<<magnitude_score<<std::endl;
-    cv::imshow("Grad", magnitude);
-    cv::waitKey();
+    //cv::imshow("Grad", magnitude);
+    //cv::waitKey();
 }
 
 // TODO: define ball bbox confidence
@@ -532,8 +538,8 @@ void od::compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball
     //    std::cout<<"SCORE: "<<score<<std::endl;
     //}
     
-    cv::imshow("Grad", frame);
-    cv::waitKey();
+    //cv::imshow("Grad", frame);
+    //cv::waitKey();
 }
 
 /* Compute gradient of grayscale image */
