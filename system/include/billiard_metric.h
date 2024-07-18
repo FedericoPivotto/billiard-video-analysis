@@ -9,6 +9,7 @@
 /* Billiard metric namespace */
 namespace bm {
     // Error constant declaration
+    // TODO: to remove since not used
     const int IMAGE_READ_ERROR = -1;
 
     // Constant declarations
@@ -48,6 +49,10 @@ namespace bm {
     // Metric function declarations
     double localization_metric(const std::vector<double>& aps, const int num_classes);
     double segmentation_metric(std::vector<double> ious, const int num_classes);
+
+    // Trigger evaluation function declarations
+    void evaluate_localization_metric(const std::string true_bboxes_frame_file_path, const std::string predicted_bboxes_frame_file_path, std::string& metrics_result);
+    void evaluate_segmentation_metric(const std::string true_mask_path, const std::string predicted_mask_path, std::string& metrics_result);
 }
 
 #endif // BILLIARD_METRIC_H

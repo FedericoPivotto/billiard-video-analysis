@@ -18,6 +18,9 @@
 // tracking library
 #include <opencv2/tracking.hpp>
 
+// billiard_metric library
+#include <billiard_metric.h>
+
 /* Computer vision system main */
 int main(int argc, char** argv) {
     // Get videos paths
@@ -38,6 +41,10 @@ int main(int argc, char** argv) {
         std::string video_result_path;
         std::vector<std::string> video_result_subdirs;
         fsu::create_video_result_dir(video_paths[i], video_result_path, video_result_subdirs);
+
+        // Get video dataset directory for metrics
+        std::vector<std::string> video_dataset_subdirs;
+        fsu::get_video_dataset_dir(video_paths[i], video_dataset_subdirs);
         
         // Skip video if empty
         if(video_frames.empty())
@@ -85,7 +92,7 @@ int main(int argc, char** argv) {
             ed::draw_borders(edge_video_frame_cv, borders, corners);
             fsu::save_video_frame(video_frames, k, edge_video_frame_cv, video_result_subdirs[3]);
 
-            // TODO: object detection (Federico)
+            // TODO: Object detection (Federico)
 
             // Segmentation (Leonardo)
             sg::segmentation(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
@@ -101,6 +108,28 @@ int main(int argc, char** argv) {
             // Save output frame
             ed::draw_borders(video_frame_cv, borders, corners);
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[6]);
+
+            // Metrics output string
+            std::string metrics_result;
+
+            // Localization metric
+            std::string true_bboxes_frame_file_path, predicted_bboxes_frame_file_path;
+            fsu::get_bboxes_frame_file_path(video_frames, k, video_dataset_subdirs[0], true_bboxes_frame_file_path);
+            fsu::get_bboxes_frame_file_path(video_frames, k, video_result_subdirs[0], predicted_bboxes_frame_file_path);
+            // Evaluate metric on ball bounding boxes
+            bm::evaluate_localization_metric(true_bboxes_frame_file_path, predicted_bboxes_frame_file_path, metrics_result);
+
+            // Segmentation metric
+            std::string true_metrics_frame_file_path, predicted_metrics_frame_file_path;
+            fsu::get_video_frame_file_path(video_frames, k, video_dataset_subdirs[2], true_metrics_frame_file_path);
+            fsu::get_video_frame_file_path(video_frames, k, video_result_subdirs[2], predicted_metrics_frame_file_path);
+            // Evaluate metric on segmentation masks
+            bm::evaluate_segmentation_metric(true_metrics_frame_file_path, predicted_metrics_frame_file_path, metrics_result);
+
+            // Save video frame metrics
+            fsu::save_video_metrics(video_frames, k, metrics_result, video_result_subdirs[7]);
+
+            // TODO: remove metrics directory and update CMakeLists.txt
         }
 
         // Assuming field corners of the first video frame
@@ -129,7 +158,7 @@ int main(int argc, char** argv) {
             video_game_frames_cv.push_back(video_game_frame_cv);
 
             // TODO: trajectory tracking (Federico)
-            // OPTIONAL: frame resize for making tracking faster
+            // OPTIONAL: frame resize for making tracking faster and increasing bbox size
 
             // Read balls from bounding box file of first frame
             if(j == 0) {

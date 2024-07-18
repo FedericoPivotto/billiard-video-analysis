@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
             // Balls detection and classification
             ed::sort_corners(corners);
             cv::Mat object_video_frame_cv = video_frames[k].clone();
-            od::object_detection(video_frames, k, video_dataset_subdirs[0], corners, is_distorted, object_video_frame_cv);
+            od::object_detection(video_frames, k, video_result_subdirs[0], corners, is_distorted, object_video_frame_cv);
 
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file

@@ -278,8 +278,6 @@ void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
 
 /* Balls detection in given a video frame */
 void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& video_frame) {
-    // Vector of bounding boxes
-    std::vector<od::Ball> ball_bboxes;
 
     // Mask image to consider only the billiard table
     cv::Mat mask = cv::Mat::zeros(video_frames[n_frame].size(), CV_8UC3);
@@ -350,13 +348,20 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     cv::imshow("Mask of change", mask_balls);
     cv::waitKey(0);*/
 
-    // TODO: fill balls vector according to circles
+    // Ball bounding boxes from circles
+    std::vector<od::Ball> ball_bboxes;
+    for(cv::Vec3f circle : circles) {
+        // Circle data
+        cv::Point center(circle[0], circle[1]);
+        unsigned int radius = circle[2];
+        // Ball bounding box
+        od::Ball ball_bbox(center.x - radius, center.y - radius, 2*radius, 2*radius);
+        ball_bboxes.push_back(ball_bbox);
+    }
     
     // Create frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
-
-    // Bounding box frame file to write
     std::ofstream bboxes_frame_file(bboxes_frame_file_path);
 
     // Scan each ball bounding box
@@ -385,14 +390,15 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // - 3:solid ball - color, except white and black, is the predominant color
     // - 4:stripe ball - both white and color are predominant colors
 
-    // TODO: set ball class
-    // ATTENTION: remove this unsensed code
-    unsigned int min = 1, max = 4;
-    ball_bbox.ball_class = std::rand() % (max - min + 1) + min;
+    // TODO: to modify
+    // Set ball class
+    ball_bbox.ball_class = -2;
 }
 
 // TODO: define ball bbox confidence
 void od::set_ball_bbox_confidence(od::Ball& ball) {
-    // TODO: to alter
-    ball.confidence = 1;
+    // TODO: compute a confidence value
+
+    // TODO: to modify
+    ball.confidence = -3;
 }

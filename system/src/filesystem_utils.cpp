@@ -23,15 +23,15 @@ void fsu::create_video_result_dir(const std::string video_path, std::string& vid
     std::filesystem::create_directory(video_result_path);
 
     // Create video bounding_boxes, frames, mask directories
-    video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks", video_result_path + "/edge_detection", video_result_path + "/object_detection", video_result_path + "/segmentation", video_result_path + "/output"};
+    video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks", video_result_path + "/edge_detection", video_result_path + "/object_detection", video_result_path + "/segmentation", video_result_path + "/output", video_result_path + "/metrics"};
     for(std::string video_result_subdir : video_result_subdirs)
     std::filesystem::create_directory(video_result_subdir);
 }
 
 /* Create a bounding box file for the given video frame */
-void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
+void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
     // Create frame bboxes text file
-    fsu::get_bboxes_frame_file_path(video_frames, nframe, bboxes_video_path, bboxes_frame_file_path);
+    fsu::get_bboxes_frame_file_path(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
     std::ofstream bboxes_frame_file(bboxes_frame_file_path);
 
     // Close frame bboxes text file
@@ -39,29 +39,43 @@ void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, con
 }
 
 /* Get bounding box file path for the given video frame */
-void fsu::get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
+void fsu::get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
     // Set frame bboxes text filename
     bboxes_frame_file_path = bboxes_video_path + "/frame_";
-    if(nframe == 0)
+    if(n_frame == 0)
         bboxes_frame_file_path += "first";
-    else if (nframe == video_frames.size()-1)
+    else if (n_frame == video_frames.size()-1)
         bboxes_frame_file_path += "last";
     else
-        bboxes_frame_file_path += std::to_string(nframe + 1);
+        bboxes_frame_file_path += std::to_string(n_frame + 1);
     bboxes_frame_file_path += "_bbox.txt";
 }
 
 /* Get file path for the given video frame */
-void fsu::get_video_frame_file_path(const std::vector<cv::Mat>& video_frames, const int nframe, const std::string bboxes_video_path, std::string& bboxes_frame_file_path) {
+void fsu::get_video_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string frame_video_path, std::string& video_frame_file_path) {
     // Set segmentation mask frame filename
-    bboxes_frame_file_path = bboxes_video_path + "/frame_";
-    if(nframe == 0)
-        bboxes_frame_file_path += "first";
-    else if (nframe == video_frames.size()-1)
-        bboxes_frame_file_path += "last";
+    video_frame_file_path = frame_video_path + "/frame_";
+    if(n_frame == 0)
+        video_frame_file_path += "first";
+    else if (n_frame == video_frames.size()-1)
+        video_frame_file_path += "last";
     else
-        bboxes_frame_file_path += std::to_string(nframe + 1);
-    bboxes_frame_file_path += ".png";
+        video_frame_file_path += std::to_string(n_frame + 1);
+    video_frame_file_path += ".png";
+}
+
+
+/* Get metrics file path for the given video frame */
+void fsu::get_metrics_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string metrics_video_path, std::string& metrics_frame_file_path) {
+    // Set frame metrics text filename
+    metrics_frame_file_path = metrics_video_path + "/frame_";
+    if(n_frame == 0)
+        metrics_frame_file_path += "first";
+    else if (n_frame == video_frames.size()-1)
+        metrics_frame_file_path += "last";
+    else
+        metrics_frame_file_path += std::to_string(n_frame + 1);
+    metrics_frame_file_path += ".txt";
 }
 
 /* Write ball in the given opened bounding box file stream */
@@ -116,9 +130,22 @@ void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::s
 }
 
 /* Save video frame in given directory */
-void fsu::save_video_frame(const std::vector<cv::Mat>& video_frames, const int nframe, const cv::Mat& frame, const std::string& video_result_subdir) {
-    // Save segmentation mask frame
+void fsu::save_video_frame(const std::vector<cv::Mat>& video_frames, const int n_frame, const cv::Mat& frame, const std::string& video_result_subdir) {
+    // Save video frame
     std::string video_frame_file_path;
-    fsu::get_video_frame_file_path(video_frames, nframe, video_result_subdir, video_frame_file_path);
+    fsu::get_video_frame_file_path(video_frames, n_frame, video_result_subdir, video_frame_file_path);
     cv::imwrite(video_frame_file_path, frame);
+}
+
+/* Save video frame metrics in given directory */
+void fsu::save_video_metrics(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string metrics_result, const std::string& video_result_subdir) {
+    // Video frame metrics text file
+    std::string video_metrics_file_path;
+    fsu::get_metrics_frame_file_path(video_frames, n_frame, video_result_subdir, video_metrics_file_path);
+    // Open metrics text file
+    std::ofstream video_metrics_file(video_metrics_file_path);
+    // Write metrics
+    video_metrics_file << metrics_result;
+    // Close metrics text file
+    video_metrics_file.close();
 }
