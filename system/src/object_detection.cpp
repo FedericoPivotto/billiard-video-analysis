@@ -415,8 +415,8 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     bboxes_frame_file.close();
 
     // Show video fram with classification
-    cv::imshow("Frame with ball classification", video_frame);
-    cv::waitKey(0);
+    /*cv::imshow("Frame with ball classification", video_frame);
+    cv::waitKey(0);*/
 }
 
 /* Ball class detection */
@@ -480,6 +480,7 @@ void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame) {
 }
 
 // TODO: define ball bbox confidence
+/* Set ball bounding box confidence value */
 void od::set_ball_bbox_confidence(od::Ball& ball) {
     // TODO: compute a confidence value
 
@@ -553,6 +554,7 @@ void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude) {
     cv::threshold(magnitude, magnitude, 100, 0, cv::THRESH_TOZERO);
 }
 
+/* Compute ratio color-white ratio */
 void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio) {
     double color_count, white_count;
     
@@ -577,6 +579,7 @@ void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio) {
     double color_ratio = 1 - white_ratio; 
 }
 
+/* Normalize given vector */
 void od::normalize_vector(std::vector<double>& vec) {
     // Check for empty vector
     if(vec.empty()) {
