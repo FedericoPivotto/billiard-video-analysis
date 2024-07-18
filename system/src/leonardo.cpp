@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
             ed::draw_borders(edge_video_frame_cv, borders, corners);
             fsu::save_video_frame(video_frames, k, edge_video_frame_cv, video_result_subdirs[3]);
 
-            // TODO: object detection (Federico)
+            // TODO: Object detection (Federico)
 
             // Segmentation (Leonardo)
             // Get video dataset directory
@@ -96,11 +96,11 @@ int main(int argc, char** argv) {
             // Distortion check
             bool is_distorted;
             mm::check_perspective_distortion(borders, is_distorted);
-
             // Balls detection and classification
-            ed::sort_corners(corners);
+            // TODO: change with result directory
             cv::Mat object_video_frame_cv = video_frames[k].clone();
-            od::object_detection(video_frames, k, video_result_subdirs[0], corners, is_distorted, object_video_frame_cv);
+            bool is_test = true;
+            od::object_detection(video_frames, k, video_result_subdirs[0], corners, is_distorted, object_video_frame_cv, video_dataset_subdirs[0], is_test);
 
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
@@ -194,9 +194,11 @@ int main(int argc, char** argv) {
         }
         
         // Show computer vision video frames
+        // TODO: to remove
         // vu::show_video_frames(video_frames_cv);
 
         // Show video game frames
+        // TODO: to remove
         // vu::show_video_frames(video_game_frames_cv);
 
         // Game video filename
