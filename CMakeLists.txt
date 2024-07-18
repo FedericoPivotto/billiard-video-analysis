@@ -1,9 +1,11 @@
-## Initial setup
+## CMake setup
 
 # CMake version
 cmake_minimum_required(VERSION 2.8)
 # Set everything up for C++ 17 features
 set(CMAKE_CXX_STANDARD 17)
+
+## Project setup
 
 # Project name
 project(billiard)
@@ -46,8 +48,8 @@ add_library(system_billiard_metric
     system/include/billiard_metric.h
     system/src/billiard_metric.cpp)
 
-    
 ## System executable
+
 add_executable(system system/src/main.cpp)
 target_link_libraries(system
 ${OpenCV_LIBS}
@@ -58,6 +60,9 @@ system_edge_detection
 system_segmentation
 system_minimap
 system_billiard_metric)
+
+# TODO: remove code below
+#########################################################
 
 ## Federico system executable
 # TODO: to remove
@@ -94,22 +99,3 @@ system_object_detection
 system_edge_detection
 system_segmentation
 system_minimap)
-
-# lourdes library
-# TODO: to remove
-add_library(system_lourdes
-    system/include/lourdes.h
-    system/src/lourdes.cpp)
-    
-## Lourdes system executable
-# TODO: to remove
-add_executable(lou system/src/main_lourdes.cpp)
-target_link_libraries(lou
-${OpenCV_LIBS}
-system_video_utils
-system_filesystem_utils
-system_object_detection
-system_edge_detection
-system_segmentation
-system_minimap
-system_lourdes)
