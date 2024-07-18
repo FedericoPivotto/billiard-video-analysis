@@ -45,7 +45,7 @@ namespace od {
     bool operator==(const Ball& ball1, const Ball& ball2);
 
     // Detect function declarations
-    void detect_ball_class(Ball& ball_bbox, const cv::Mat& frame, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
+    void detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat& frame, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
 
     // Ball bounding box confidence function declaration
     void set_ball_bbox_confidence(od::Ball& ball);
@@ -68,7 +68,7 @@ namespace od {
     // Object classification auxiliary functions
     void compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball>& ball_bboxes, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
     void compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& gradient);
-    void compute_color_white_ratio(const cv::Mat& ball, double& ratio);
+    void compute_color_white_ratio(const cv::Mat& ball, double& ratio, double& white_ratio, double& color_ratio);
     void normalize_vector(std::vector<double>& vec);
     void overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox);
 }

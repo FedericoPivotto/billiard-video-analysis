@@ -400,9 +400,12 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_scores, gradient_counts);
 
     // Scan each ball bounding box
-    for(od::Ball ball_bbox : ball_bboxes) {
+    for(int i = 0; i < ball_bboxes.size(); ++i) {
+        // Get ball bounding box
+        od::Ball ball_bbox = ball_bboxes[i];
+
         // TODO: Ball class detection
-        od::detect_ball_class(ball_bbox, video_frames[n_frame], gradient_scores, gradient_counts);
+        od::detect_ball_class(ball_bbox, i, video_frames[n_frame], gradient_scores, gradient_counts);
 
         // TODO: Compute confidence value
         od::set_ball_bbox_confidence(ball_bbox);
@@ -423,7 +426,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 }
 
 /* Ball class detection */
-void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts) {
+void od::detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat& frame, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts) {
     // TODO: remove background
 
     // TODO: detect ball class
@@ -446,40 +449,36 @@ void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame, std::vector<do
     cv::Mat frame_roi;
     frame.copyTo(frame_roi, mask_ball);
 
-    // Get grayscale frame
-    cv::Mat frame_gray;
-    cv::cvtColor(frame_roi, frame_gray, cv::COLOR_BGR2GRAY);
-
-    // Compute ball gradient magnitude    
-    cv::Mat magnitude;
-    od::compute_gradient_magnitude(frame_gray, magnitude);
-    magnitude.setTo(0, ~mask_grad_ball);
-
-    // Compute gradient score (balls with >=0.1 magnitude, then they are stripes)
-    cv::Scalar magnitude_score = cv::sum(magnitude);
-    double magnitude_count = static_cast<double> (cv::countNonZero(magnitude)) / cv::countNonZero(mask_grad_ball);
-    const double grad_score = 0.5 * magnitude_score[0] + magnitude_count;
+    // Extract magnitude score and count
+    double magnitude_score = magnitude_scores[ball_index];
+    double magnitude_count = magnitude_counts[ball_index];
 
     // Compute ball color ratio w.r.t. white
-    double ratio;
-    od::compute_color_white_ratio(frame_roi, ratio);
+    double ratio, white_ratio, color_ratio;
+    od::compute_color_white_ratio(frame_roi, ratio, white_ratio, color_ratio);
 
-    // Classify according to ratio and gradient magnitude
-    // TODO: add trackbars to tune weights
-    double ball_score = ratio + 0.5 * grad_score;
-
-    // TODO: to modify
-    // Set ball class
-    if(magnitude_count >= 0.1) {
-        ball_bbox.ball_class = 4;
+    // TODO: Classify according to ratio and gradient magnitude
+    // Stripe ball features: high gradient (more important when few color or few white is shown), white and color
+    // Solid ball features: low gradient, few white and more color, gradient is less important
+    
+    double white_th = 0.4, grad_score_th = 0.18, grad_count_th = 0.1;
+    if(white_ratio > white_th && magnitude_count > grad_count_th) {
+        if(magnitude_score > grad_score_th)
+            ball_bbox.ball_class = 4; // Stripe
+        else if(magnitude_count > 1.2*grad_count_th)
+            ball_bbox.ball_class = 4; // Stripe
+        else
+            ball_bbox.ball_class = 3; // Solid
+    } else if (white_ratio > white_th && magnitude_count > 0.5*grad_count_th && magnitude_score > 0.8*grad_score_th) {
+        ball_bbox.ball_class = 4; // Stripe
     } else {
-        ball_bbox.ball_class = 3;
+        ball_bbox.ball_class = 3; // Solid
     }
 
-    std::cout<<"COUNT: "<<magnitude_count<<std::endl;
-    std::cout<<"SCORE: "<<magnitude_score<<std::endl;
-    //cv::imshow("Grad", magnitude);
-    //cv::waitKey();
+    // std::cout<<"SCORE: " << magnitude_score << std::endl;
+    std::cout << "COUNT: " << magnitude_count << std::endl;
+    // cv::imshow("Grad", magnitude);
+    // cv::waitKey();
 }
 
 // TODO: define ball bbox confidence
@@ -493,6 +492,19 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
 
 /* Compute gradient magnitude of the ball and the number of pixels with non-zero gradient */
 void od::compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball>& ball_bboxes, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts) {
+    // Clone input frame
+    cv::Mat frame_hsv;
+    cv::cvtColor(frame, frame_hsv, cv::COLOR_BGR2HSV);
+    // Split frame HSV
+    std::vector<cv::Mat> hsv_channels;
+    cv::split(frame_hsv, hsv_channels);
+
+    // Show channels
+    // cv::imshow("H", hsv_channels[0]);
+    // cv::imshow("S", hsv_channels[1]);
+    // cv::imshow("V", hsv_channels[2]);
+    // cv::waitKey(0);
+
     // Scan all bounding boxes
     for(od::Ball ball_bbox : ball_bboxes) {
         // Get bounding box center and radius
@@ -512,6 +524,7 @@ void od::compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball
         // Get grayscale frame
         cv::Mat frame_gray;
         cv::cvtColor(frame_roi, frame_gray, cv::COLOR_BGR2GRAY);
+        // frame_gray = hsv_channels[2];
 
         // Compute ball gradient magnitude    
         cv::Mat magnitude;
@@ -525,7 +538,6 @@ void od::compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball
         // Store magnitude information
         magnitude_counts.push_back(magnitude_count);
         magnitude_scores.push_back(magnitude_score[0]);
-
 
         //std::cout<<"COUNT: "<<magnitude_count<<std::endl;
         //std::cout<<"SCORE: "<<magnitude_score<<std::endl;
@@ -558,7 +570,7 @@ void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude) {
 }
 
 /* Compute ratio color-white ratio */
-void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio) {
+void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio, double& white_ratio, double& color_ratio) {
     double color_count, white_count;
     
     // Define color thresholds
@@ -578,8 +590,8 @@ void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio) {
     // Close to 1 if color and white are similar quantity
     // Greater than 1 if color is predominant
     ratio = color_count / white_count;
-    double white_ratio = white_count / (white_count + color_count);
-    double color_ratio = 1 - white_ratio; 
+    white_ratio = white_count / (white_count + color_count);
+    color_ratio = 1 - white_ratio; 
 }
 
 /* Normalize given vector */
