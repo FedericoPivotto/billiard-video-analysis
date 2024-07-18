@@ -137,8 +137,6 @@ int main(int argc, char** argv) {
 
             // Save video frame metrics
             fsu::save_video_metrics(video_frames, k, metrics_result, video_result_subdirs[7]);
-
-            // TODO: remove metrics directory and update CMakeLists.txt
         }
 
         // Assuming field corners of the first video frame
