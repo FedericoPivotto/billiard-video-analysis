@@ -26,7 +26,7 @@ namespace od {
 
             // Constructors
             Ball();
-            Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class, double confidence = 0);
+            Ball(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int ball_class = -1, double confidence = 0);
 
             // Function declarations
             std::pair<unsigned int, unsigned int> center() const;
