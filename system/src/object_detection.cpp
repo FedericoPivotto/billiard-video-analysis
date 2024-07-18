@@ -398,16 +398,18 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // - 4:stripe ball - both white and color are predominant colors
 
     // Get bounding box center and radius
-    cv::Point box_center = cv::Point(ball_bbox.x, ball_bbox.y);
+    cv::Point box_center = cv::Point(ball_bbox.x + (ball_bbox.width / 2), ball_bbox.y + (ball_bbox.height / 2));
     unsigned int radius = ball_bbox.radius();
 
-    // Get ball mask
-    cv::Mat mask_ball = cv::Mat::zeros(frame.size(), CV_8UC3);
-    cv::circle(mask_ball, box_center, radius, cv::Scalar(255, 255, 255), cv::FILLED);
+    // Get ball masks
+    cv::Mat mask_ball = cv::Mat::zeros(frame.size(), CV_8UC1);
+    cv::Mat mask_grad_ball = cv::Mat::zeros(frame.size(), CV_8UC1);
+    cv::circle(mask_ball, box_center, radius, cv::Scalar(255), cv::FILLED);
+    cv::circle(mask_grad_ball, box_center, radius - 2, cv::Scalar(255), cv::FILLED);
 
     // Get ball region
-    // TODO: issue to fix for having circular ball mask
-    cv::Mat frame_roi = frame(mask_ball);
+    cv::Mat frame_roi;
+    frame.copyTo(frame_roi, mask_ball);
 
     // Get grayscale frame
     cv::Mat frame_gray;
@@ -416,18 +418,27 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     // Compute ball gradient magnitude    
     cv::Mat magnitude;
     od::compute_gradient_magnitude(frame_gray, magnitude);
-    double grad_score = cv::countNonZero(magnitude);
+    magnitude.setTo(0, ~mask_grad_ball);
+
+    // Compute gradient score
+    cv::Scalar magnitude_score = cv::sum(magnitude);
+    const int grad_score = magnitude_score[0];
+
 
     // Compute ball color ratio w.r.t. white
-    double ratio;
-    od::compute_color_white_ratio(frame_roi, ratio);
-
+    //double ratio;
+    //od::compute_color_white_ratio(frame_roi, ratio);
+    //
     // Classify according to ratio and gradient magnitude
-    double ball_score = ratio + 0.5 * grad_score;
+    //double ball_score = ratio + 0.5 * grad_score;
 
     // TODO: to modify
     // Set ball class
     ball_bbox.ball_class = -2;
+
+    std::cout<<grad_score<<std::endl;
+    cv::imshow("Grad", magnitude);
+    cv::waitKey();
 }
 
 // TODO: define ball bbox confidence
@@ -442,8 +453,8 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
 void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude){
     // Apply Sobel to get gradient magnitude
     cv::Mat grad_x, grad_y;
-    cv::Sobel(frame, grad_x, 1, 0, 3);
-    cv::Sobel(frame, grad_y, 0, 1, 3);
+    cv::Sobel(frame, grad_x, CV_32F, 1, 0, 3);
+    cv::Sobel(frame, grad_y, CV_32F, 0, 1, 3);
     cv::magnitude(grad_x, grad_y, magnitude);
 
     // Normalize magnitude
