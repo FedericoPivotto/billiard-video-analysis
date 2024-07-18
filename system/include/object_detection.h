@@ -70,6 +70,7 @@ namespace od {
     void compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& gradient);
     void compute_color_white_ratio(const cv::Mat& ball, double& ratio);
     void normalize_vector(std::vector<double>& vec);
+    void overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox);
 }
 
 #endif // OBJECT_DETECTION_H
