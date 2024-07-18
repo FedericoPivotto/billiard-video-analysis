@@ -46,75 +46,70 @@ add_library(system_billiard_metric
     system/include/billiard_metric.h
     system/src/billiard_metric.cpp)
 
-# TODO: to remove
-# lourdes library
-add_library(system_lourdes
-    system/include/lourdes.h
-    system/src/lourdes.cpp)
-
+    
 ## System executable
 add_executable(system system/src/main.cpp)
 target_link_libraries(system
-    ${OpenCV_LIBS}
-    system_video_utils
-    system_filesystem_utils
-    system_object_detection
-    system_edge_detection
-    system_segmentation
-    system_minimap
-    system_billiard_metric)
-
-## Metrics executable
-# TODO: to remove
-add_executable(metrics metrics/src/main.cpp)
-target_link_libraries(metrics
-    ${OpenCV_LIBS}
-    system_billiard_metric
-    system_filesystem_utils
-    system_object_detection)
+${OpenCV_LIBS}
+system_video_utils
+system_filesystem_utils
+system_object_detection
+system_edge_detection
+system_segmentation
+system_minimap
+system_billiard_metric)
 
 ## Federico system executable
+# TODO: to remove
 add_executable(federico system/src/federico.cpp)
 target_link_libraries(federico
-    ${OpenCV_LIBS}
-    system_video_utils
-    system_filesystem_utils
-    system_object_detection
-    system_edge_detection
-    system_segmentation
-    system_minimap)
+${OpenCV_LIBS}
+system_video_utils
+system_filesystem_utils
+system_object_detection
+system_edge_detection
+system_segmentation
+system_minimap)
 
 ## Fabrizio system executable
+# TODO: to remove
 add_executable(fabrizio system/src/fabrizio.cpp)
 target_link_libraries(fabrizio
-    ${OpenCV_LIBS}
-    system_video_utils
-    system_filesystem_utils
-    system_object_detection
-    system_edge_detection
-    system_segmentation
-    system_minimap)
+${OpenCV_LIBS}
+system_video_utils
+system_filesystem_utils
+system_object_detection
+system_edge_detection
+system_segmentation
+system_minimap)
 
 ## Leonardo system executable
+# TODO: to remove
 add_executable(leonardo system/src/leonardo.cpp)
 target_link_libraries(leonardo
-    ${OpenCV_LIBS}
-    system_video_utils
-    system_filesystem_utils
-    system_object_detection
-    system_edge_detection
-    system_segmentation
-    system_minimap)
+${OpenCV_LIBS}
+system_video_utils
+system_filesystem_utils
+system_object_detection
+system_edge_detection
+system_segmentation
+system_minimap)
 
+# lourdes library
 # TODO: to remove
+add_library(system_lourdes
+    system/include/lourdes.h
+    system/src/lourdes.cpp)
+    
 ## Lourdes system executable
+# TODO: to remove
 add_executable(lou system/src/main_lourdes.cpp)
 target_link_libraries(lou
-    ${OpenCV_LIBS}
-    system_video_utils
-    system_filesystem_utils
-    system_object_detection
-    system_edge_detection
-    system_segmentation
-    system_minimap
-    system_lourdes)
+${OpenCV_LIBS}
+system_video_utils
+system_filesystem_utils
+system_object_detection
+system_edge_detection
+system_segmentation
+system_minimap
+system_lourdes)
