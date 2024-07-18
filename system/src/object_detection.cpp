@@ -394,10 +394,10 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     // Compute magnitude on grayscale frame
     // TODO: to review
     std::vector<double> gradient_scores, gradient_magnitudes;
-    od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_scores, gradient_magnitudes);
+    //od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_scores, gradient_magnitudes);
 
     // Scan each ball bounding box
-    /*for(od::Ball ball_bbox : ball_bboxes) {
+    for(od::Ball ball_bbox : ball_bboxes) {
         // TODO: Ball class detection
         od::detect_ball_class(ball_bbox, video_frames[n_frame]);
 
@@ -406,10 +406,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
         // Write ball bounding box in frame bboxes text file
         fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
-
-        // Overlay ball bounding box
-        od::overlay_ball_bounding_bbox(video_frame, ball_bbox);
-    }*/
+    }
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
@@ -459,7 +456,7 @@ void od::detect_ball_class(Ball& ball_bbox, const cv::Mat& frame) {
 
     // Compute ball color ratio w.r.t. white
     double ratio;
-    //od::compute_color_white_ratio(frame_roi, ratio);
+    od::compute_color_white_ratio(frame_roi, ratio);
 
     // Classify according to ratio and gradient magnitude
     // TODO: add trackbars to tune weights
@@ -525,12 +522,12 @@ void od::compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball
 
 
         //std::cout<<"COUNT: "<<magnitude_count<<std::endl;
-        std::cout<<"SCORE: "<<magnitude_score<<std::endl;
+        //std::cout<<"SCORE: "<<magnitude_score<<std::endl;
         //cv::imshow("Grad", magnitude);
         //cv::waitKey();
     }
     
-    //od::normalize_vector(magnitude_scores);
+    od::normalize_vector(magnitude_scores);
     //for(const double& score : magnitude_scores){
     //    std::cout<<"SCORE: "<<score<<std::endl;
     //}
@@ -575,7 +572,7 @@ void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio) {
     // Close to 1 if color and white are similar quantity
     // Greater than 1 if color is predominant
     ratio = color_count / white_count;
-    double white_ratio = white_count / cv::countNonZero(ball_region);
+    double white_ratio = white_count / (white_count + color_count);
     double color_ratio = 1 - white_ratio; 
 }
 
