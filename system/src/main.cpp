@@ -18,6 +18,9 @@
 // tracking library
 #include <opencv2/tracking.hpp>
 
+// billiard_metric library
+#include <billiard_metric.h>
+
 /* Computer vision system main */
 int main(int argc, char** argv) {
     // Get videos paths
@@ -101,6 +104,20 @@ int main(int argc, char** argv) {
             // Save output frame
             ed::draw_borders(video_frame_cv, borders, corners);
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[6]);
+
+            // Localization metric
+            // TODO: alter with real paths
+            std::string true_bboxes_frame_file_path = "../metrics/data/true_frame_first_bbox.txt";
+            std::string predicted_bboxes_frame_file_path = "../metrics/data/predicted_frame_first_bbox.txt";
+            std::string localization_result_file_path;
+            bm::evaluate_localization_metric(true_bboxes_frame_file_path, predicted_bboxes_frame_file_path, localization_result_file_path);
+
+            // Segmentation metric
+            // TODO: alter with real paths
+            std::string true_mask_path = "../metrics/data/true_mask_frame_first.png"; // "../metrics/data/wrong_mask.png"
+            std::string predicted_mask_path = "../metrics/data/predicted_mask_frame_first.png";
+            std::string segmentation_result_file_path;
+            bm::evaluate_segmentation_metric(true_mask_path, predicted_mask_path, segmentation_result_file_path);
         }
 
         // Assuming field corners of the first video frame

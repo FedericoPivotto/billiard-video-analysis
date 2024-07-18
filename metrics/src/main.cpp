@@ -96,8 +96,8 @@ int main(int argc, char** argv) {
 
     // Read true mask
     // TODO: it will come from result directory
-    std::string true_mask_path = "../metrics/data/true_mask_frame_first.png";
-    // std::string true_mask_path = "../metrics/data/wrong_mask.png";
+    // std::string true_mask_path = "../metrics/data/true_mask_frame_first.png";
+    std::string true_mask_path = "../metrics/data/wrong_mask.png";
     cv::Mat true_mask = cv::imread(true_mask_path, cv::IMREAD_GRAYSCALE);
     // safety check on true mask
 	if(true_mask.data == NULL) {

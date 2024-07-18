@@ -41,19 +41,16 @@ add_library(system_segmentation
 add_library(system_minimap
     system/include/minimap.h
     system/src/minimap.cpp)
+# billiard_metric library
+add_library(system_billiard_metric
+    system/include/billiard_metric.h
+    system/src/billiard_metric.cpp)
 
 # TODO: to remove
 # lourdes library
 add_library(system_lourdes
     system/include/lourdes.h
     system/src/lourdes.cpp)
-
-## Metrics libraries
-
-# billiard_metric library
-add_library(metrics_billiard_metric
-    metrics/include/billiard_metric.h
-    metrics/src/billiard_metric.cpp)
 
 ## System executable
 add_executable(system system/src/main.cpp)
@@ -64,13 +61,15 @@ target_link_libraries(system
     system_object_detection
     system_edge_detection
     system_segmentation
-    system_minimap)
+    system_minimap
+    system_billiard_metric)
 
 ## Metrics executable
+# TODO: to remove
 add_executable(metrics metrics/src/main.cpp)
 target_link_libraries(metrics
     ${OpenCV_LIBS}
-    metrics_billiard_metric
+    system_billiard_metric
     system_filesystem_utils
     system_object_detection)
 
