@@ -16,7 +16,7 @@
 #include <minimap.h>
 
 // tracking library
-#include <opencv2/tracking.hpp>
+//#include <opencv2/tracking.hpp>
 
 // billiard_metric library
 #include <billiard_metric.h>

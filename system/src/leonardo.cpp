@@ -16,7 +16,7 @@
 #include <minimap.h>
 
 // tracking library
-#include <opencv2/tracking.hpp>
+//#include <opencv2/tracking.hpp>
 
 /* Computer vision system main */
 int main(int argc, char** argv) {
