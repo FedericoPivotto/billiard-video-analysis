@@ -368,11 +368,11 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     // In case of test, read ball bboxes from dataset
     if(test_flag) {
         // Read true frame bboxes text file
+        std::vector<od::Ball> test_ball_bboxes;
         std::string test_bboxes_frame_file_path;
         fsu::get_bboxes_frame_file_path(video_frames, n_frame, test_bboxes_video_path, test_bboxes_frame_file_path);
 
         // Read ball bounding box from frame bboxes text file
-        std::vector<od::Ball> test_ball_bboxes;
         bool confidence_flag = ! test_flag;
         fsu::read_ball_bboxes(test_bboxes_frame_file_path, test_ball_bboxes, confidence_flag);
 
@@ -384,6 +384,10 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     std::string bboxes_frame_file_path;
     fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
     std::ofstream bboxes_frame_file(bboxes_frame_file_path);
+
+    // TODO: print to remove
+    if(bboxes_frame_file.is_open())
+        std::cout << bboxes_frame_file_path << std::endl;
 
     // Compute magnitude on grayscale frame
     // TODO: to review
@@ -399,7 +403,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         // TODO: Compute confidence value
         od::set_ball_bbox_confidence(ball_bbox);
 
-        // Write Ball bounding box in frame bboxes text file
+        // Write ball bounding box in frame bboxes text file
         fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
     }
 
@@ -454,7 +458,7 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
 
     // TODO: to modify
     // Set ball class
-    ball_bbox.ball_class = -2;
+    ball_bbox.ball_class = 1; // Since unsigned int, it must be >0
 
     std::cout<<grad_score<<std::endl;
     cv::imshow("Grad", magnitude);
@@ -466,7 +470,7 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
     // TODO: compute a confidence value
 
     // TODO: to modify
-    ball.confidence = -3;
+    ball.confidence = -1;
 }
 
 /* Compute gradient of grayscale image */
