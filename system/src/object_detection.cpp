@@ -444,23 +444,28 @@ void od::detect_ball_class(Ball& ball_bbox, cv::Mat frame) {
     od::compute_gradient_magnitude(frame_gray, magnitude);
     magnitude.setTo(0, ~mask_grad_ball);
 
-    // Compute gradient score
+    // Compute gradient score (balls with >=0.1 magnitude, then they are stripes)
     cv::Scalar magnitude_score = cv::sum(magnitude);
-    const int grad_score = magnitude_score[0];
-
+    double magnitude_count = static_cast<double> (cv::countNonZero(magnitude)) / cv::countNonZero(mask_grad_ball);
+    const double grad_score = 0.5 * magnitude_score[0] + magnitude_count;
 
     // Compute ball color ratio w.r.t. white
-    //double ratio;
+    double ratio;
     //od::compute_color_white_ratio(frame_roi, ratio);
-    //
+
     // Classify according to ratio and gradient magnitude
-    //double ball_score = ratio + 0.5 * grad_score;
+    // TODO: add trackbars to tune weights
+    double ball_score = ratio + 0.5 * grad_score;
 
     // TODO: to modify
     // Set ball class
-    ball_bbox.ball_class = 1; // Since unsigned int, it must be >0
+    if(magnitude_count >= 0.1) {
+        ball_bbox.ball_class = 4;
+    } else {
+        ball_bbox.ball_class = 3;
+    }
 
-    std::cout<<grad_score<<std::endl;
+    //std::cout<<magnitude_count<<std::endl;
     cv::imshow("Grad", magnitude);
     cv::waitKey();
 }
@@ -470,7 +475,7 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
     // TODO: compute a confidence value
 
     // TODO: to modify
-    ball.confidence = -1;
+    ball.confidence = -3;
 }
 
 /* Compute gradient of grayscale image */
@@ -483,8 +488,31 @@ void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude){
 
     // Normalize magnitude
     cv::normalize(magnitude, magnitude, 0, 255, cv::NORM_MINMAX, CV_8U);
+
+    // Keep only high valued gradients
+    cv::threshold(magnitude, magnitude, 100, 0, cv::THRESH_TOZERO);
 }
 
-void od::compute_color_white_ratio(const cv::Mat& ball, double& ratio){
-    double color_ratio, white_ratio;
+void od::compute_color_white_ratio(const cv::Mat& ball_region, double& ratio){
+    double color_count, white_count;
+    
+    // Define color thresholds
+    cv::Scalar lower_th = cv::Scalar(200, 200, 200);
+    cv::Scalar upper_th = cv::Scalar(255, 255, 255);
+
+    // Count color and white pixels
+    cv::Mat mask_color, mask_white;
+    cv::inRange(ball_region, lower_th, upper_th, mask_white);
+    cv::inRange(ball_region, cv::Scalar(0, 0, 0), upper_th, mask_color);
+    
+    white_count = cv::countNonZero(mask_white);
+    color_count = cv::countNonZero(mask_color);
+    
+    // Compute ratio
+    // Close to 0 if white is predominant
+    // Close to 1 if color and white are similar quantity
+    // Greater than 1 if color is predominant
+    ratio = color_count / white_count;
+    double white_ratio = white_count / cv::countNonZero(ball_region);
+    double color_ratio = 1 - white_ratio; 
 }
