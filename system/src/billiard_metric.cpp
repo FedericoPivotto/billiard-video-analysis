@@ -187,7 +187,7 @@ double bm::segmentation_metric(std::vector<double> ious, const int num_classes) 
 }
 
 /* Evaluate localization metric */
-void bm::evaluate_localization_metric(const std::string true_bboxes_frame_file_path, const std::string predicted_bboxes_frame_file_path, const std::string result_file_path) {
+void bm::evaluate_localization_metric(const std::string true_bboxes_frame_file_path, const std::string predicted_bboxes_frame_file_path, std::string& metrics_result) {
     // Read true bounding boxes
     std::vector<od::Ball> true_balls;
     fsu::read_ball_bboxes(true_bboxes_frame_file_path, true_balls);
@@ -219,17 +219,20 @@ void bm::evaluate_localization_metric(const std::string true_bboxes_frame_file_p
 
         // Ball class average precision
         aps.push_back(bm::average_precision(best_ball_matches, predicted_balls_class, true_balls_class.size()));
+
+        // Update video frame metrics with AP of current class
+        // TODO: to remove
+        metrics_result += "Average Precision (AP) for class " + std::to_string(i) + ": " + std::to_string(aps[i-1]*100) + "%\n";
     }
 
     // Localization metric
     double map = bm::localization_metric(aps, num_classes);
 
-    // Print mean Average Precision
-    // TODO: to remove and replace with writing in a text file (result_file_path)
-    std::cout << "Mean Average Precision (mAP): " << map*100 << "%" << std::endl;
+    // Update video frame metrics result with mAP
+    metrics_result += "Mean Average Precision (mAP): " + std::to_string(map*100) + "%\n\n";
 }
 
-void bm::evaluate_segmentation_metric(const std::string true_mask_path, const std::string predicted_mask_path, const std::string result_file_path) {
+void bm::evaluate_segmentation_metric(const std::string true_mask_path, const std::string predicted_mask_path, std::string& metrics_result) {
     // Read true mask
     cv::Mat true_mask = cv::imread(true_mask_path, cv::IMREAD_GRAYSCALE);
     // Safety check on true mask
@@ -252,12 +255,15 @@ void bm::evaluate_segmentation_metric(const std::string true_mask_path, const st
     for(size_t i = 0; i < num_classes; ++i) {
         // Billiard class IoU
         ious.push_back(bm::iou_class(true_mask, predicted_mask, i));
+
+        // Update video frame metrics with IoU of current class
+        // TODO: to remove
+        metrics_result += "Intersection over Union (IoU) for class " + std::to_string(i) + ": " + std::to_string(ious[i]*100) + "%\n";
     }
 
     // Segmentation metric
     double miou = bm::segmentation_metric(ious, num_classes);
 
-    // Print mIoU
-    // TODO: to remove and replace with writing in a text file (std::string result_file_path)
-    std::cout << "Mean Intersection over Union (mIoU): " << miou*100 << "%" << std::endl;
+    // Update video frame metrics result with mIoU
+    metrics_result += "Mean Intersection over Union (mIoU): " + std::to_string(miou*100) + "%\n\n";
 }

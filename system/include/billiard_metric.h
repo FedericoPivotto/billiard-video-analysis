@@ -51,8 +51,8 @@ namespace bm {
     double segmentation_metric(std::vector<double> ious, const int num_classes);
 
     // Trigger evaluation function declarations
-    void evaluate_localization_metric(const std::string true_bboxes_frame_file_path, const std::string predicted_bboxes_frame_file_path, const std::string result_file_path);
-    void evaluate_segmentation_metric(const std::string true_mask_path, const std::string predicted_mask_path, const std::string result_file_path);
+    void evaluate_localization_metric(const std::string true_bboxes_frame_file_path, const std::string predicted_bboxes_frame_file_path, std::string& metrics_result);
+    void evaluate_segmentation_metric(const std::string true_mask_path, const std::string predicted_mask_path, std::string& metrics_result);
 }
 
 #endif // BILLIARD_METRIC_H
