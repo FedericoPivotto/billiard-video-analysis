@@ -55,8 +55,6 @@ namespace od {
 
     // Circle filters declarations
     void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted);
-    void suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_close, const double ratio);
-    void suppress_big_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big, const double min_distance);
     void suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_small, const double radius_min);
     void suppress_big_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big, const double radius_max);
     void suppress_black_circles(std::vector<cv::Vec3f>& circles, cv::Mat mask);
