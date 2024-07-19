@@ -68,10 +68,11 @@ namespace od {
     // Object classification auxiliary functions
     void compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball>& ball_bboxes, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
     void compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& gradient);
-    void compute_color_white_ratio(const cv::Mat& ball, double& white_ratio, double& black_ratio);
+    void compute_black_white_ratio(const cv::Mat& ball, double& white_ratio, double& black_ratio);
+    void compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios);
     void normalize_vector(std::vector<double>& vec);
     void overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox);
-    void detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, const std::vector<double>& magnitude_scores, const std::vector<double>& magnitude_counts);
+    void detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio);
 }
 
 #endif // OBJECT_DETECTION_H

@@ -395,9 +395,14 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         std::cout << bboxes_frame_file_path << std::endl;
 
     // Compute magnitude on grayscale frame
-    // TODO: to review
-    std::vector<double> gradient_scores, gradient_counts;
+    std::vector<double> gradient_scores, gradient_counts, white_ratios, black_ratios;
     od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_scores, gradient_counts);
+
+    // Compute ball colors informations
+    od::compute_color_ratios(ball_bboxes, video_frames[n_frame], white_ratios, black_ratios);
+
+    // Detect black and white balls
+    //od::detect_white_black_balls(ball_bboxes, white_ratios, black_ratios);
 
     // Scan each ball bounding box
     for(int i = 0; i < ball_bboxes.size(); ++i) {
@@ -405,16 +410,17 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         od::Ball ball_bbox = ball_bboxes[i];
 
         // TODO: Ball class detection
-        od::detect_ball_class(ball_bbox, i, video_frames[n_frame], gradient_scores, gradient_counts);
+        //od::detect_ball_class(ball_bbox, i, video_frames[n_frame], gradient_scores, gradient_counts);
+        std::cout<<"S: " << gradient_scores[i] << " C: " << gradient_counts[i] << " W: " << white_ratios[i] <<  "B: " << black_ratios[i] << std::endl;
 
         // TODO: Compute confidence value
-        od::set_ball_bbox_confidence(ball_bbox);
+        //od::set_ball_bbox_confidence(ball_bbox);
 
         // Write ball bounding box in frame bboxes text file
-        fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
+        //fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
 
         // Apply ball classification to video frame
-        od::overlay_ball_bounding_bbox(video_frame, ball_bbox);
+        //od::overlay_ball_bounding_bbox(video_frame, ball_bbox);
     }
 
     // Close frame bboxes text file
@@ -455,7 +461,7 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat&
 
     // Compute ball color ratio w.r.t. white
     double white_ratio, black_ratio;
-    od::compute_color_white_ratio(frame_roi, white_ratio, black_ratio);
+    od::compute_black_white_ratio(frame_roi, white_ratio, black_ratio);
 
     // TODO: Classify according to ratio and gradient magnitude
     // Stripe ball features: high gradient (more important when few color or few white is shown), white and color
@@ -498,18 +504,6 @@ void od::set_ball_bbox_confidence(od::Ball& ball) {
 
 /* Compute gradient magnitude of the ball and the number of pixels with non-zero gradient */
 void od::compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball>& ball_bboxes, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts) {
-    // Clone input frame
-    cv::Mat frame_hsv;
-    cv::cvtColor(frame, frame_hsv, cv::COLOR_BGR2HSV);
-    // Split frame HSV
-    std::vector<cv::Mat> hsv_channels;
-    cv::split(frame_hsv, hsv_channels);
-
-    // Show channels
-    // cv::imshow("H", hsv_channels[0]);
-    // cv::imshow("S", hsv_channels[1]);
-    // cv::imshow("V", hsv_channels[2]);
-    // cv::waitKey(0);
 
     // Scan all bounding boxes
     for(od::Ball ball_bbox : ball_bboxes) {
@@ -576,14 +570,14 @@ void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude) {
 }
 
 /* Compute ratio color-white ratio */
-void od::compute_color_white_ratio(const cv::Mat& ball_region, double& white_ratio, double& black_ratio) {
+void od::compute_black_white_ratio(const cv::Mat& ball_region, double& white_ratio, double& black_ratio) {
     double color_count, white_count, black_count;
     
     // Define color thresholds
     cv::Scalar lower_th = cv::Scalar(100, 100, 100);
     cv::Scalar upper_th = cv::Scalar(255, 255, 255);
 
-    // Count color and white pixels
+    // Count black and white pixels
     cv::Mat mask_color, mask_white, mask_black;
     cv::inRange(ball_region, lower_th, upper_th, mask_white);
     cv::inRange(ball_region, cv::Scalar(1, 1, 1), upper_th, mask_color);
@@ -592,17 +586,37 @@ void od::compute_color_white_ratio(const cv::Mat& ball_region, double& white_rat
     white_count = cv::countNonZero(mask_white);
     black_count = cv::countNonZero(mask_black);
     color_count = cv::countNonZero(mask_color);
-    
-    // Compute ratio
-    // Close to 0 if white is predominant
-    // Close to 1 if color and white are similar quantity
-    // Greater than 1 if color is predominant
+
     white_ratio = white_count / (white_count + color_count);
     black_ratio = black_count / (white_count + color_count);
 }
 
+void od::compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios){
+    for(od::Ball ball_bbox : ball_bboxes) {
+        // Get bounding box center and radius
+        cv::Point box_center = cv::Point(ball_bbox.x + (ball_bbox.width / 2), ball_bbox.y + (ball_bbox.height / 2));
+        unsigned int radius = ball_bbox.radius();
+
+        // Get ball masks
+        cv::Mat mask_ball = cv::Mat::zeros(frame.size(), CV_8UC1);
+        cv::Mat mask_grad_ball = cv::Mat::zeros(frame.size(), CV_8UC1);
+        cv::circle(mask_ball, box_center, radius, cv::Scalar(255), cv::FILLED);
+
+        // Get ball region
+        cv::Mat frame_roi;
+        frame.copyTo(frame_roi, mask_ball);
+
+        // Compute ball color ratio w.r.t. white
+        double white_ratio, black_ratio;
+        od::compute_black_white_ratio(frame_roi, white_ratio, black_ratio);
+
+        white_ratios.push_back(white_ratio);
+        black_ratios.push_back(black_ratio);
+    }
+}
+
 /* Detect white and black balls */
-void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, const std::vector<double>& magnitude_scores, const std::vector<double>& magnitude_counts){
+void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio){
     int white_index = 0, black_index = 0;
     
     // Detect white ball
