@@ -414,7 +414,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         if(i != white_index && i != black_index){
             od::detect_ball_class(ball_bbox, i, white_ratios, black_ratios, gradient_scores, gradient_counts);
         }
-        std::cout<<"S: " << gradient_scores[i] << " C: " << gradient_counts[i] << " W: " << white_ratios[i] <<  "B: " << black_ratios[i] << std::endl;
+        //std::cout<<"S: " << gradient_scores[i] << " C: " << gradient_counts[i] << " W: " << white_ratios[i] <<  "B: " << black_ratios[i] << std::endl;
 
         // TODO: Compute confidence value
         od::set_ball_bbox_confidence(ball_bbox);
