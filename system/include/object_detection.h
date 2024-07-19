@@ -45,13 +45,13 @@ namespace od {
     bool operator==(const Ball& ball1, const Ball& ball2);
 
     // Detect function declarations
-    void detect_ball_class(Ball& ball_bbox, cv::Mat frame);
+    void detect_ball_class(Ball& ball_bbox, const int ball_index, std::vector<double>& white_ratios, std::vector<double>& black_ratios, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
 
     // Ball bounding box confidence function declaration
     void set_ball_bbox_confidence(od::Ball& ball);
 
     // Object detection main declaration
-    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners, const bool is_distorted, cv::Mat& video_frame);
+    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path = "", const bool test_flag = false);
 
     // Circle filters declarations
     void suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vector<cv::Point2f> corners, const bool is_distorted);
@@ -66,8 +66,14 @@ namespace od {
     void morpho_pre_process(cv::Mat& mask);
 
     // Object classification auxiliary functions
+    void compute_gradient_balls(const cv::Mat& frame, const std::vector<od::Ball>& ball_bboxes, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
     void compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& gradient);
-    void compute_color_white_ratio(const cv::Mat& ball, double& ratio);
+    void compute_black_white_ratio(const cv::Mat& ball, double& white_ratio, double& black_ratio);
+    void compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios);
+    void get_best_two_indexes(const std::vector<double>& vec, int& best_index, int& sec_index);
+    void normalize_vector(std::vector<double>& vec);
+    void overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox);
+    void detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& white_index, int& black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, std::vector<double>& magnitude_counts);
 }
 
 #endif // OBJECT_DETECTION_H

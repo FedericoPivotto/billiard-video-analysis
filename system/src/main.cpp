@@ -16,7 +16,7 @@
 #include <minimap.h>
 
 // tracking library
-#include <opencv2/tracking.hpp>
+//#include <opencv2/tracking.hpp>
 
 // billiard_metric library
 #include <billiard_metric.h>
@@ -94,10 +94,19 @@ int main(int argc, char** argv) {
 
             // TODO: Object detection (Federico)
 
+            // Distortion check
+            bool is_distorted;
+            mm::check_perspective_distortion(borders, is_distorted);
+            // Balls detection and classification
+            cv::Mat object_video_frame_cv = video_frames[k].clone();
+            od::object_detection(video_frames, k, video_result_subdirs[0], corners, is_distorted, object_video_frame_cv);
+            // Save object detection
+            fsu::save_video_frame(video_frames, k, object_video_frame_cv, video_result_subdirs[5]);
+
             // Segmentation (Leonardo)
             sg::segmentation(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
             // Save segmentation
-            fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[5]);
+            fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[4]);
 
             // Create segmentation mask
             cv::Mat video_frame_cv_mask = video_frames[k].clone();
@@ -128,11 +137,10 @@ int main(int argc, char** argv) {
 
             // Save video frame metrics
             fsu::save_video_metrics(video_frames, k, metrics_result, video_result_subdirs[7]);
-
-            // TODO: remove metrics directory and update CMakeLists.txt
         }
 
-        // Assuming field corners of the first video frame
+        // TODO: to uncomment once object detection is fine
+        /*// Assuming field corners of the first video frame
 
         // 2D top-view minimap and tracking (Fabrizio)
         
@@ -200,16 +208,18 @@ int main(int argc, char** argv) {
         }
 
         // Show computer vision video frames
+        // TODO: to remove
         // vu::show_video_frames(video_frames_cv);
 
         // Show game video frames
+        // TODO: to remove
         // vu::show_video_frames(video_game_frames_cv);
         
         // Game video filename
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
         // Create and save video
-        vu::save_video(video_game_frames_cv, captures[i], result_video_path);
+        vu::save_video(video_game_frames_cv, captures[i], result_video_path);*/
     }
 
     return 0;
