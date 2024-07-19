@@ -187,7 +187,7 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
 }
 
 /* Suppress too much close circles */
-void od::suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_close) {
+void od::suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_close, const double ratio) {
     // Collect not suppressed circles
     std::vector<cv::Vec3f> circles_filtered;
 
@@ -213,23 +213,22 @@ void od::suppress_close_circles(std::vector<cv::Vec3f>& circles, std::vector<cv:
         cv::Vec3f max_circle = pair.first[2] > pair.second[2] ? pair.first : pair.second;
         cv::Vec3f min_circle = pair.first[2] <= pair.second[2] ? pair.first : pair.second;
         double max_circle_radius = max_circle[2];
+        double min_circle_radius = min_circle[2];
 
         // Suppress close min circle
-        double max_distance = max_circle_radius * 0.5;
+        double max_distance = max_circle_radius * ratio;
         if(distance <= max_distance) {
-            circles_close.push_back(min_circle);
-            std::cout << "SUPPRESS ->";
-        }
-        else
+            max_circle[2] = (max_circle_radius + min_circle_radius) / 2;
+            circles_filtered.push_back(max_circle);
+        } else {
             circles_filtered.push_back(min_circle);
-
-        // Keep big circle
-        circles_filtered.push_back(max_circle);
-
-        std::cout << "Distance: " << distance <<  " Max distance: " << max_distance;
+            circles_filtered.push_back(max_circle);
+        }
+        
+        // std::cout << "Distance: " << distance <<  " Max distance: " << max_distance;
         // Print radius and position of max and min circles
-        std::cout << "\t| Max center(" << max_circle[0] << ", " << max_circle[1] << ") Max radius: " << max_circle[2];
-        std::cout << "\t| Min center(" << min_circle[0] << ", " << min_circle[1] << ") Min radius: " << min_circle[2] << std::endl;
+        // std::cout << "\t| Max center(" << max_circle[0] << ", " << max_circle[1] << ") Max radius: " << max_circle[2];
+        // std::cout << "\t| Min center(" << min_circle[0] << ", " << min_circle[1] << ") Min radius: " << min_circle[2] << std::endl;
     }
 
     // Update circles
@@ -326,6 +325,59 @@ void od::suppress_black_circles(std::vector<cv::Vec3f>& circles, cv::Mat mask) {
     circles = circles_filtered;
 }
 
+/* Compute the mean circles of circles with center inside a bigger circle */
+void od::compute_mean_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_mean, const double offset) {
+    // Collect circles and new circles
+    std::vector<cv::Vec3f> circles_filtered;
+    
+    // Compute the mean circles of circles with center inside a bigger circle
+    for(size_t i = 0; i < circles.size(); i++) {
+        // Circle i data
+        cv::Vec3f circle_i = circles[i];
+        cv::Point2f center_i(circle_i[0], circle_i[1]);
+        double radius_i = circle_i[2];
+
+        // Check if circle i is not already considered
+        bool is_considered = false;
+        for(size_t j = 0; j < circles_filtered.size(); j++) {
+            // Circle j data
+            cv::Vec3f circle_j = circles_filtered[j];
+            cv::Point2f center_j(circle_j[0], circle_j[1]);
+            double radius_j = circle_j[2];
+
+            // Compute distance between centers of circle i and circle j
+            double base = std::abs(center_i.x - center_j.x);
+            double height = std::abs(center_i.y - center_j.y);
+            double distance = std::sqrt(std::pow(base, 2) + std::pow(height, 2));
+
+            // Set max distance
+            double max_distance = radius_j + offset;
+            
+            // Check if circle i is inside circle j
+            if(distance <= max_distance) {
+                // Compute mean circle
+                double radius_mean = (radius_i + radius_j) / 2;
+                double x_mean = (center_i.x + center_j.x) / 2;
+                double y_mean = (center_i.y + center_j.y) / 2;
+                cv::Vec3f circle_mean(x_mean, y_mean, radius_mean);
+                // Update circles mean
+                circles_mean.push_back(circle_mean);
+                // Replace pair of circles with mean circle
+                circles_filtered[j] = circle_mean;
+                // Update visiting
+                is_considered = true;
+            }
+        }
+
+        // Add circle i if not considered
+        if(! is_considered)
+            circles_filtered.push_back(circle_i);
+    }
+
+    // Update circles
+    circles = circles_filtered;
+}
+
 /* Normalize too much small or large circles */
 void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
     float radius_sum = 0.0, radius_avg = 0.0;
@@ -380,43 +432,28 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     od::morpho_pre_process(mask_balls);
 
     // Circle Hough transform
-    std::vector<cv::Vec3f> circles, circles_big, circles_small, circles_close;
+    std::vector<cv::Vec3f> circles, circles_big, circles_small, circles_mean, circles_close, circles_close_final;
 	cv::HoughCircles(mask_balls, circles, cv::HOUGH_GRADIENT, 1,
 		7,      // Distance between circles
 		100, 9, // Canny edge detector parameters and circles center detection 
 		3, 22); // Min-radius and max-radius of circles to detect
 
-    // Suppress circles
+    // Suppress holes circles
     od::suppress_billiard_holes(circles, corners, is_distorted);
-
-    // TODO: Compute mean circle to merge neighboring circles with center inside the bigger circle
-
-    // TODO: Remove big circles involved in mean circles computation
-
-    // TODO: Suppress close circles and keep big circles
-    od::suppress_close_circles(circles, circles_close);
-
-    // TODO: suppress the original big circles
-    double radius_max = 15.0;
+    // Merge neighboring circles
+    od::compute_mean_circles(circles, circles_mean);
+    // Suppress big circles
+    double radius_max = 17.0;
     od::suppress_big_circles(circles, circles_big, radius_max);
+    // Suppress smalle circles
+    double radius_min = 3.0;
+    od::suppress_small_circles(circles, circles_small, radius_min);
+    // Merge neighboring circles
+    // od::compute_mean_circles(circles, circles_mean, 10.0);
 
-    // TODO: remove
-    // NOTE: useless
-    // double min_distance = 15.0;
-    // od::suppress_big_close_circles(circles, circles_big, min_distance);
-    
-    // TODO: remove
-    // NOTE: not necessary
-    // double radius_min = 3.0;
-    // od::suppress_small_circles(circles, circles_small, radius_min);
-
+    // Additional operations
     od::suppress_black_circles(circles, mask_balls);
     od::normalize_circles_radius(circles);
-
-    // Add suppressed circles
-    // circles.insert(circles.end(), circles_big.begin(), circles_big.end());
-    // circles.insert(circles.end(), circles_small.begin(), circles_small.end());
-    // circles.insert(circles.end(), circles_close.begin(), circles_close.end());
 
     // Show detected circles
     // TODO: to be removed
@@ -431,48 +468,6 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         // cv::circle(frame, center, 1, cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
         // Show circle outline
         cv::circle(frame, center, radius, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
-    }
-
-    // Show big circles
-    // TODO: to be removed
-    for(size_t i = 0; i < circles_big.size(); i++) {
-        // Circle data
-        cv::Vec3i c = circles_big[i];
-        cv::Point center(c[0], c[1]);
-        unsigned int radius = c[2];
-
-        // Show circle center
-        // cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // Show circle outline
-        cv::circle(frame, center, radius, cv::Scalar(255, 0, 0), 1, cv::LINE_AA);
-    }
-
-    // Show small circles
-    // TODO: to be removed
-    for(size_t i = 0; i < circles_small.size(); i++) {
-        // Circle data
-        cv::Vec3i c = circles_small[i];
-        cv::Point center(c[0], c[1]);
-        unsigned int radius = c[2];
-
-        // Show circle center
-        // cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // Show circle outline
-        cv::circle(frame, center, radius, cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
-    }
-
-    // Show close circles
-    // TODO: to be removed
-    for(size_t i = 0; i < circles_close.size(); i++) {
-        // Circle data
-        cv::Vec3i c = circles_close[i];
-        cv::Point center(c[0], c[1]);
-        unsigned int radius = c[2];
-
-        // Show circle center
-        // cv::circle(frame, center, 1, cv::Scalar(0, 100, 100), 3, cv::LINE_AA);
-        // Show circle outline
-        cv::circle(frame, center, radius, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
     }
 
     // Display our result
@@ -608,7 +603,7 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat&
 
     // std::cout<<"SCORE: " << magnitude_score << std::endl;
     //std::cout << "COUNT: " << magnitude_count << std::endl;
-    std::cout << "WHITE: " << white_ratio << std::endl;
+    // std::cout << "WHITE: " << white_ratio << std::endl;
     // cv::imshow("Grad", magnitude);
     // cv::waitKey();
 }
