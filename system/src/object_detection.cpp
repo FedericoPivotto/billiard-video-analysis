@@ -403,7 +403,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Detect black and white balls
     int white_index = 0, black_index = 0;
-    od::detect_white_black_balls(ball_bboxes, white_index, black_index, white_ratios, black_ratios);
+    od::detect_white_black_balls(ball_bboxes, white_index, black_index, white_ratios, black_ratios, gradient_counts);
 
     // Scan each ball bounding box
     for(int i = 0; i < ball_bboxes.size(); ++i) {
@@ -602,26 +602,51 @@ void od::compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& 
 }
 
 /* Detect white and black balls */
-void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& white_index, int& black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio){
-    white_index = 0;
-    black_index = 0;
+void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& best_white_index, int& best_black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, std::vector<double>& magnitude_counts){
+    double sec_white_index = 0, sec_black_index = 0;
     
+    best_white_index = 0;
+    best_black_index = 0;
+    
+    // Make best and second best indexes different
+    if(best_white_index == sec_white_index && ball_bboxes.size() >= 2){
+        sec_white_index++;
+    }
+
     // Detect white ball
     for(size_t i = 0; i < ball_bboxes.size(); i++){
-        if(white_ratio[i] >= white_ratio[white_index]){
-            white_index = i;
+        if(white_ratio[i] >= white_ratio[best_white_index]){
+            best_white_index = i;
+        }
+    }
+
+    // Find second white candidate
+    for(size_t i = 0; i < ball_bboxes.size(); i++){
+        if(i != best_white_index){
+            if(white_ratio[i] >= white_ratio[sec_white_index]){
+                sec_white_index = i;
+            }
         }
     }
 
     // Detect black ball
     for(size_t i = 0; i < ball_bboxes.size(); i++){
-        if(black_ratio[i] >= black_ratio[black_index]){
-            black_index = i;
+        if(black_ratio[i] >= black_ratio[best_black_index]){
+            best_black_index = i;
         }
     }
 
-    ball_bboxes[white_index].ball_class = 1;
-    ball_bboxes[black_index].ball_class = 2;
+    // Check white consistency
+    if((white_ratio[best_white_index] - white_ratio[sec_white_index]) <= 0.015 && magnitude_counts[sec_white_index] < magnitude_counts[best_white_index]){
+        if(std::fabs(magnitude_counts[best_white_index] - magnitude_counts[sec_white_index]) > 0.2){
+            best_white_index = sec_white_index;
+        }
+    }
+
+    // Check black consistency
+
+    ball_bboxes[best_white_index].ball_class = 1;
+    ball_bboxes[best_black_index].ball_class = 2;
 }
 
 /* Normalize given vector */
