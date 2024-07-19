@@ -45,7 +45,7 @@ namespace od {
     bool operator==(const Ball& ball1, const Ball& ball2);
 
     // Detect function declarations
-    void detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat& frame, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
+    void detect_ball_class(Ball& ball_bbox, const int ball_index, std::vector<double>& white_ratios, std::vector<double>& black_ratios, std::vector<double>& magnitude_scores, std::vector<double>& magnitude_counts);
 
     // Ball bounding box confidence function declaration
     void set_ball_bbox_confidence(od::Ball& ball);
@@ -72,7 +72,7 @@ namespace od {
     void compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios);
     void normalize_vector(std::vector<double>& vec);
     void overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox);
-    void detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio);
+    void detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& white_index, int& black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio);
 }
 
 #endif // OBJECT_DETECTION_H
