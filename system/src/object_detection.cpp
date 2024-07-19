@@ -401,13 +401,15 @@ void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
 
     // Compute median of radius
     std::vector<double> radius_values;
-    for(size_t i = 0; i < circles.size(); i++)
+    for(size_t i = 0; i < circles.size(); i++) {
         radius_values.push_back(circles[i][2]);
+        std::cout << "Radius: " << circles[i][2] << std::endl;
+    }
     double radius_median = get_median(radius_values);
 
     // Resize small circles
     for(size_t i = 0; i < circles.size(); i++) {
-        if(circles[i][2] <= radius_avg) // 15.0)
+        if(circles[i][2] <= 14.0)
             circles[i][2] = radius_median;
     }
 
@@ -426,28 +428,6 @@ void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
     for(size_t i = 0; i < circles.size(); i++)
         circles[i][2] = radius_median * (1 + radius_values_norm[i]);*/
 }
-
-/*void findBoundingRectForCircles(const std::vector<cv::Vec3f>& circles, float expansionFactor, cv::Rect &boundingRect) {
-    std::vector<cv::Point2f> points;
-
-    // Extract the circle centers and expand the radius
-    for (const auto& circle : circles) {
-        float x = circle[0];
-        float y = circle[1];
-        float radius = circle[2];
-
-        // Create expanded points
-        points.emplace_back(x - radius * expansionFactor, y - radius * expansionFactor);
-        points.emplace_back(x + radius * expansionFactor, y - radius * expansionFactor);
-        points.emplace_back(x - radius * expansionFactor, y + radius * expansionFactor);
-        points.emplace_back(x + radius * expansionFactor, y + radius * expansionFactor);
-    }
-
-    // Find the bounding rectangle
-    cv::Rect boundingRect = cv::boundingRect(points);
-    
-    return boundingRect;
-}*/
 
 /* Balls detection in given a video frame */
 void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path, const bool test_flag) {
@@ -505,10 +485,10 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
     // Additional operations
     od::suppress_black_circles(circles, mask_balls);
     // Normalize circles to median
-    // od::normalize_circles_radius(circles);
+    od::normalize_circles_radius(circles);
     // Merge neighboring circles
-    double offset = 9.0;
-    od::compute_mean_circles(circles, circles_mean, offset);
+    // double offset = 12.0;
+    // od::compute_mean_circles(circles, circles_mean, offset);
     
     // Show detected circles
     // TODO: to be removed
@@ -519,7 +499,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         cv::Point2f center(c[0], c[1]);
         unsigned int radius = c[2];
 
-        // Ball ROI
+        /*// Ball ROI
         int length = 2 * radius;
         double size_ratio = 1;
         cv::Rect roi(center.x - radius, center.y - radius, length * size_ratio, length * size_ratio);
@@ -534,7 +514,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         std::vector<std::vector<cv::Point>> contours;
         std::vector<cv::Vec4i> hierarchy;
         cv::findContours(roi_image, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-          // Find and draw the largest contour's minimum enclosing circle
+        // Find and draw the largest contour's minimum enclosing circle
         if (! contours.empty()) {
             double max_area = 0;
             size_t largest_contour_index = 0;
@@ -552,8 +532,8 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
             cv::minEnclosingCircle(contours[largest_contour_index], min_enclosing_center, min_enclosing_radius);
         
             // Convert radius to integer and draw the circle
-            cv::circle(frame, min_enclosing_center + cv::Point2f(roi.x, roi.y), (int)min_enclosing_radius, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
-        }
+            cv::circle(frame, min_enclosing_center + cv::Point2f(roi.x, roi.y), (int)min_enclosing_radius, cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
+        }*/
 
         /*// Create an empty vector to store points around the circles' circumferences
         // Number of points to approximate each circle (higher number for more accuracy)
@@ -576,7 +556,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         // Show circle center
         // cv::circle(frame, center, 1, cv::Scalar(255, 255, 255), 2, cv::LINE_AA);
         // Show circle outline
-        // cv::circle(frame, center, radius, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+        cv::circle(frame, center, radius, cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
     }
 
     // Display our result
