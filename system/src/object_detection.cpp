@@ -461,7 +461,7 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat&
     // Stripe ball features: high gradient (more important when few color or few white is shown), white and color
     // Solid ball features: low gradient, few white and more color, gradient is less important
     
-    double white_th = 0.2, grad_score_th = 0.13, grad_count_th = 0.1;
+    double white_th = 0.2, grad_score_th = 0.13, grad_count_th = 0.15;
     if(white_ratio > white_th && magnitude_count > grad_count_th) {
         if(magnitude_score > grad_score_th)
             ball_bbox.ball_class = 4; // Stripe
@@ -471,7 +471,7 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat&
             ball_bbox.ball_class = 3; // Solid
     } else if (white_ratio > 0.9 * white_th && magnitude_count > 0.5 * grad_count_th && magnitude_score > 0.8 * grad_score_th) {
         ball_bbox.ball_class = 4; // Stripe
-    } else if(white_ratio >= 0.45){
+    } else if(white_ratio >= 0.42){
         ball_bbox.ball_class = 1; // White
     } else if(white_ratio < 0.2 && black_ratio >= 0.2){
         ball_bbox.ball_class = 2; // Black
@@ -479,9 +479,10 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, const cv::Mat&
         ball_bbox.ball_class = 3; // Solid
     }
 
-    // std::cout<<"SCORE: " << magnitude_score << std::endl;
+    std::cout<<"S: " << magnitude_score << " C: " << magnitude_count << " W: " << white_ratio <<  "B: " << black_ratio << std::endl;
     //std::cout << "COUNT: " << magnitude_count << std::endl;
-    std::cout << "WHITE: " << white_ratio << std::endl;
+    //std::cout << "WHITE: " << white_ratio << std::endl;
+    //std::cout << "BLACK: " << black_ratio << std::endl;
     // cv::imshow("Grad", magnitude);
     // cv::waitKey();
 }
@@ -571,7 +572,7 @@ void od::compute_gradient_magnitude(const cv::Mat& frame, cv::Mat& magnitude) {
     cv::normalize(magnitude, magnitude, 0, 255, cv::NORM_MINMAX, CV_8U);
 
     // Keep only high valued gradients
-    cv::threshold(magnitude, magnitude, 100, 0, cv::THRESH_TOZERO);
+    cv::threshold(magnitude, magnitude, 50, 0, cv::THRESH_TOZERO);
 }
 
 /* Compute ratio color-white ratio */
@@ -598,6 +599,28 @@ void od::compute_color_white_ratio(const cv::Mat& ball_region, double& white_rat
     // Greater than 1 if color is predominant
     white_ratio = white_count / (white_count + color_count);
     black_ratio = black_count / (white_count + color_count);
+}
+
+/* Detect white and black balls */
+void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, const std::vector<double>& magnitude_scores, const std::vector<double>& magnitude_counts){
+    int white_index = 0, black_index = 0;
+    
+    // Detect white ball
+    for(size_t i = 0; i < ball_bboxes.size(); i++){
+        if(white_ratio[i] >= white_ratio[white_index]){
+            white_index = i;
+        }
+    }
+
+    // Detect black ball
+    for(size_t i = 0; i < ball_bboxes.size(); i++){
+        if(black_ratio[i] >= black_ratio[black_index]){
+            black_index = i;
+        }
+    }
+
+    ball_bboxes[white_index].ball_class = 1;
+    ball_bboxes[black_index].ball_class = 2;
 }
 
 /* Normalize given vector */

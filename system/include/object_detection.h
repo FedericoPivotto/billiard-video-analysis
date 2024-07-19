@@ -71,6 +71,7 @@ namespace od {
     void compute_color_white_ratio(const cv::Mat& ball, double& white_ratio, double& black_ratio);
     void normalize_vector(std::vector<double>& vec);
     void overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox);
+    void detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, const std::vector<double>& magnitude_scores, const std::vector<double>& magnitude_counts);
 }
 
 #endif // OBJECT_DETECTION_H
