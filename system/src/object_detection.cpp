@@ -414,7 +414,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         if(i != white_index && i != black_index){
             od::detect_ball_class(ball_bbox, i, white_ratios, black_ratios, gradient_scores, gradient_counts);
         }
-        //std::cout<<"S: " << gradient_scores[i] << " C: " << gradient_counts[i] << " W: " << white_ratios[i] <<  "B: " << black_ratios[i] << std::endl;
+        //std::cout<<"S: " << gradient_scores[i] << " C: " << gradient_counts[i] << " W: " << white_ratios[i] <<  " B: " << black_ratios[i] << std::endl;
 
         // TODO: Compute confidence value
         od::set_ball_bbox_confidence(ball_bbox);
@@ -455,16 +455,27 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, std::vector<do
     // TODO: Classify according to ratio and gradient magnitude
     // Stripe ball features: high gradient (more important when few color or few white is shown), white and color
     // Solid ball features: low gradient, few white and more color, gradient is less important
-    
-    double white_th = 0.2, grad_score_th = 0.13, grad_count_th = 0.15;
-    if(white_ratio > white_th && magnitude_count > grad_count_th) {
-        if(magnitude_score > grad_score_th)
-            ball_bbox.ball_class = 4; // Stripe
-        else if(magnitude_count >= 1.1 * grad_count_th && magnitude_score >= 0.8 * grad_score_th)
-            ball_bbox.ball_class = 4; // Stripe
-        else 
-            ball_bbox.ball_class = 3; // Solid
-    } else if (white_ratio > 0.9 * white_th && magnitude_count > 0.5 * grad_count_th && magnitude_score > 0.8 * grad_score_th) {
+    std::cout<<"S: " << magnitude_score << " C: " << magnitude_count << " W: " << white_ratio << std::endl;
+
+    double white_th = 0.15, grad_count_th = 0.1;
+    /*
+    if(white_ratio >= 1.75 * white_th) {
+        ball_bbox.ball_class = 4; // Stripe
+    } else if((white_ratio >= 1.5 * white_th) && (magnitude_count >= 0.35 * grad_count_th)){
+        ball_bbox.ball_class = 4; // Stripe
+    } else if((white_ratio > white_th) && (magnitude_count >= grad_count_th)) {
+        ball_bbox.ball_class = 4; // Stripe
+    } else if(white_ratio > 0.75 * white_th && magnitude_count >= 1.25 * grad_count_th) {
+        //std::cout << "BALL: " << ball_index << std::endl;
+        ball_bbox.ball_class = 4; // Stripe
+    } else {
+        ball_bbox.ball_class = 3; // Solid
+        std::cout << "BALL: " << ball_index << std::endl;
+    }*/
+
+    if(white_ratio >= 1.75 * white_th) {
+        ball_bbox.ball_class = 4; // Stripe
+    } else if((white_ratio >= white_th) && (magnitude_count >= grad_count_th)){
         ball_bbox.ball_class = 4; // Stripe
     } else {
         ball_bbox.ball_class = 3; // Solid
