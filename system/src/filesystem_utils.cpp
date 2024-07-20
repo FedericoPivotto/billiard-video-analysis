@@ -1,3 +1,5 @@
+/* Federico Pivotto */
+
 #include <filesystem_utils.h>
 
 /* Librarires required in this source file and not already included in video_utils.h */

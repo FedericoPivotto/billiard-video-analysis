@@ -1,3 +1,5 @@
+/* Leonardo Egidati */
+
 #include <segmentation.h>
 
 /* Librarires required in this source file and not already included in segmentation.h */

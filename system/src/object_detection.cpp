@@ -1,3 +1,5 @@
+/* Federico Pivotto */
+
 #include <object_detection.h>
 
 /* Librarires required in this source file and not already included in object_detection.h */

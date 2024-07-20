@@ -1,3 +1,5 @@
+### Fabrizio Genilotti
+
 ## CMake setup
 
 # CMake version

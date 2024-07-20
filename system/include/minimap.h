@@ -1,3 +1,5 @@
+/* Fabrizio Genilotti */
+
 #ifndef MINIMAP_H
 #define MINIMAP_H
 

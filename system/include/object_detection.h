@@ -1,3 +1,5 @@
+/* Federico Pivotto */
+
 #ifndef OBJECT_DETECTION_H
 #define OBJECT_DETECTION_H
 

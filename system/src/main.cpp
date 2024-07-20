@@ -1,3 +1,5 @@
+/* Fabrizio Genilotti */
+
 /* User-defined libraries */
 
 // video_captures: video utilities

@@ -1,3 +1,5 @@
+/* Leonardo Egidati */
+
 #ifndef BILLIARD_METRIC_H
 #define BILLIARD_METRIC_H
 

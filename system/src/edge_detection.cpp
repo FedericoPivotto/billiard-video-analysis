@@ -1,3 +1,5 @@
+/* Fabrizio Genilotti */
+
 #include <edge_detection.h>
 
 /* Librarires required in this source file and not already included in edge_detection.h */

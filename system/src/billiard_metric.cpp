@@ -1,3 +1,5 @@
+/* Leonardo Egidati */
+
 #include <billiard_metric.h>
 
 /* Librarires required in this source file and not already included in billiard_metric.h */

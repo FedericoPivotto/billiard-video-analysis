@@ -1,3 +1,5 @@
+/* Fabrizio Genilotti */
+
 #include <minimap.h>
 
 /* Librarires required in this source file and not already included in minimap.h */

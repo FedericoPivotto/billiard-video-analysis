@@ -1,3 +1,5 @@
+/* Leonardo Egidati */
+
 #ifndef SEGMENTATION_H
 #define SEGMENTATION_H
 
