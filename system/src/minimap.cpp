@@ -84,7 +84,7 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, cv::Mat& map_p
     cv::warpPerspective(image, map_view, map_perspective, cv::Size(350, 175));
 }
 
-/* Overlay the balls trajectories on the map_view*/
+/* Overlay the balls trajectories on the map_view */
 void mm::overlay_map_view_trajectories(cv::Mat& map_view, cv::Mat& map_perspective, const std::vector<od::Ball> ball_bboxes) {
     // Warp each ball center and draw mini-map balls position
     cv::Point2f warped_point;
