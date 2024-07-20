@@ -16,7 +16,7 @@
 #include <minimap.h>
 
 // tracking library
-//#include <opencv2/tracking.hpp>
+#include <opencv2/tracking.hpp>
 
 // billiard_metric library
 #include <billiard_metric.h>
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
         }
 
         // TODO: to uncomment once object detection is fine
-        /*// Assuming field corners of the first video frame
+        // Assuming field corners of the first video frame
 
         // 2D top-view minimap and tracking (Fabrizio)
         
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
         // Create and save video
-        vu::save_video(video_game_frames_cv, captures[i], result_video_path);*/
+        vu::save_video(video_game_frames_cv, captures[i], result_video_path);
     }
 
     return 0;

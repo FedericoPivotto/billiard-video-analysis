@@ -16,7 +16,7 @@
 #include <minimap.h>
 
 // tracking library
-//#include <opencv2/tracking.hpp>
+#include <opencv2/tracking.hpp>
 
 /* Computer vision system main */
 int main(int argc, char** argv) {
@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[6]);
         }
 
-        /*// Assuming field corners of the first video frame
+        // Assuming field corners of the first video frame
         
         // 2D top-view minimap and tracking (Fabrizio)
         
@@ -168,17 +168,17 @@ int main(int argc, char** argv) {
                     // Get ball bbox rectangle
                     cv::Rect bbox(ball_bboxes[k].get_rect_bbox());
                     // Create CSRT tracker
-                    // trackers.push_back(cv::TrackerCSRT::create());
-                    // trackers[k]->init(video_game_frame_cv, bbox);
+                    trackers.push_back(cv::TrackerCSRT::create());
+                    trackers[k]->init(video_game_frame_cv, bbox);
                 }
             } else {
                 // For each ball update tracker
                 for(size_t k = 0; k < ball_bboxes.size(); ++k) {
                     // Update tracker
                     cv::Rect bbox;
-                    // trackers[k]->update(video_game_frame_cv, bbox);
+                    trackers[k]->update(video_game_frame_cv, bbox);
                     // Update ball bbox
-                    // ball_bboxes[k].set_rect_bbox(bbox);
+                    ball_bboxes[k].set_rect_bbox(bbox);
                 }
             }
 
@@ -205,7 +205,7 @@ int main(int argc, char** argv) {
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
         // Create and save video
-        // vu::save_video(video_game_frames_cv, captures[i], result_video_path);*/
+        vu::save_video(video_game_frames_cv, captures[i], result_video_path);
     }
 
     return 0;

@@ -445,10 +445,6 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
-
-    // Show video fram with classification
-    cv::imshow("Frame with ball classification", video_frame);
-    cv::waitKey(0);
 }
 
 /* Ball class detection */
