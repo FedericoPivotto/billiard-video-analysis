@@ -7,9 +7,9 @@ Final project - June + July 2024.
 - Leonardo Egidati, 2106370
 
 # TODO
-- [ ] Federico: object detection
-- [ ] Fabrizio: 2D top-view minimap
-- [ ] Leonardo: metrics
+- Update README with system execution details
+- Add a single author in first row of each source file
+- Report number of work hours
 
 # Steps
 The project will be divided in steps according to the following schedule.

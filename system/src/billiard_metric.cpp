@@ -221,7 +221,6 @@ void bm::evaluate_localization_metric(const std::string true_bboxes_frame_file_p
         aps.push_back(bm::average_precision(best_ball_matches, predicted_balls_class, true_balls_class.size()));
 
         // Update video frame metrics with AP of current class
-        // TODO: to remove
         metrics_result += "Average Precision (AP) for class " + std::to_string(i) + ": " + std::to_string(aps[i-1]*100) + "%\n";
     }
 
@@ -257,7 +256,6 @@ void bm::evaluate_segmentation_metric(const std::string true_mask_path, const st
         ious.push_back(bm::iou_class(true_mask, predicted_mask, i));
 
         // Update video frame metrics with IoU of current class
-        // TODO: to remove
         metrics_result += "Intersection over Union (IoU) for class " + std::to_string(i) + ": " + std::to_string(ious[i]*100) + "%\n";
     }
 
