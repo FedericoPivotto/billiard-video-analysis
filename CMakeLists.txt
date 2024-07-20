@@ -98,4 +98,5 @@ system_filesystem_utils
 system_object_detection
 system_edge_detection
 system_segmentation
-system_minimap)
+system_minimap
+system_billiard_metric)

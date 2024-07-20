@@ -34,9 +34,15 @@ unsigned int od::Ball::radius() const {
     return width < height ? width / 2 : height / 2;
 }
 
-cv::Rect od::Ball::get_rect_bbox() {
-    // Create bounding box cv::Rect
-    return cv::Rect(x, y, width, height);
+cv::Rect od::Ball::get_rect_bbox(const double increase_ratio) {
+    // Increased bounding box data
+    unsigned int width_inc = static_cast<unsigned int>(width * increase_ratio);
+    unsigned int height_inc = static_cast<unsigned int>(height * increase_ratio);
+    unsigned int x_inc = x - (width_inc - width) / 2;
+    unsigned int y_inc = y - (height_inc - height) / 2;
+
+    // Create bounding box cv::Rect considering increase ratio
+    return cv::Rect(x_inc, y_inc, width_inc, height_inc);
 }
 
 void od::Ball::set_rect_bbox(cv::Rect bbox) {
@@ -445,10 +451,6 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
-
-    // Show video fram with classification
-    cv::imshow("Frame with ball classification", video_frame);
-    cv::waitKey(0);
 }
 
 /* Ball class detection */

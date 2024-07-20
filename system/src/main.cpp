@@ -16,7 +16,7 @@
 #include <minimap.h>
 
 // tracking library
-//#include <opencv2/tracking.hpp>
+#include <opencv2/tracking.hpp>
 
 // billiard_metric library
 #include <billiard_metric.h>
@@ -101,12 +101,12 @@ int main(int argc, char** argv) {
             cv::Mat object_video_frame_cv = video_frames[k].clone();
             od::object_detection(video_frames, k, video_result_subdirs[0], corners, is_distorted, object_video_frame_cv);
             // Save object detection
-            fsu::save_video_frame(video_frames, k, object_video_frame_cv, video_result_subdirs[5]);
+            fsu::save_video_frame(video_frames, k, object_video_frame_cv, video_result_subdirs[4]);
 
             // Segmentation (Leonardo)
             sg::segmentation(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
             // Save segmentation
-            fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[4]);
+            fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[5]);
 
             // Create segmentation mask
             cv::Mat video_frame_cv_mask = video_frames[k].clone();
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
         }
 
         // TODO: to uncomment once object detection is fine
-        /*// Assuming field corners of the first video frame
+        // Assuming field corners of the first video frame
 
         // 2D top-view minimap and tracking (Fabrizio)
         
@@ -180,7 +180,8 @@ int main(int argc, char** argv) {
                 // For each ball create tracker
                 for(size_t k = 0; k < ball_bboxes.size(); ++k) {
                     // Get ball bbox rectangle
-                    cv::Rect bbox(ball_bboxes[k].get_rect_bbox());
+                    double increase_ratio = 1.5;
+                    cv::Rect bbox(ball_bboxes[k].get_rect_bbox(increase_ratio));
                     // Create CSRT tracker
                     trackers.push_back(cv::TrackerCSRT::create());
                     trackers[k]->init(video_game_frame_cv, bbox);
@@ -219,7 +220,7 @@ int main(int argc, char** argv) {
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
         std::string result_video_path = video_result_path + "/" + result_video_name + ".mp4";
         // Create and save video
-        vu::save_video(video_game_frames_cv, captures[i], result_video_path);*/
+        vu::save_video(video_game_frames_cv, captures[i], result_video_path);
     }
 
     return 0;
