@@ -31,7 +31,7 @@ namespace od {
             // Function declarations
             std::pair<unsigned int, unsigned int> center() const;
             unsigned int radius() const;
-            cv::Rect get_rect_bbox();
+            cv::Rect get_rect_bbox(const double increase_ratio = 1);
             void set_rect_bbox(cv::Rect bbox);
     
             // Operator overload declarations

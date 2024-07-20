@@ -180,7 +180,8 @@ int main(int argc, char** argv) {
                 // For each ball create tracker
                 for(size_t k = 0; k < ball_bboxes.size(); ++k) {
                     // Get ball bbox rectangle
-                    cv::Rect bbox(ball_bboxes[k].get_rect_bbox());
+                    double increase_ratio = 1.5;
+                    cv::Rect bbox(ball_bboxes[k].get_rect_bbox(increase_ratio));
                     // Create CSRT tracker
                     trackers.push_back(cv::TrackerCSRT::create());
                     trackers[k]->init(video_game_frame_cv, bbox);
