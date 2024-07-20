@@ -215,6 +215,10 @@ int main(int argc, char** argv) {
         // Show game video frames
         // TODO: to remove
         // vu::show_video_frames(video_game_frames_cv);
+
+        // Save first and last game frame with minimap
+        fsu::save_video_frame(video_frames, 0, video_game_frames_cv.front(), video_result_subdirs[8]);
+        fsu::save_video_frame(video_frames, video_frames.size()-1, video_game_frames_cv.back(), video_result_subdirs[8]);
         
         // Game video filename
         std::string result_video_name = std::filesystem::path(video_paths[i]).parent_path().filename();
