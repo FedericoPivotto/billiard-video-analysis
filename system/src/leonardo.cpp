@@ -104,6 +104,8 @@ int main(int argc, char** argv) {
             cv::Mat object_video_frame_cv = video_frames[k].clone();
             bool is_test = true;
             od::object_detection(video_frames, k, video_result_subdirs[0], corners, is_distorted, object_video_frame_cv, video_dataset_subdirs[0], is_test);
+            // Save object detection
+            fsu::save_video_frame(video_frames, k, object_video_frame_cv, video_result_subdirs[4]);
 
             // TODO: when object detection is fine, the flag must be sat to false
             // ATTENTION: test_flag is used just to do test with a dataset bounding box file
