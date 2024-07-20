@@ -18,6 +18,9 @@
 // tracking library
 #include <opencv2/tracking.hpp>
 
+// billiard_metric library
+#include <billiard_metric.h>
+
 /* Computer vision system main */
 int main(int argc, char** argv) {
     // Get videos paths
@@ -118,6 +121,26 @@ int main(int argc, char** argv) {
             // Save output frame
             ed::draw_borders(video_frame_cv, borders, corners);
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[6]);
+
+            // Metrics output string
+            std::string metrics_result;
+
+            // Localization metric
+            std::string true_bboxes_frame_file_path, predicted_bboxes_frame_file_path;
+            fsu::get_bboxes_frame_file_path(video_frames, k, video_dataset_subdirs[0], true_bboxes_frame_file_path);
+            fsu::get_bboxes_frame_file_path(video_frames, k, video_result_subdirs[0], predicted_bboxes_frame_file_path);
+            // Evaluate metric on ball bounding boxes
+            bm::evaluate_localization_metric(true_bboxes_frame_file_path, predicted_bboxes_frame_file_path, metrics_result);
+
+            // Segmentation metric
+            std::string true_metrics_frame_file_path, predicted_metrics_frame_file_path;
+            fsu::get_video_frame_file_path(video_frames, k, video_dataset_subdirs[2], true_metrics_frame_file_path);
+            fsu::get_video_frame_file_path(video_frames, k, video_result_subdirs[2], predicted_metrics_frame_file_path);
+            // Evaluate metric on segmentation masks
+            bm::evaluate_segmentation_metric(true_metrics_frame_file_path, predicted_metrics_frame_file_path, metrics_result);
+
+            // Save video frame metrics
+            fsu::save_video_metrics(video_frames, k, metrics_result, video_result_subdirs[7]);
         }
 
         // Assuming field corners of the first video frame
