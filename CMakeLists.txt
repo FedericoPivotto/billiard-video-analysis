@@ -66,30 +66,6 @@ system_billiard_metric)
 # TODO: remove code below
 #########################################################
 
-## Federico system executable
-# TODO: to remove
-add_executable(federico system/src/federico.cpp)
-target_link_libraries(federico
-${OpenCV_LIBS}
-system_video_utils
-system_filesystem_utils
-system_object_detection
-system_edge_detection
-system_segmentation
-system_minimap)
-
-## Fabrizio system executable
-# TODO: to remove
-add_executable(fabrizio system/src/fabrizio.cpp)
-target_link_libraries(fabrizio
-${OpenCV_LIBS}
-system_video_utils
-system_filesystem_utils
-system_object_detection
-system_edge_detection
-system_segmentation
-system_minimap)
-
 ## Leonardo system executable
 # TODO: to remove
 add_executable(leonardo system/src/leonardo.cpp)
