@@ -2,70 +2,31 @@
 
 #include <minimap.h>
 
-/* Librarires required in this source file and not already included in minimap.h */
-
-// iostream: std::cout, std::endl
+/* Librarires required and not yet included in minimap.h */
 #include <iostream>
-// calib3d: findHomography()
 #include <opencv2/calib3d.hpp>
-// imgproc: warpPerspective(), cv::circle
 #include <opencv2/imgproc.hpp>
-// edge_detection: ed::sort_corners()
+
+/* User-defined librarires required and not yet included in minimap.h */
 #include <edge_detection.h>
-// segmentation: sg::field_segmentation()
 #include <segmentation.h>
 
-/* Compute the slope of a line expressed in polar representation (rho, theta) */
-double mm::compute_slope(const double theta) {
-    const double epsilon = 1e-1;
+/* Computes map-view of the current frame */
+void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, cv::Mat& map_perspective, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners) {
+    // Sorted float corners
+    std::vector<cv::Point2f> sorted_corners(corners);
+    ed::sort_corners(sorted_corners);
 
-    // Check if line is vertical, otherwise compute slope    
-    if((std::abs(theta) < epsilon) || std::abs(theta - CV_PI) < epsilon) {
-        return std::numeric_limits<double>::infinity();
-    } else {
-        return - 1.0 / std::tan(theta);
-    }
-}
-
-/* Check whether the video point of view is affected by distortion */
-void mm::check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& is_distorted) {
-    is_distorted = false;
-    double slope_sum = 0.0;
-
-    // Sum the slopes of the borders 
-    for(const cv::Vec2f& border : borders) {
-        double slope = mm::compute_slope(border[1]);
-
-        if(slope == std::numeric_limits<double>::infinity()) {
-            slope_sum += 1000;
-        } else {
-            slope_sum += slope;
-        }
-    }
-
-    // Set threshold for distortion check
-    const double threshold = 100.0;
-
-    // Check for presence of distortion
-    if(slope_sum <= threshold) {
-        is_distorted = true;
-    }
-}
-
-/* Compute the pixel location in the warped image w.r.t. the original image */
-void mm::warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, cv::Point2f& warped_point) {
-    // Convert original point into homogeneous coordinates
-    cv::Mat homogeneous_point(3, 1, CV_64F);
-    homogeneous_point.at<double>(0,0) = static_cast<double>(point.x);
-    homogeneous_point.at<double>(1,0) = static_cast<double>(point.y);
-    homogeneous_point.at<double>(2,0) = 1.0;
+    // Field frame white table segmentation
+    bool white_flag = true;
+    sg::field_segmentation(sorted_corners, field_frame, mm::FIELD_BGR.second);
     
-    // Compute warped point in homogeneous coordinates
-    cv::Mat homogeneous_warped_point = map_perspective * homogeneous_point;
+    // Check for presence of distortion
+    bool is_distorted = false;
+    mm::check_perspective_distortion(borders, is_distorted);
 
-    // Store warped point
-    warped_point.x = static_cast<float>(homogeneous_warped_point.at<double>(0,0) / homogeneous_warped_point.at<double>(2,0));
-    warped_point.y = static_cast<float>(homogeneous_warped_point.at<double>(1,0) / homogeneous_warped_point.at<double>(2,0));
+    // Create map-view
+    mm::create_map_view(field_frame, map_view, map_perspective, sorted_corners, is_distorted);
 }
 
 /* Generate map view of the area inside the borders */
@@ -73,17 +34,31 @@ void mm::create_map_view(const cv::Mat& image, cv::Mat& map_view, cv::Mat& map_p
     std::vector<cv::Point2f> dst;
 
     // Check table orientation
-    if(!is_distorted) {
+    if(!is_distorted)
         dst = {cv::Point2f(0, 0), cv::Point2f(350, 0), cv::Point2f(350, 175), cv::Point2f(0, 175)};
-    } else {
+    else
         dst = {cv::Point2f(0, 175), cv::Point2f(0, 0), cv::Point2f(350, 0), cv::Point2f(350, 175)};
-    }
 
     // Get perspective transform matrix
     map_perspective = cv::findHomography(corners, dst);
 
     // Generate map view
     cv::warpPerspective(image, map_view, map_perspective, cv::Size(350, 175));
+}
+
+/* Overlay the map-view into the current frame */
+void mm::overlay_map_view(cv::Mat& frame, cv::Mat& map_view) {
+    // Resize map-view
+    double scale = 0.85;
+    cv::resize(map_view, map_view, cv::Size(), scale, scale);
+
+    // Consider offsets for the coordinates
+    const int x = 10;
+    const int y = frame.rows - map_view.rows - 10;
+
+    // Set the region of interest and to overlay on it
+    cv::Rect roi(x, y, map_view.cols, map_view.rows);
+    map_view.copyTo(frame(roi));
 }
 
 /* Overlay the balls trajectories on the map_view */
@@ -149,35 +124,52 @@ void mm::overlay_map_view_background(cv::Mat& map_view) {
     map_view = map_view_background;
 }
 
-/* Overlay the map-view into the current frame */
-void mm::overlay_map_view(cv::Mat& frame, cv::Mat& map_view) {
-    // Resize map-view
-    double scale = 0.85;
-    cv::resize(map_view, map_view, cv::Size(), scale, scale);
+/* Compute the slope of a line expressed in polar representation (rho, theta) */
+double mm::compute_slope(const double theta) {
+    const double epsilon = 1e-1;
 
-    // Consider offsets for the coordinates
-    const int x = 10;
-    const int y = frame.rows - map_view.rows - 10;
-
-    // Set the region of interest and to overlay on it
-    cv::Rect roi(x, y, map_view.cols, map_view.rows);
-    map_view.copyTo(frame(roi));
+    // Check if line is vertical, otherwise compute slope    
+    if((std::abs(theta) < epsilon) || std::abs(theta - CV_PI) < epsilon)
+        return std::numeric_limits<double>::infinity();
+    else
+        return - 1.0 / std::tan(theta);
 }
 
-/* Computes map-view of the current frame */
-void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, cv::Mat& map_perspective, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners) {
-    // Sorted float corners
-    std::vector<cv::Point2f> sorted_corners(corners);
-    ed::sort_corners(sorted_corners);
-
-    // Field frame white table segmentation
-    bool white_flag = true;
-    sg::field_segmentation(sorted_corners, field_frame, mm::FIELD_BGR.second);
+/* Compute the pixel location in the warped image w.r.t. the original image */
+void mm::warped_pixel(const cv::Point2f& point, const cv::Mat& map_perspective, cv::Point2f& warped_point) {
+    // Convert original point into homogeneous coordinates
+    cv::Mat homogeneous_point(3, 1, CV_64F);
+    homogeneous_point.at<double>(0,0) = static_cast<double>(point.x);
+    homogeneous_point.at<double>(1,0) = static_cast<double>(point.y);
+    homogeneous_point.at<double>(2,0) = 1.0;
     
-    // Check for presence of distortion
-    bool is_distorted = false;
-    mm::check_perspective_distortion(borders, is_distorted);
+    // Compute warped point in homogeneous coordinates
+    cv::Mat homogeneous_warped_point = map_perspective * homogeneous_point;
 
-    // Create map-view
-    mm::create_map_view(field_frame, map_view, map_perspective, sorted_corners, is_distorted);
+    // Store warped point
+    warped_point.x = static_cast<float>(homogeneous_warped_point.at<double>(0,0) / homogeneous_warped_point.at<double>(2,0));
+    warped_point.y = static_cast<float>(homogeneous_warped_point.at<double>(1,0) / homogeneous_warped_point.at<double>(2,0));
+}
+
+/* Check whether the video point of view is affected by distortion */
+void mm::check_perspective_distortion(const std::vector<cv::Vec2f>& borders, bool& is_distorted) {
+    is_distorted = false;
+    double slope_sum = 0.0;
+
+    // Sum the slopes of the borders 
+    for(const cv::Vec2f& border : borders) {
+        double slope = mm::compute_slope(border[1]);
+
+        if(slope == std::numeric_limits<double>::infinity())
+            slope_sum += 1000;
+        else
+            slope_sum += slope;
+    }
+
+    // Set threshold for distortion check
+    const double threshold = 100.0;
+
+    // Check for presence of distortion
+    if(slope_sum <= threshold)
+        is_distorted = true;
 }

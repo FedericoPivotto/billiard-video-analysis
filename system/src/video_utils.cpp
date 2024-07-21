@@ -50,6 +50,7 @@ void vu::show_video_frames(const std::vector<cv::Mat> video_frames) {
     }
 }
 
+/* Create and save a video given a vector of frames */
 void vu::save_video(std::vector<cv::Mat>& video_frames, const cv::VideoCapture capture, const std::string video_path) {
     // Video writer
     cv::VideoWriter video_writer;
