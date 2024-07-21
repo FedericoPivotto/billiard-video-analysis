@@ -3,22 +3,14 @@
 #ifndef FILESYSTEM_UTILS_H
 #define FILESYSTEM_UTILS_H
 
-/* Libraries required in this source file */
-
-// iostream: std::string
+/* Libraries required */
 #include <iostream>
-// vector: std::vector
 #include <vector>
-// highgui: cv::Mat
 #include <opencv2/highgui.hpp>
-// fstream: std::ofstream
 #include <fstream>
-// filesystem: std::filesystem
 #include <filesystem>
 
-/* User-defined libraries required in this source file */
-
-// Object detection library
+/* User-defined libraries required */
 #include <object_detection.h>
 
 /* Filesystem utils namespace */
@@ -28,8 +20,8 @@ namespace fsu {
     void create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, std::string& bboxes_frame_file);
 
     // Get function declarations
-    void get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, std::string& bboxes_frame_file_path);
     void get_video_dataset_dir(const std::string video_path, std::vector<std::string>& video_dataset_subdirs);
+    void get_bboxes_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, std::string& bboxes_frame_file_path);
     void get_video_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, std::string& bboxes_frame_file_path);
     void get_metrics_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string metrics_video_path, std::string& metrics_frame_file_path);
 

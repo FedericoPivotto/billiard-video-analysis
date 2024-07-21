@@ -2,15 +2,12 @@
 
 #include <object_detection.h>
 
-/* Librarires required in this source file and not already included in object_detection.h */
-
-// imgproc: cv::cvtColor(), color space conversion codes
+/* Librarires required and not yet included in object_detection.h */
 #include <opencv2/imgproc.hpp>
-// filesystem_utils: fsu::create_bboxes_frame_file()
 #include <filesystem_utils.h>
-// edge_detection: ed::sort_corners()
+
+/* User-defined librarires required and not yet included in object_detection.h */
 #include <edge_detection.h>
-// segmentation: ball color constans
 #include <segmentation.h>
 
 /* Static id definition */
@@ -36,6 +33,7 @@ unsigned int od::Ball::radius() const {
     return width < height ? width / 2 : height / 2;
 }
 
+/* Get augmented ball bounding box rectangle */
 cv::Rect od::Ball::get_rect_bbox(const double increase_ratio) {
     // Increased bounding box data
     unsigned int width_inc = static_cast<unsigned int>(width * increase_ratio);
@@ -47,7 +45,9 @@ cv::Rect od::Ball::get_rect_bbox(const double increase_ratio) {
     return cv::Rect(x_inc, y_inc, width_inc, height_inc);
 }
 
+/* Initialize ball bounding box rectangle */
 void od::Ball::set_rect_bbox(cv::Rect bbox) {
+    // Initialize ball bounding box rectangle
     x = bbox.x;
     y = bbox.y;
     width = bbox.width;
@@ -62,13 +62,146 @@ std::ostream& od::operator<<(std::ostream& os, const Ball& ball) {
 
 /* Ball operator == overload */
 bool od::operator==(const Ball& ball1, const Ball& ball2) {
-    // Ball comparison
+    // Balls comparison
     return  ball1.x == ball2.x && 
             ball1.y == ball2.y && 
             ball1.width == ball2.width &&
             ball1.height == ball2.height && 
             ball1.ball_class == ball2.ball_class &&
             ball1.confidence == ball2.confidence;
+}
+
+/* Balls detection and classification given a video frame */
+void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path, const bool test_flag) {
+    // Sorted float corners
+    std::vector<cv::Point2f> corners(corners_float);
+    ed::sort_corners(corners);
+
+    // Mask image to consider only the billiard table
+    cv::Mat mask = cv::Mat::zeros(video_frames[n_frame].size(), CV_8UC3);
+    std::vector<cv::Point> table_corners;
+    od::points_float_to_int(corners, table_corners);
+    cv::fillConvexPoly(mask, table_corners, cv::Scalar(255, 255, 255));
+
+    // Filter out the background of the billiard table
+    cv::Mat frame_masked;
+    cv::bitwise_and(video_frames[n_frame], mask, frame_masked);
+
+    // Masked frame preprocessing 
+    cv::Mat preprocessed_video_frame;
+    od::preprocess_bgr_frame(frame_masked, preprocessed_video_frame);
+
+    // Convert to HSV color space
+    cv::Mat frame_hsv;
+    cv::cvtColor(preprocessed_video_frame, frame_hsv, cv::COLOR_BGR2HSV);
+
+    // Mask on billiard balls
+    cv::Mat mask_balls;
+    cv::inRange(frame_hsv, cv::Scalar(60, 150, 115), cv::Scalar(120, 255, 255), mask_balls);
+    cv::bitwise_not(mask_balls, mask_balls);
+    cv::Mat mask_balls_roi = cv::Mat::zeros(frame_hsv.size(), CV_8UC1);
+    cv::fillConvexPoly(mask_balls_roi, table_corners, cv::Scalar(255, 255, 255));
+    cv::bitwise_and(mask_balls, mask_balls_roi, mask_balls);
+
+    // Morphological operations on mask
+    od::morpho_pre_process(mask_balls);
+
+    // Circle Hough transform
+    std::vector<cv::Vec3f> circles, circles_big, circles_small, circles_mean, circles_close, circles_close_final;
+	cv::HoughCircles(mask_balls, circles, cv::HOUGH_GRADIENT, 1,
+		7,      // Distance between circles
+		100, 9, // Canny edge detector parameters and circles center detection 
+		3, 22); // Min-radius and max-radius of circles to detect
+
+    // Suppress holes circles
+    od::suppress_billiard_holes(circles, corners, is_distorted);
+    // Merge neighboring circles
+    od::compute_mean_circles(circles, circles_mean);
+    // Suppress big circles
+    double radius_max = 17.0;
+    od::suppress_big_circles(circles, circles_big, radius_max);
+    // Suppress small circles
+    double radius_min = 3.0;
+    od::suppress_small_circles(circles, circles_small, radius_min);
+
+    // Additional operations
+    od::suppress_black_circles(circles, mask_balls);
+    // Normalize circles to median
+    od::normalize_circles_radius(circles);
+
+    // Ball bounding boxes from circles
+    std::vector<od::Ball> ball_bboxes;
+    for(cv::Vec3f circle : circles) {
+        // Circle data
+        cv::Point center(circle[0], circle[1]);
+        unsigned int radius = circle[2];
+
+        // Ball bounding box
+        od::Ball ball_bbox(center.x - radius, center.y - radius, 2*radius, 2*radius);
+        ball_bboxes.push_back(ball_bbox);
+    }
+
+    // In case of test, read ball bboxes from dataset
+    // TODO: to remove
+    if(test_flag) {
+        // Read true frame bboxes text file
+        std::vector<od::Ball> test_ball_bboxes;
+        std::string test_bboxes_frame_file_path;
+        fsu::get_bboxes_frame_file_path(video_frames, n_frame, test_bboxes_video_path, test_bboxes_frame_file_path);
+
+        // Read ball bounding box from frame bboxes text file
+        bool confidence_flag = ! test_flag;
+        fsu::read_ball_bboxes(test_bboxes_frame_file_path, test_ball_bboxes, confidence_flag);
+
+        for(od::Ball& ball : test_ball_bboxes) {
+            ball.ball_class = 6;
+        }
+
+        // Replace detected ball bboxes with dataset ones
+        ball_bboxes = test_ball_bboxes;
+    }
+    
+    // Create frame bboxes text file
+    std::string bboxes_frame_file_path;
+    fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
+    std::ofstream bboxes_frame_file(bboxes_frame_file_path);
+
+    // TODO: print to remove
+    if(bboxes_frame_file.is_open())
+        std::cout << bboxes_frame_file_path << std::endl;
+
+    // Compute magnitude on grayscale frame
+    std::vector<double> gradient_counts, white_ratios, black_ratios;
+    od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_counts);
+
+    // Compute ball colors informations
+    od::compute_color_ratios(ball_bboxes, video_frames[n_frame], white_ratios, black_ratios);
+
+    // Detect black and white balls
+    int white_index = 0, black_index = 0;
+    od::detect_white_black_balls(ball_bboxes, white_index, black_index, white_ratios, black_ratios, gradient_counts);
+
+    // Scan each ball bounding box
+    for(int i = 0; i < ball_bboxes.size(); ++i) {
+        // Get ball bounding box
+        od::Ball ball_bbox = ball_bboxes[i];
+
+        // Ball class detection
+        if(i != white_index && i != black_index)
+            od::detect_ball_class(ball_bbox, i, white_ratios, black_ratios, gradient_counts);
+
+        // Compute confidence value
+        od::set_ball_bbox_confidence(ball_bbox);
+
+        // Write ball bounding box in frame bboxes text file
+        fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
+
+        // Apply ball classification to video frame
+        od::overlay_ball_bounding_bbox(video_frame, ball_bbox);
+    }
+
+    // Close frame bboxes text file
+    bboxes_frame_file.close();
 }
 
 /* Convert points from float to int */
@@ -83,6 +216,7 @@ void od::preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_
     // Apply median to slightly remove noise
     cv::medianBlur(frame, preprocessed_video_frame, 3);
 
+    // Intermediate preprocessing
     cv::Mat gaussian_frame;
     cv::GaussianBlur(preprocessed_video_frame, gaussian_frame, cv::Size(3,3), 1.0);
     cv::addWeighted(preprocessed_video_frame, 1.5, gaussian_frame, -0.4, 0, preprocessed_video_frame);
@@ -93,20 +227,68 @@ void od::preprocess_bgr_frame(const cv::Mat& frame, cv::Mat& preprocessed_video_
 
 /* Morphological operations on mask */
 void od::morpho_pre_process(cv::Mat& mask) {
+    // Combination of morphological operators
     cv::Mat kernel1 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
     cv::erode(mask, mask, kernel1);
-
     cv::Mat kernel2 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
     cv::dilate(mask, mask, kernel2);
-
     cv::Mat kernel3 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
     cv::erode(mask, mask, kernel3);
-
     cv::Mat kernel4 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
     cv::dilate(mask, mask, kernel4);
-
     cv::Mat kernel5 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
     cv::erode(mask, mask, kernel5);
+}
+
+/* Detect white and black balls */
+void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& best_white_index, int& best_black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, std::vector<double>& magnitude_counts) {
+    // Detect best white ball candidates
+    int sec_white_index = 0;
+    best_white_index = 0;
+    od::get_best_two_indexes(white_ratio, best_white_index, sec_white_index);
+
+    // Detect best black ball candidates
+    int sec_black_index = 0;
+    best_black_index = 0;
+    od::get_best_two_indexes(black_ratio, best_black_index, sec_black_index);
+
+    // Check white consistency
+    if((white_ratio[best_white_index] - white_ratio[sec_white_index]) <= 0.015 && magnitude_counts[sec_white_index] < magnitude_counts[best_white_index]) {
+        if(std::fabs(magnitude_counts[best_white_index] - magnitude_counts[sec_white_index]) > 0.2)
+            best_white_index = sec_white_index;
+    }          
+
+    // Check black consistency
+    if(((black_ratio[best_black_index] - black_ratio[sec_black_index]) <= 0.03) && (magnitude_counts[sec_black_index] < magnitude_counts[best_black_index])) {
+        if(std::fabs(magnitude_counts[best_black_index] - magnitude_counts[sec_black_index]) > 0.05)
+            best_black_index = sec_black_index;
+    }   
+
+    // Set white and black ball class
+    ball_bboxes[best_white_index].ball_class = 1;
+    ball_bboxes[best_black_index].ball_class = 2;
+}
+
+/* Ball class detection */
+void od::detect_ball_class(Ball& ball_bbox, const int ball_index, std::vector<double>& white_ratios, std::vector<double>& black_ratios, std::vector<double>& magnitude_counts) {
+    // Extract magnitude count
+    double magnitude_count = magnitude_counts[ball_index];
+
+    // Extract ball color ratios
+    double white_ratio = white_ratios[ball_index];
+    double white_th = 0.15, grad_count_th = 0.1;
+
+    // Ball classification
+    if(white_ratio >= 1.75 * white_th) {
+        // Stripe
+        ball_bbox.ball_class = 4;
+    } else if((white_ratio >= white_th) && (magnitude_count >= grad_count_th)) {
+        // Stripe
+        ball_bbox.ball_class = 4;
+    } else {
+        // Solid
+        ball_bbox.ball_class = 3;
+    }
 }
 
 /* Suppress circles too close to billiard holes */
@@ -116,7 +298,7 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
     std::vector<cv::Vec3f> circles_filtered;
 
     // Check if billiard table is distorted
-    if(!is_distorted) {
+    if(! is_distorted) {
         // Compute short border length 
         const int border_length = cv::norm(corners[0] - corners[3]);
         const int radius = border_length * ratio_hole_border;
@@ -137,15 +319,13 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
 
             // Check holes in the long borders
             for(size_t j = 0; j < 2; j++) {
-                if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius) {
+                if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius)
                     is_close = true;
-                }
             }
 
             // Check if circle not too close to a billiard hole
-            if(!is_close) {
+            if(! is_close)
                 circles_filtered.push_back(circles[i]);
-            }
         }
 
     } else {
@@ -175,7 +355,7 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
 
             // Check holes in the long borders
             for(size_t j = 0; j < 2; j++) {
-                if(j <= 1){
+                if(j <= 1) {
                     if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius_one)
                         is_close = true;
                 } else {
@@ -185,7 +365,7 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
             }
 
             // Check if circle not too close to a billiard hole
-            if(!is_close)
+            if(! is_close)
                 circles_filtered.push_back(circles[i]);
         }
     }
@@ -196,14 +376,13 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
 
 /* Suppress too much small circles */
 void od::suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_small, const double radius_min) {
+    // Suppress too small circles
     std::vector<cv::Vec3f> circles_filtered;
-    
-    for(size_t i = 0; i < circles.size(); i++){
-        if(circles[i][2] >= radius_min){
+    for(size_t i = 0; i < circles.size(); i++) {
+        if(circles[i][2] >= radius_min)
             circles_filtered.push_back(circles[i]);
-        } else {
+        else
             circles_small.push_back(circles[i]);
-        }
     }
 
     // Update circles
@@ -212,14 +391,13 @@ void od::suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv:
 
 /* Suppress too much big circles */
 void od::suppress_big_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big, const double radius_max) {
+    // Suppress too big circles
     std::vector<cv::Vec3f> circles_filtered;
-    
-    for(size_t i = 0; i < circles.size(); i++){
-        if(circles[i][2] <= radius_max){
+    for(size_t i = 0; i < circles.size(); i++) {
+        if(circles[i][2] <= radius_max)
             circles_filtered.push_back(circles[i]);
-        } else {
+        else
             circles_big.push_back(circles[i]);
-        }
     }
 
     // Update circles
@@ -296,9 +474,8 @@ void od::compute_mean_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::V
 
 /* Normalize too much small or large circles */
 void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
-    float radius_sum = 0.0, radius_avg = 0.0;
-    
     // Compute average radius only on not large circles
+    float radius_sum = 0.0, radius_avg = 0.0;
     for(size_t i = 0; i < circles.size(); i++)
         radius_sum += circles[i][2];
     radius_avg = radius_sum / circles.size();
@@ -321,166 +498,6 @@ void od::normalize_circles_radius(std::vector<cv::Vec3f>& circles) {
         if(circles[i][2] <= 14.0)
             circles[i][2] = radius_median;
     }
-}
-
-/* Balls detection in given a video frame */
-void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path, const bool test_flag) {
-    // Sorted float corners
-    std::vector<cv::Point2f> corners(corners_float);
-    ed::sort_corners(corners);
-
-    // Mask image to consider only the billiard table
-    cv::Mat mask = cv::Mat::zeros(video_frames[n_frame].size(), CV_8UC3);
-    std::vector<cv::Point> table_corners;
-    od::points_float_to_int(corners, table_corners);
-    cv::fillConvexPoly(mask, table_corners, cv::Scalar(255, 255, 255));
-
-    // Filter out the background of the billiard table
-    cv::Mat frame_masked;
-    cv::bitwise_and(video_frames[n_frame], mask, frame_masked);
-
-    // Masked frame preprocessing 
-    cv::Mat preprocessed_video_frame;
-    od::preprocess_bgr_frame(frame_masked, preprocessed_video_frame);
-
-    // Convert to HSV color space
-    cv::Mat frame_hsv;
-    cv::cvtColor(preprocessed_video_frame, frame_hsv, cv::COLOR_BGR2HSV);
-
-    // Mask on billiard balls
-    cv::Mat mask_balls;
-    cv::inRange(frame_hsv, cv::Scalar(60, 150, 115), cv::Scalar(120, 255, 255), mask_balls);
-    cv::bitwise_not(mask_balls, mask_balls);
-    cv::Mat mask_balls_roi = cv::Mat::zeros(frame_hsv.size(), CV_8UC1);
-    cv::fillConvexPoly(mask_balls_roi, table_corners, cv::Scalar(255, 255, 255));
-    cv::bitwise_and(mask_balls, mask_balls_roi, mask_balls);
-
-    // Morphological operations on mask
-    od::morpho_pre_process(mask_balls);
-
-    // Circle Hough transform
-    std::vector<cv::Vec3f> circles, circles_big, circles_small, circles_mean, circles_close, circles_close_final;
-	cv::HoughCircles(mask_balls, circles, cv::HOUGH_GRADIENT, 1,
-		7,      // Distance between circles
-		100, 9, // Canny edge detector parameters and circles center detection 
-		3, 22); // Min-radius and max-radius of circles to detect
-
-    // Suppress holes circles
-    od::suppress_billiard_holes(circles, corners, is_distorted);
-    // Merge neighboring circles
-    od::compute_mean_circles(circles, circles_mean);
-    // Suppress big circles
-    double radius_max = 17.0;
-    od::suppress_big_circles(circles, circles_big, radius_max);
-    // Suppress small circles
-    double radius_min = 3.0;
-    od::suppress_small_circles(circles, circles_small, radius_min);
-
-    // Additional operations
-    od::suppress_black_circles(circles, mask_balls);
-    // Normalize circles to median
-    od::normalize_circles_radius(circles);
-
-    // Ball bounding boxes from circles
-    std::vector<od::Ball> ball_bboxes;
-    for(cv::Vec3f circle : circles) {
-        // Circle data
-        cv::Point center(circle[0], circle[1]);
-        unsigned int radius = circle[2];
-
-        // Ball bounding box
-        od::Ball ball_bbox(center.x - radius, center.y - radius, 2*radius, 2*radius);
-        ball_bboxes.push_back(ball_bbox);
-    }
-
-    // In case of test, read ball bboxes from dataset
-    if(test_flag) {
-        // Read true frame bboxes text file
-        std::vector<od::Ball> test_ball_bboxes;
-        std::string test_bboxes_frame_file_path;
-        fsu::get_bboxes_frame_file_path(video_frames, n_frame, test_bboxes_video_path, test_bboxes_frame_file_path);
-
-        // Read ball bounding box from frame bboxes text file
-        bool confidence_flag = ! test_flag;
-        fsu::read_ball_bboxes(test_bboxes_frame_file_path, test_ball_bboxes, confidence_flag);
-
-        for(od::Ball& ball : test_ball_bboxes){
-            ball.ball_class = 6;
-        }
-        // Replace detected ball bboxes with dataset ones
-        ball_bboxes = test_ball_bboxes;
-    }
-    
-    // Create frame bboxes text file
-    std::string bboxes_frame_file_path;
-    fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
-    std::ofstream bboxes_frame_file(bboxes_frame_file_path);
-
-    // TODO: print to remove
-    if(bboxes_frame_file.is_open())
-        std::cout << bboxes_frame_file_path << std::endl;
-
-    // Compute magnitude on grayscale frame
-    std::vector<double> gradient_counts, white_ratios, black_ratios;
-    od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_counts);
-
-    // Compute ball colors informations
-    od::compute_color_ratios(ball_bboxes, video_frames[n_frame], white_ratios, black_ratios);
-
-    // Detect black and white balls
-    int white_index = 0, black_index = 0;
-    od::detect_white_black_balls(ball_bboxes, white_index, black_index, white_ratios, black_ratios, gradient_counts);
-
-    // Scan each ball bounding box
-    for(int i = 0; i < ball_bboxes.size(); ++i) {
-        // Get ball bounding box
-        od::Ball ball_bbox = ball_bboxes[i];
-
-        // Ball class detection
-        if(i != white_index && i != black_index){
-            od::detect_ball_class(ball_bbox, i, white_ratios, black_ratios, gradient_counts);
-        }
-
-        // Compute confidence value
-        od::set_ball_bbox_confidence(ball_bbox);
-
-        // Write ball bounding box in frame bboxes text file
-        fsu::write_ball_bbox(bboxes_frame_file, ball_bbox);
-
-        // Apply ball classification to video frame
-        od::overlay_ball_bounding_bbox(video_frame, ball_bbox);
-    }
-
-    // Close frame bboxes text file
-    bboxes_frame_file.close();
-}
-
-/* Ball class detection */
-void od::detect_ball_class(Ball& ball_bbox, const int ball_index, std::vector<double>& white_ratios, std::vector<double>& black_ratios, std::vector<double>& magnitude_counts) {
-    // Extract magnitude count
-    double magnitude_count = magnitude_counts[ball_index];
-
-    // Extract ball color ratios
-    double white_ratio = white_ratios[ball_index];
-    double white_th = 0.15, grad_count_th = 0.1;
-
-    // Ball classification
-    if(white_ratio >= 1.75 * white_th) {
-        // Stripe
-        ball_bbox.ball_class = 4;
-    } else if((white_ratio >= white_th) && (magnitude_count >= grad_count_th)){
-        // Stripe
-        ball_bbox.ball_class = 4;
-    } else {
-        // Solid
-        ball_bbox.ball_class = 3;
-    }
-}
-
-/* Set ball bounding box confidence value */
-void od::set_ball_bbox_confidence(od::Ball& ball) {
-    // TODO: Compute a confidence value
-    ball.confidence = 1;
 }
 
 /* Compute gradient magnitude of the ball and the number of pixels with non-zero gradient */
@@ -556,7 +573,7 @@ void od::compute_black_white_ratio(const cv::Mat& ball_region, double& white_rat
 }
 
 /* Compute white and black ratio for each ball */
-void od::compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios){
+void od::compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios) {
     for(od::Ball ball_bbox : ball_bboxes) {
         // Get bounding box center and radius
         cv::Point box_center = cv::Point(ball_bbox.x + (ball_bbox.width / 2), ball_bbox.y + (ball_bbox.height / 2));
@@ -580,40 +597,30 @@ void od::compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& 
     }
 }
 
-/* Detect white and black balls */
-void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& best_white_index, int& best_black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, std::vector<double>& magnitude_counts){
-    int sec_white_index = 0, sec_black_index = 0;
+/* Normalize given vector */
+void od::normalize_vector(std::vector<double>& vec) {
+    // Check for empty vector
+    if(vec.empty())
+        return;
     
-    best_white_index = 0;
-    best_black_index = 0;
+    // Compute norm
+    double norm = 0, sum = 0;
+    for(const double& elem : vec)
+        sum += (elem * elem);
+    norm = std::sqrt(sum);
 
-    // Detect best white ball candidates
-    od::get_best_two_indexes(white_ratio, best_white_index, sec_white_index);
+    // Compute normalized vector
+    std::vector<double> norm_vector;
+    for(const double& elem : vec)
+        norm_vector.push_back(elem / norm);
 
-    // Detect best black ball candidates
-    od::get_best_two_indexes(black_ratio, best_black_index, sec_black_index);
-
-    // Check white consistency
-    if((white_ratio[best_white_index] - white_ratio[sec_white_index]) <= 0.015 && magnitude_counts[sec_white_index] < magnitude_counts[best_white_index]){
-        if(std::fabs(magnitude_counts[best_white_index] - magnitude_counts[sec_white_index]) > 0.2){
-            best_white_index = sec_white_index;
-        }
-    }          
-
-    // Check black consistency
-    if(((black_ratio[best_black_index] - black_ratio[sec_black_index]) <= 0.03) && (magnitude_counts[sec_black_index] < magnitude_counts[best_black_index])){
-        if(std::fabs(magnitude_counts[best_black_index] - magnitude_counts[sec_black_index]) > 0.05){
-            best_black_index = sec_black_index;
-        }
-    }   
-
-    ball_bboxes[best_white_index].ball_class = 1;
-    ball_bboxes[best_black_index].ball_class = 2;
+    vec = norm_vector;
 }
 
-void od::get_best_two_indexes(const std::vector<double>& vec, int& best_index, int& sec_index){
+/* Get best two indexes */
+void od::get_best_two_indexes(const std::vector<double>& vec, int& best_index, int& sec_index) {
     // Check index consistency
-    if(best_index < 0 || best_index >= vec.size()){
+    if(best_index < 0 || best_index >= vec.size()) {
         return;
     }
     
@@ -628,11 +635,10 @@ void od::get_best_two_indexes(const std::vector<double>& vec, int& best_index, i
 
     // Choose best index
     for(size_t i = 0; i < vec.size(); i++) {
-        if(vec[i] >= vec[best_index]){
+        if(vec[i] >= vec[best_index]) {
             best_index = i;
         }
     }
-
     // Find second best index
     for(size_t i = 0; i < vec.size(); i++) {
         if(i != best_index) {
@@ -643,30 +649,13 @@ void od::get_best_two_indexes(const std::vector<double>& vec, int& best_index, i
     }
 }
 
-/* Normalize given vector */
-void od::normalize_vector(std::vector<double>& vec) {
-    // Check for empty vector
-    if(vec.empty()) {
-        return;
-    }
-    
-    // Compute norm
-    double norm = 0, sum = 0;
-    for(const double& elem : vec) {
-        sum += (elem * elem);
-    }
-    norm = std::sqrt(sum);
-
-    // Compute normalized vector
-    std::vector<double> norm_vector;
-    for(const double& elem : vec){
-        norm_vector.push_back(elem / norm);
-    }
-
-    vec = norm_vector;
+/* Set ball bounding box confidence value */
+void od::set_ball_bbox_confidence(od::Ball& ball) {
+    // Assumed confidence value
+    ball.confidence = 1;
 }
 
-/* Show ball bounding boxes according to class color */
+/* Overlay ball bounding boxes according to class color */
 void od::overlay_ball_bounding_bbox(cv::Mat& video_frame, od::Ball ball_bbox) {
     // Ball bounding box corners offset
     unsigned int offset = 1;

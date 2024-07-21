@@ -3,11 +3,8 @@
 #ifndef VIDEO_UTILS_H
 #define VIDEO_UTILS_H
 
-/* Libraries required in this source file */
-
-// highgui: cv::Mat
+/* Libraries required */
 #include <opencv2/highgui.hpp>
-// videoio: cv::VideoCapture
 #include <opencv2/videoio.hpp>
 
 /* Video utils namespace */
@@ -20,13 +17,13 @@ namespace vu {
     void get_video_paths(std::vector<cv::String>& video_paths);
     void get_video_captures(const std::vector<cv::String> video_paths, std::vector<cv::VideoCapture>& captures);
 
-    // Read function declarations
+    // Read function declaration
     void read_video_frames(cv::VideoCapture capture, std::vector<cv::Mat>& video_frames);
 
-    // Show function declarations
+    // Show function declaration
     void show_video_frames(const std::vector<cv::Mat> video_frames);
 
-    // Save function declarations
+    // Save function declaration
     void save_video(std::vector<cv::Mat>& video_frames, const cv::VideoCapture capture, const std::string video_path);
 }
 

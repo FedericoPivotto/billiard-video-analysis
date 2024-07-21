@@ -2,149 +2,9 @@
 
 #include <edge_detection.h>
 
-/* Librarires required in this source file and not already included in edge_detection.h */
-
-// iostream: std::cerr
+/* Librarires required and not yet included in edge_detection.h */
 #include <iostream>
-// imgproc: cv::HoughLines()
 #include <opencv2/imgproc.hpp>
-
-/* Manage candidate lines with negative rho to make them comparable */
-void ed::negative_lines(std::vector<cv::Vec2f>& lines) {
-    for(int i = 0; i < lines.size() - 1; i++ ) {
-        if(lines[i][0] < 0) {
-            lines[i][0] *= -1.0;
-            lines[i][1] -= CV_PI;
-        }
-    }
-}
-
-/* Find the possible four borders among the candidate lines */
-void ed::select_borders(const std::vector<cv::Vec2f> lines, std::vector<cv::Vec2f>& borders) {
-    
-    // List of already visited candidates (similar to already selected borders)
-    std::vector<bool> visited(lines.size(), false);
-
-    // Check number of candidates
-    if(lines.size() < 4) {
-        std::cerr << "Not enough lines to find a border" << std::endl;
-        return;
-    }
-
-    // Find borders (by means of rho and theta comparisons)
-    for(int i = 0; i < lines.size(); i++ ) {
-        float rho_i = lines[i][0], theta_i = lines[i][1];
-        
-        if(!visited[i] && borders.size() < 4) {
-            borders.push_back(lines[i]);
-            
-            for(int j = i + 1; j < lines.size(); j++ ) {
-                float rho_j = lines[j][0], theta_j = lines[j][1];
-                
-                if( (std::abs(rho_i - rho_j) <= 100 && std::abs(theta_i - theta_j) <= (CV_PI / 36)) && !visited[j]) {
-                    visited[j] = true;    
-                }
-            }
-        } else if( borders.size() == 4 ) {
-            return;
-        }
-    }
-}
-
-/* Find the borders of the billiard table */
-void ed::find_borders(const cv::Mat& edge_map, std::vector<cv::Vec2f>& borders) {
-    // Find line candidates and select the four borders
-    std::vector<cv::Vec2f> lines;
-    cv::HoughLines(edge_map, lines, 1, CV_PI / 180, 95, 0, 0);
-    ed::negative_lines(lines);
-    ed::select_borders(lines, borders);
-}
-
-/* Find the intersection of two lines */
-void ed::borders_intersection(const cv::Vec2f& first_line, const cv::Vec2f& second_line, cv::Point2f& corner) {
-
-    // Compute line intersection by solving a linear system of two equations
-    // The two equations are considered with the following notation:
-    // a*x + b*y + c = 0
-    // d*x + e*y + f = 0
-    double rho_first = first_line[0], theta_first = first_line[1];
-    double rho_second = second_line[0], theta_second = second_line[1];
-
-    double a = std::cos(theta_first), b = std::sin(theta_first);
-    double d = std::cos(theta_second), e = std::sin(theta_second);
-    double c = rho_first * (-1.0), f = rho_second * (-1.0);
-
-    // Check lines parallelism, if so return
-    double det = d*b - e*a;
-    if(std::abs(det) < 1e-1) {
-        corner.x = -1.0;
-        corner.y = -1.0;
-        return;
-    }
-
-    // Compute intersection
-    corner.x = (e*c - b*f) / det;
-    corner.y = (a*f - d*c) / det;
-}
-
-/* Find the corners of the borders */
-void ed::find_corners(const std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners) {
-    // Compute the borders by finding lines intersections
-    for( size_t i = 0; i < borders.size(); i++ ) {
-        for( size_t j = i + 1; j < borders.size(); j++ ) {
-            // Check if there are all four corners
-            if(corners.size() == 4) {
-                return;
-            }
-
-            // Find corner candidate
-            cv::Point2f corner;
-            ed::borders_intersection(borders[i], borders[j], corner);
-
-            // Check corner feasibility
-            if((corner.x != -1.0 && corner.y != -1.0) && (corner.x >= 0 && corner.y >= 0)) {
-                corners.push_back(corner);
-            }
-        }
-    }
-}
-
-/* Draw the borders on the current frame */
-void ed::draw_borders(cv::Mat& image, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners) {
-    double distance_th = 5.0;
-
-    // Draw the borders
-    for( size_t i = 0; i < borders.size(); i++) {
-        float rho = borders[i][0], theta = borders[i][1];
-        double a = std::cos(theta), b = std::sin(theta);
-
-        // Collect corners belonging to the current border
-        std::vector<cv::Point2f> matched_corners;
-
-        // Check what corners belong to the current border
-        for( size_t j = 0; j < corners.size(); j++) {
-            if(std::fabs(corners[j].x * a + corners[j].y * b - rho) <= distance_th) {
-                matched_corners.push_back(corners[j]);
-            }
-        }
-
-        // Check if correct number of corners
-        if(matched_corners.size() == 2) {
-            cv::line(image, matched_corners[0], matched_corners[1], ed::BORDER_BGR, 3, cv::LINE_AA);
-        }
-    }
-}
-
-/* Generate mask by ranged HSV color segmentation */
-void ed::hsv_mask(const cv::Mat& hsv_frame, cv::Mat& mask, cv::Scalar lower_hsv, cv::Scalar upper_hsv) {
-    // Color segmentation
-    cv::inRange(hsv_frame, lower_hsv, upper_hsv, mask);
-
-    // Dilate and erosion set operations on mask 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(21, 21));
-    cv::dilate(mask, mask, kernel);
-    cv::erode(mask, mask, kernel);
-}
 
 /* Perform edge detectionon the first frame */
 void ed::edge_detection(cv::Mat& video_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners) {
@@ -170,22 +30,150 @@ void ed::edge_detection(cv::Mat& video_frame, std::vector<cv::Vec2f>& borders, s
     ed::find_corners(borders, corners);
 }
 
-/* Sort corners in top-left, top-right, bottom-right, bottom-left */
-void ed::sort_corners(std::vector<cv::Point2f>& corners) {
-        // Sort by y coordinate
-        for(size_t i = 0; i < corners.size(); i++) {
-            for(size_t j = i + 1; j < corners.size(); j++) {
-                if(corners[i].y > corners[j].y){
-                    std::swap(corners[i], corners[j]);
-                }
-            }
+/* Draw the borders on the current frame */
+void ed::draw_borders(cv::Mat& image, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners) {
+    double distance_th = 5.0;
+
+    // Draw the borders
+    for(size_t i = 0; i < borders.size(); i++) {
+        float rho = borders[i][0], theta = borders[i][1];
+        double a = std::cos(theta), b = std::sin(theta);
+
+        // Collect corners belonging to the current border
+        std::vector<cv::Point2f> matched_corners;
+
+        // Check what corners belong to the current border
+        for(size_t j = 0; j < corners.size(); j++) {
+            if(std::fabs(corners[j].x * a + corners[j].y * b - rho) <= distance_th)
+                matched_corners.push_back(corners[j]);
         }
 
-        // Sort by x coordinate
-        if(corners[0].x >= corners[1].x) {
-            std::swap(corners[0], corners[1]);
+        // Check if correct number of corners
+        if(matched_corners.size() == 2)
+            cv::line(image, matched_corners[0], matched_corners[1], ed::BORDER_BGR, 3, cv::LINE_AA);
+    }
+}
+
+/* Find the corners of the borders */
+void ed::find_corners(const std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners) {
+    // Compute the borders by finding lines intersections
+    for(size_t i = 0; i < borders.size(); i++) {
+        for(size_t j = i + 1; j < borders.size(); j++) {
+            // Check if there are all four corners
+            if(corners.size() == 4)
+                return;
+
+            // Find corner candidate
+            cv::Point2f corner;
+            ed::borders_intersection(borders[i], borders[j], corner);
+
+            // Check corner feasibility
+            if((corner.x != -1.0 && corner.y != -1.0) && (corner.x >= 0 && corner.y >= 0))
+                corners.push_back(corner);
         }
-        if(corners[2].x <= corners[3].x) {
-            std::swap(corners[2], corners[3]);
+    }
+}
+
+/* Sort corners in top-left, top-right, bottom-right, bottom-left */
+void ed::sort_corners(std::vector<cv::Point2f>& corners) {
+    // Sort by y coordinate
+    for(size_t i = 0; i < corners.size(); i++) {
+        for(size_t j = i + 1; j < corners.size(); j++) {
+            if(corners[i].y > corners[j].y)
+                std::swap(corners[i], corners[j]);
         }
+    }
+
+    // Sort by x coordinate
+    if(corners[0].x >= corners[1].x)
+        std::swap(corners[0], corners[1]);
+    if(corners[2].x <= corners[3].x)
+        std::swap(corners[2], corners[3]);
+}
+
+/* Find the possible four borders among the candidate lines */
+void ed::select_borders(const std::vector<cv::Vec2f> lines, std::vector<cv::Vec2f>& borders) {
+    // List of already visited candidates (similar to already selected borders)
+    std::vector<bool> visited(lines.size(), false);
+
+    // Check number of candidates
+    if(lines.size() < 4) {
+        std::cerr << "Not enough lines to find a border" << std::endl;
+        return;
+    }
+
+    // Find borders (by means of rho and theta comparisons)
+    for(int i = 0; i < lines.size(); i++) {
+        float rho_i = lines[i][0], theta_i = lines[i][1];
+        
+        if(!visited[i] && borders.size() < 4) {
+            borders.push_back(lines[i]);
+            
+            for(int j = i + 1; j < lines.size(); j++) {
+                float rho_j = lines[j][0], theta_j = lines[j][1];
+                
+                if((std::abs(rho_i - rho_j) <= 100 && std::abs(theta_i - theta_j) <= (CV_PI / 36)) && !visited[j]) {
+                    visited[j] = true;    
+                }
+            }
+        } else if(borders.size() == 4) {
+            return;
+        }
+    }
+}
+
+/* Find the borders of the billiard table */
+void ed::find_borders(const cv::Mat& edge_map, std::vector<cv::Vec2f>& borders) {
+    // Find line candidates and select the four borders
+    std::vector<cv::Vec2f> lines;
+    cv::HoughLines(edge_map, lines, 1, CV_PI / 180, 95, 0, 0);
+    ed::negative_lines(lines);
+    ed::select_borders(lines, borders);
+}
+
+/* Find the intersection of two lines */
+void ed::borders_intersection(const cv::Vec2f& first_line, const cv::Vec2f& second_line, cv::Point2f& corner) {
+    // Compute line intersection by solving a linear system of two equations
+    // The two equations are considered with the following notation:
+    // a*x + b*y + c = 0
+    // d*x + e*y + f = 0
+    double rho_first = first_line[0], theta_first = first_line[1];
+    double rho_second = second_line[0], theta_second = second_line[1];
+
+    double a = std::cos(theta_first), b = std::sin(theta_first);
+    double d = std::cos(theta_second), e = std::sin(theta_second);
+    double c = rho_first * (-1.0), f = rho_second * (-1.0);
+
+    // Check lines parallelism, if so return
+    double det = d*b - e*a;
+    if(std::abs(det) < 1e-1) {
+        corner.x = -1.0;
+        corner.y = -1.0;
+        return;
+    }
+
+    // Compute intersection
+    corner.x = (e*c - b*f) / det;
+    corner.y = (a*f - d*c) / det;
+}
+
+/* Generate mask by ranged HSV color segmentation */
+void ed::hsv_mask(const cv::Mat& hsv_frame, cv::Mat& mask, cv::Scalar lower_hsv, cv::Scalar upper_hsv) {
+    // Color segmentation
+    cv::inRange(hsv_frame, lower_hsv, upper_hsv, mask);
+
+    // Dilate and erosion set operations on mask 
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(21, 21));
+    cv::dilate(mask, mask, kernel);
+    cv::erode(mask, mask, kernel);
+}
+
+/* Manage candidate lines with negative rho to make them comparable */
+void ed::negative_lines(std::vector<cv::Vec2f>& lines) {
+    for(int i = 0; i < lines.size() - 1; i++) {
+        if(lines[i][0] < 0) {
+            lines[i][0] *= -1.0;
+            lines[i][1] -= CV_PI;
+        }
+    }
 }
