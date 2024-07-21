@@ -151,7 +151,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         bool confidence_flag = ! test_flag;
         fsu::read_ball_bboxes(test_bboxes_frame_file_path, test_ball_bboxes, confidence_flag);
 
-        for(od::Ball& ball : test_ball_bboxes){
+        for(od::Ball& ball : test_ball_bboxes) {
             ball.ball_class = 6;
         }
         // Replace detected ball bboxes with dataset ones
@@ -184,7 +184,7 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         od::Ball ball_bbox = ball_bboxes[i];
 
         // Ball class detection
-        if(i != white_index && i != black_index){
+        if(i != white_index && i != black_index) {
             od::detect_ball_class(ball_bbox, i, white_ratios, black_ratios, gradient_counts);
         }
 
@@ -241,7 +241,7 @@ void od::morpho_pre_process(cv::Mat& mask) {
 }
 
 /* Detect white and black balls */
-void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& best_white_index, int& best_black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, std::vector<double>& magnitude_counts){
+void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& best_white_index, int& best_black_index, const std::vector<double>& white_ratio, const std::vector<double>& black_ratio, std::vector<double>& magnitude_counts) {
     int sec_white_index = 0, sec_black_index = 0;
     
     best_white_index = 0;
@@ -254,15 +254,15 @@ void od::detect_white_black_balls(std::vector<od::Ball>& ball_bboxes, int& best_
     od::get_best_two_indexes(black_ratio, best_black_index, sec_black_index);
 
     // Check white consistency
-    if((white_ratio[best_white_index] - white_ratio[sec_white_index]) <= 0.015 && magnitude_counts[sec_white_index] < magnitude_counts[best_white_index]){
-        if(std::fabs(magnitude_counts[best_white_index] - magnitude_counts[sec_white_index]) > 0.2){
+    if((white_ratio[best_white_index] - white_ratio[sec_white_index]) <= 0.015 && magnitude_counts[sec_white_index] < magnitude_counts[best_white_index]) {
+        if(std::fabs(magnitude_counts[best_white_index] - magnitude_counts[sec_white_index]) > 0.2) {
             best_white_index = sec_white_index;
         }
     }          
 
     // Check black consistency
-    if(((black_ratio[best_black_index] - black_ratio[sec_black_index]) <= 0.03) && (magnitude_counts[sec_black_index] < magnitude_counts[best_black_index])){
-        if(std::fabs(magnitude_counts[best_black_index] - magnitude_counts[sec_black_index]) > 0.05){
+    if(((black_ratio[best_black_index] - black_ratio[sec_black_index]) <= 0.03) && (magnitude_counts[sec_black_index] < magnitude_counts[best_black_index])) {
+        if(std::fabs(magnitude_counts[best_black_index] - magnitude_counts[sec_black_index]) > 0.05) {
             best_black_index = sec_black_index;
         }
     }   
@@ -284,7 +284,7 @@ void od::detect_ball_class(Ball& ball_bbox, const int ball_index, std::vector<do
     if(white_ratio >= 1.75 * white_th) {
         // Stripe
         ball_bbox.ball_class = 4;
-    } else if((white_ratio >= white_th) && (magnitude_count >= grad_count_th)){
+    } else if((white_ratio >= white_th) && (magnitude_count >= grad_count_th)) {
         // Stripe
         ball_bbox.ball_class = 4;
     } else {
@@ -359,7 +359,7 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
 
             // Check holes in the long borders
             for(size_t j = 0; j < 2; j++) {
-                if(j <= 1){
+                if(j <= 1) {
                     if(cv::norm(mid_holes[j] - cv::Point2f(circles[i][0], circles[i][1])) <= radius_one)
                         is_close = true;
                 } else {
@@ -382,8 +382,8 @@ void od::suppress_billiard_holes(std::vector<cv::Vec3f>& circles, const std::vec
 void od::suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_small, const double radius_min) {
     std::vector<cv::Vec3f> circles_filtered;
     
-    for(size_t i = 0; i < circles.size(); i++){
-        if(circles[i][2] >= radius_min){
+    for(size_t i = 0; i < circles.size(); i++) {
+        if(circles[i][2] >= radius_min) {
             circles_filtered.push_back(circles[i]);
         } else {
             circles_small.push_back(circles[i]);
@@ -398,8 +398,8 @@ void od::suppress_small_circles(std::vector<cv::Vec3f>& circles, std::vector<cv:
 void od::suppress_big_circles(std::vector<cv::Vec3f>& circles, std::vector<cv::Vec3f>& circles_big, const double radius_max) {
     std::vector<cv::Vec3f> circles_filtered;
     
-    for(size_t i = 0; i < circles.size(); i++){
-        if(circles[i][2] <= radius_max){
+    for(size_t i = 0; i < circles.size(); i++) {
+        if(circles[i][2] <= radius_max) {
             circles_filtered.push_back(circles[i]);
         } else {
             circles_big.push_back(circles[i]);
@@ -580,7 +580,7 @@ void od::compute_black_white_ratio(const cv::Mat& ball_region, double& white_rat
 }
 
 /* Compute white and black ratio for each ball */
-void od::compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios){
+void od::compute_color_ratios(std::vector<od::Ball> ball_bboxes, const cv::Mat& frame, std::vector<double>& white_ratios, std::vector<double>& black_ratios) {
     for(od::Ball ball_bbox : ball_bboxes) {
         // Get bounding box center and radius
         cv::Point box_center = cv::Point(ball_bbox.x + (ball_bbox.width / 2), ball_bbox.y + (ball_bbox.height / 2));
@@ -620,7 +620,7 @@ void od::normalize_vector(std::vector<double>& vec) {
 
     // Compute normalized vector
     std::vector<double> norm_vector;
-    for(const double& elem : vec){
+    for(const double& elem : vec) {
         norm_vector.push_back(elem / norm);
     }
 
@@ -628,9 +628,9 @@ void od::normalize_vector(std::vector<double>& vec) {
 }
 
 /* Get best two indexes */
-void od::get_best_two_indexes(const std::vector<double>& vec, int& best_index, int& sec_index){
+void od::get_best_two_indexes(const std::vector<double>& vec, int& best_index, int& sec_index) {
     // Check index consistency
-    if(best_index < 0 || best_index >= vec.size()){
+    if(best_index < 0 || best_index >= vec.size()) {
         return;
     }
     
@@ -645,7 +645,7 @@ void od::get_best_two_indexes(const std::vector<double>& vec, int& best_index, i
 
     // Choose best index
     for(size_t i = 0; i < vec.size(); i++) {
-        if(vec[i] >= vec[best_index]){
+        if(vec[i] >= vec[best_index]) {
             best_index = i;
         }
     }
