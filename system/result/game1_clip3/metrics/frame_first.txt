@@ -1,0 +1,14 @@
+Average Precision (AP) for class 1: 100.000000%
+Average Precision (AP) for class 2: 100.000000%
+Average Precision (AP) for class 3: 100.000000%
+Average Precision (AP) for class 4: 63.636364%
+Mean Average Precision (mAP): 90.909091%
+
+Intersection over Union (IoU) for class 0: 98.717816%
+Intersection over Union (IoU) for class 1: 72.279793%
+Intersection over Union (IoU) for class 2: 69.517544%
+Intersection over Union (IoU) for class 3: 53.003534%
+Intersection over Union (IoU) for class 4: 43.454421%
+Intersection over Union (IoU) for class 5: 96.702909%
+Mean Intersection over Union (mIoU): 72.279336%
+

@@ -15,6 +15,3 @@ build
 
 # VScode directory
 .vscode
-
-# Result directory
-system/result
