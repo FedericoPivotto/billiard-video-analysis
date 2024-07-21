@@ -8,8 +8,8 @@
 // Filesystem utilities
 #include <filesystem_utils.h>
 
-// Edge detection library
-#include <edge_detection.h>
+// Border detection library
+#include <border_detection.h>
 
 // Segmentation library
 #include <segmentation.h>
@@ -77,10 +77,10 @@ int main(int argc, char** argv) {
             // Save video frame
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[1]);
 
-            // Edge detection
+            // Border detection
             std::vector<cv::Vec2f> borders;
             std::vector<cv::Point2f> corners;
-            ed::edge_detection(video_frame_cv, borders, corners);
+            bd::border_detection(video_frame_cv, borders, corners);
 
             // Store borders and corners if first frame analyzed
             bool is_first = video_frames_cv.size() == 1 ? true : false;
@@ -89,10 +89,10 @@ int main(int argc, char** argv) {
                 first_corners = corners;
             }
 
-            // Save edge detection frame
-            cv::Mat edge_video_frame_cv = video_frames[k].clone();
-            ed::draw_borders(edge_video_frame_cv, borders, corners);
-            fsu::save_video_frame(video_frames, k, edge_video_frame_cv, video_result_subdirs[3]);
+            // Save border detection frame
+            cv::Mat border_video_frame_cv = video_frames[k].clone();
+            bd::draw_borders(border_video_frame_cv, borders, corners);
+            fsu::save_video_frame(video_frames, k, border_video_frame_cv, video_result_subdirs[3]);
 
             // Distortion check
             bool is_distorted;
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
             fsu::save_video_frame(video_frames, k, video_frame_cv_mask, video_result_subdirs[2]);
             
             // Save output frame
-            ed::draw_borders(video_frame_cv, borders, corners);
+            bd::draw_borders(video_frame_cv, borders, corners);
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[6]);
 
             // Metrics output string

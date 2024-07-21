@@ -1,18 +1,18 @@
 /* Fabrizio Genilotti */
 
-#ifndef EDGE_DETECTION_H
-#define EDGE_DETECTION_H
+#ifndef BORDER_DETECTION_H
+#define BORDER_DETECTION_H
 
 /* Libraries required */
 #include <opencv2/highgui.hpp>
 
-/* Edge detection namespace */
-namespace ed {
+/* Border detection namespace */
+namespace bd {
     // Color constant
     const cv::Scalar BORDER_BGR(0, 255, 255);
 
     // Border detection function delcarations
-    void edge_detection(cv::Mat& first_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners);
+    void border_detection(cv::Mat& first_frame, std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners);
     void draw_borders(cv::Mat& image, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners);
     
     // Border detection auxiliary function declarations
@@ -27,4 +27,4 @@ namespace ed {
     void negative_lines(std::vector<cv::Vec2f>& lines);
 }
 
-#endif // EDGE_DETECTION_H
+#endif // BORDER_DETECTION_H

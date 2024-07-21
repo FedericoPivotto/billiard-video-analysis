@@ -8,7 +8,7 @@
 #include <algorithm>
 
 /* User-defined librarires required and not yet included in segmentation.h */
-#include <edge_detection.h>
+#include <border_detection.h>
 #include <minimap.h>
 
 /* Table and balls segmentation */
@@ -57,7 +57,7 @@ void sg::segmentation_mask(const std::vector<cv::Mat>& video_frames, const int n
 void sg::field_segmentation(const std::vector<cv::Point2f>& corners, cv::Mat& frame, const cv::Scalar field_color) {
     // Sorted float corners
     std::vector<cv::Point2f> sorted_corners(corners);
-    ed::sort_corners(sorted_corners);
+    bd::sort_corners(sorted_corners);
 
     // Round float corners to int
     std::vector<cv::Point> int_corners;

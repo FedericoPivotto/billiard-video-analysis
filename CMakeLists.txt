@@ -33,10 +33,10 @@ add_library(system_filesystem_utils
 add_library(system_object_detection
     system/include/object_detection.h
     system/src/object_detection.cpp)
-# edge_detection library
-add_library(system_edge_detection
-    system/include/edge_detection.h
-    system/src/edge_detection.cpp)
+# border_detection library
+add_library(system_border_detection
+    system/include/border_detection.h
+    system/src/border_detection.cpp)
 # segmentation library
 add_library(system_segmentation
     system/include/segmentation.h
@@ -58,7 +58,7 @@ ${OpenCV_LIBS}
 system_video_utils
 system_filesystem_utils
 system_object_detection
-system_edge_detection
+system_border_detection
 system_segmentation
 system_minimap
 system_billiard_metric)

@@ -7,7 +7,7 @@
 #include <filesystem_utils.h>
 
 /* User-defined librarires required and not yet included in object_detection.h */
-#include <edge_detection.h>
+#include <border_detection.h>
 #include <segmentation.h>
 
 /* Static id definition */
@@ -75,7 +75,7 @@ bool od::operator==(const Ball& ball1, const Ball& ball2) {
 void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path, const bool test_flag) {
     // Sorted float corners
     std::vector<cv::Point2f> corners(corners_float);
-    ed::sort_corners(corners);
+    bd::sort_corners(corners);
 
     // Mask image to consider only the billiard table
     cv::Mat mask = cv::Mat::zeros(video_frames[n_frame].size(), CV_8UC3);

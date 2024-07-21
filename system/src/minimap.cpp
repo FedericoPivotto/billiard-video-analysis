@@ -8,14 +8,14 @@
 #include <opencv2/imgproc.hpp>
 
 /* User-defined librarires required and not yet included in minimap.h */
-#include <edge_detection.h>
+#include <border_detection.h>
 #include <segmentation.h>
 
 /* Computes map-view of the current frame */
 void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, cv::Mat& map_perspective, const std::vector<cv::Vec2f>& borders, const std::vector<cv::Point2f>& corners) {
     // Sorted float corners
     std::vector<cv::Point2f> sorted_corners(corners);
-    ed::sort_corners(sorted_corners);
+    bd::sort_corners(sorted_corners);
 
     // Field frame white table segmentation
     bool white_flag = true;

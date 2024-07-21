@@ -23,7 +23,7 @@ void fsu::create_video_result_dir(const std::string video_path, std::string& vid
     std::filesystem::create_directory(video_result_path);
 
     // Create video sub-directories
-    video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks", video_result_path + "/edge_detection", video_result_path + "/object_detection", video_result_path + "/segmentation", video_result_path + "/output", video_result_path + "/metrics", video_result_path + "/minimap"};
+    video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks", video_result_path + "/border_detection", video_result_path + "/object_detection", video_result_path + "/segmentation", video_result_path + "/output", video_result_path + "/metrics", video_result_path + "/minimap"};
     for(std::string video_result_subdir : video_result_subdirs)
     std::filesystem::create_directory(video_result_subdir);
 }
