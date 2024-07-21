@@ -1,29 +1,29 @@
 /* Fabrizio Genilotti */
 
-/* User-defined libraries */
+/* Libraries required */
 
-// video_captures: video utilities
+// Video utilities
 #include <video_utils.h>
 
-// filesystem_utils: filesystem utilities
+// Filesystem utilities
 #include <filesystem_utils.h>
 
-// edge_detection detection library
+// Edge detection library
 #include <edge_detection.h>
 
-// segmentation library
+// Segmentation library
 #include <segmentation.h>
 
-// minimap detection library
+// Minimap library
 #include <minimap.h>
 
-// tracking library
+// Tracking library
 #include <opencv2/tracking.hpp>
 
-// billiard_metric library
+// Billiard metric library
 #include <billiard_metric.h>
 
-/* Computer vision system main */
+/* Computer vision system */
 int main(int argc, char** argv) {
     // Get videos paths
     std::vector<cv::String> video_paths;
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
             // Save segmentation
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[5]);
 
-            // Create segmentation mask
+            // Segmentation mask
             cv::Mat video_frame_cv_mask = video_frames[k].clone();
             sg::segmentation_mask(video_frames, k, video_result_subdirs[0], corners, video_frame_cv_mask);
             // Save segmentation mask
@@ -139,16 +139,11 @@ int main(int argc, char** argv) {
             fsu::save_video_metrics(video_frames, k, metrics_result, video_result_subdirs[7]);
         }
 
-        // TODO: to uncomment once object detection is fine
-        // Assuming field corners of the first video frame
-
-        // 2D top-view minimap and tracking (Fabrizio)
-        
         // Variables for minimap and tracking
         std::vector<cv::Mat> video_game_frames_cv;
         std::vector<od::Ball> ball_bboxes;
         
-        // Create map-view base
+        // 2D top-view minimap and tracking
         cv::Mat map_view, field_frame = video_frames[0].clone(), map_perspective;
         mm::compute_map_view(map_view, field_frame, map_perspective, first_borders, first_corners);
         
@@ -164,9 +159,6 @@ int main(int argc, char** argv) {
             // Video game frame clone
             cv::Mat video_game_frame_cv = video_frames[j].clone();
             video_game_frames_cv.push_back(video_game_frame_cv);
-
-            // TODO: trajectory tracking (Federico)
-            // OPTIONAL: frame resize for making tracking faster and increasing bbox size
 
             // Read balls from bounding box file of first frame
             if(j == 0) {
@@ -207,14 +199,6 @@ int main(int argc, char** argv) {
             // Overlay the map-view in the current frame
             mm::overlay_map_view(video_game_frame_cv, balls_map_view);
         }
-
-        // Show computer vision video frames
-        // TODO: to remove
-        // vu::show_video_frames(video_frames_cv);
-
-        // Show game video frames
-        // TODO: to remove
-        // vu::show_video_frames(video_game_frames_cv);
 
         // Save first and last game frame with minimap
         fsu::save_video_frame(video_frames, 0, video_game_frames_cv.front(), video_result_subdirs[8]);
