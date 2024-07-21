@@ -92,7 +92,7 @@ void mm::overlay_map_view_trajectories(cv::Mat& map_view, cv::Mat& map_perspecti
     cv::Point2f warped_point;
 
     // Balls position drawing
-    for(const od::Ball& ball : ball_bboxes){
+    for(const od::Ball& ball : ball_bboxes) {
         mm::warped_pixel(cv::Point2f(ball.x + ball.width / 2, ball.y + ball.height / 2), map_perspective, warped_point);
         
         // Draw ball position
@@ -108,17 +108,17 @@ void mm::overlay_map_view_balls(cv::Mat& map_view, cv::Mat& map_perspective, con
     cv::Point2f warped_point;
 
     // Balls drawing
-    for(const od::Ball& ball : ball_bboxes){
+    for(const od::Ball& ball : ball_bboxes) {
         mm::warped_pixel(cv::Point2f(ball.x + ball.width / 2, ball.y + ball.height / 2), map_perspective, warped_point);
         
         // Draw ball inside
-        if(ball.ball_class == 1){
+        if(ball.ball_class == 1) {
             cv::circle(map_view, warped_point, ball_radius, mm::WHITE_BALL_BGR.second, cv::FILLED);
-        } else if(ball.ball_class == 2){
+        } else if(ball.ball_class == 2) {
             cv::circle(map_view, warped_point, ball_radius, mm::BLACK_BALL_BGR.second, cv::FILLED);
-        } else if(ball.ball_class == 3){
+        } else if(ball.ball_class == 3) {
             cv::circle(map_view, warped_point, ball_radius, mm::SOLID_BALL_BGR.second, cv::FILLED);
-        } else if(ball.ball_class == 4){
+        } else if(ball.ball_class == 4) {
             cv::circle(map_view, warped_point, ball_radius, mm::STRIPE_BALL_BGR.second, cv::FILLED);
         }
 
@@ -131,7 +131,6 @@ void mm::overlay_map_view_balls(cv::Mat& map_view, cv::Mat& map_perspective, con
 /* Overlay the map-view on the map-view background */
 void mm::overlay_map_view_background(cv::Mat& map_view) {
     // Read billiard minimap background image
-    // TODO: decide one of the two image as background
     cv::Mat map_view_background = cv::imread("../system/img/billiard_minimap.png");
 
     // Resize map-view background according to scale
@@ -175,7 +174,7 @@ void mm::compute_map_view(cv::Mat& map_view, cv::Mat& field_frame, cv::Mat& map_
     bool white_flag = true;
     sg::field_segmentation(sorted_corners, field_frame, mm::FIELD_BGR.second);
     
-    // Check for presenceof distortion
+    // Check for presence of distortion
     bool is_distorted = false;
     mm::check_perspective_distortion(borders, is_distorted);
 

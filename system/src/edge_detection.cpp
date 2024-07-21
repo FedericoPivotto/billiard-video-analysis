@@ -11,7 +11,7 @@
 
 /* Manage candidate lines with negative rho to make them comparable */
 void ed::negative_lines(std::vector<cv::Vec2f>& lines) {
-    for(int i = 0; i < lines.size() - 1; i++ ) {
+    for(int i = 0; i < lines.size() - 1; i++) {
         if(lines[i][0] < 0) {
             lines[i][0] *= -1.0;
             lines[i][1] -= CV_PI;
@@ -32,20 +32,20 @@ void ed::select_borders(const std::vector<cv::Vec2f> lines, std::vector<cv::Vec2
     }
 
     // Find borders (by means of rho and theta comparisons)
-    for(int i = 0; i < lines.size(); i++ ) {
+    for(int i = 0; i < lines.size(); i++) {
         float rho_i = lines[i][0], theta_i = lines[i][1];
         
         if(!visited[i] && borders.size() < 4) {
             borders.push_back(lines[i]);
             
-            for(int j = i + 1; j < lines.size(); j++ ) {
+            for(int j = i + 1; j < lines.size(); j++) {
                 float rho_j = lines[j][0], theta_j = lines[j][1];
                 
-                if( (std::abs(rho_i - rho_j) <= 100 && std::abs(theta_i - theta_j) <= (CV_PI / 36)) && !visited[j]) {
+                if((std::abs(rho_i - rho_j) <= 100 && std::abs(theta_i - theta_j) <= (CV_PI / 36)) && !visited[j]) {
                     visited[j] = true;    
                 }
             }
-        } else if( borders.size() == 4 ) {
+        } else if(borders.size() == 4) {
             return;
         }
     }
@@ -90,8 +90,8 @@ void ed::borders_intersection(const cv::Vec2f& first_line, const cv::Vec2f& seco
 /* Find the corners of the borders */
 void ed::find_corners(const std::vector<cv::Vec2f>& borders, std::vector<cv::Point2f>& corners) {
     // Compute the borders by finding lines intersections
-    for( size_t i = 0; i < borders.size(); i++ ) {
-        for( size_t j = i + 1; j < borders.size(); j++ ) {
+    for(size_t i = 0; i < borders.size(); i++) {
+        for(size_t j = i + 1; j < borders.size(); j++) {
             // Check if there are all four corners
             if(corners.size() == 4) {
                 return;
@@ -114,7 +114,7 @@ void ed::draw_borders(cv::Mat& image, const std::vector<cv::Vec2f>& borders, con
     double distance_th = 5.0;
 
     // Draw the borders
-    for( size_t i = 0; i < borders.size(); i++) {
+    for(size_t i = 0; i < borders.size(); i++) {
         float rho = borders[i][0], theta = borders[i][1];
         double a = std::cos(theta), b = std::sin(theta);
 
@@ -122,7 +122,7 @@ void ed::draw_borders(cv::Mat& image, const std::vector<cv::Vec2f>& borders, con
         std::vector<cv::Point2f> matched_corners;
 
         // Check what corners belong to the current border
-        for( size_t j = 0; j < corners.size(); j++) {
+        for(size_t j = 0; j < corners.size(); j++) {
             if(std::fabs(corners[j].x * a + corners[j].y * b - rho) <= distance_th) {
                 matched_corners.push_back(corners[j]);
             }
@@ -175,7 +175,7 @@ void ed::sort_corners(std::vector<cv::Point2f>& corners) {
         // Sort by y coordinate
         for(size_t i = 0; i < corners.size(); i++) {
             for(size_t j = i + 1; j < corners.size(); j++) {
-                if(corners[i].y > corners[j].y){
+                if(corners[i].y > corners[j].y) {
                     std::swap(corners[i], corners[j]);
                 }
             }
