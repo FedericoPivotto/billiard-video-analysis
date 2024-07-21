@@ -25,12 +25,12 @@ At the end of the execution of the computer vision system, the generated outputs
 
 For each video sub-directory `/gameX_clipY` included in `/dataset` is generated an output directory `/gameX_clipY` in the `/result` directory, containing the following sub-directories:
 - `/frames`: first and last frame of the video;
-- `/edge_detection`: first and last frame with border detection of the playing field;
+- `/border_detection`: first and last frame with border detection of the playing field;
 - `/object_detection`: first and last frame with ball detection and classification;
 - `/bounding_boxes`: text file with list of ball bounding boxes detected in the first and last frame;
 - `/segmentation`: first and last frame with segmentation of the playing field;
 - `/masks`: first and last frame with mask segmentation of the playing field and surrounding environment;
-- `/output`: first and last frame given by the union of edge detection and segmentation;
+- `/output`: first and last frame given by the union of border detection and segmentation;
 - `/minimap`: first and last frame with 2D top-view visualization map;
 - `/metrics`: mAP and mIoU metrics measured on the first and last frame;
 - Video with 2D-top-view visualization map.
