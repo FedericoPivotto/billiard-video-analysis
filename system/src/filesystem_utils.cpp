@@ -22,7 +22,7 @@ void fsu::create_video_result_dir(const std::string video_path, std::string& vid
     // Create video result directory
     std::filesystem::create_directory(video_result_path);
 
-    // Create video bounding_boxes, frames, mask directories
+    // Create video sub-directories
     video_result_subdirs = {video_result_path + "/bounding_boxes", video_result_path + "/frames", video_result_path + "/masks", video_result_path + "/edge_detection", video_result_path + "/object_detection", video_result_path + "/segmentation", video_result_path + "/output", video_result_path + "/metrics", video_result_path + "/minimap"};
     for(std::string video_result_subdir : video_result_subdirs)
     std::filesystem::create_directory(video_result_subdir);
@@ -36,6 +36,19 @@ void fsu::create_bboxes_frame_file(const std::vector<cv::Mat>& video_frames, con
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
+}
+
+/* Get video dataset directory */
+void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::string>& video_dataset_subdirs) {
+    // Get dataset directory if not exists
+    std::string dataset_path = "../dataset/";
+
+    // Get video dataset directory
+    std::string video_dataset_dir = std::filesystem::path(video_path).parent_path().filename();
+    std::string video_dataset_path = dataset_path + video_dataset_dir;
+
+    // Get video bounding_boxes, frames, mask directories
+    video_dataset_subdirs = {video_dataset_path + "/bounding_boxes", video_dataset_path + "/frames", video_dataset_path + "/masks"};
 }
 
 /* Get bounding box file path for the given video frame */
@@ -63,7 +76,6 @@ void fsu::get_video_frame_file_path(const std::vector<cv::Mat>& video_frames, co
         video_frame_file_path += std::to_string(n_frame + 1);
     video_frame_file_path += ".png";
 }
-
 
 /* Get metrics file path for the given video frame */
 void fsu::get_metrics_frame_file_path(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string metrics_video_path, std::string& metrics_frame_file_path) {
@@ -114,19 +126,6 @@ void fsu::read_ball_bboxes(const std::string bboxes_frame_file_path, std::vector
 
     // Close frame bboxes text file
     bboxes_frame_file.close();
-}
-
-/* Get video dataset directory */
-void fsu::get_video_dataset_dir(const std::string video_path, std::vector<std::string>& video_dataset_subdirs) {
-    // Get dataset directory if not exists
-    std::string dataset_path = "../dataset/";
-
-    // Get video dataset directory
-    std::string video_dataset_dir = std::filesystem::path(video_path).parent_path().filename();
-    std::string video_dataset_path = dataset_path + video_dataset_dir;
-
-    // Get video bounding_boxes, frames, mask directories
-    video_dataset_subdirs = {video_dataset_path + "/bounding_boxes", video_dataset_path + "/frames", video_dataset_path + "/masks"};
 }
 
 /* Save video frame in given directory */

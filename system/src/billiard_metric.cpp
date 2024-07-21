@@ -54,6 +54,87 @@ std::ostream& bm::operator<<(std::ostream& os, const bm::BallMatch& ball_match) 
     return os << "(" << ball_match.true_ball << " | " << ball_match.predicted_ball << "), " << ball_match.state << ", IoU(" << ball_match.iou << ")";
 }
 
+/* Evaluate localization metric */
+void bm::evaluate_localization_metric(const std::string true_bboxes_frame_file_path, const std::string predicted_bboxes_frame_file_path, std::string& metrics_result) {
+    // Read true bounding boxes
+    std::vector<od::Ball> true_balls;
+    fsu::read_ball_bboxes(true_bboxes_frame_file_path, true_balls);
+
+    // Read predicted bounding boxes
+    std::vector<od::Ball> predicted_balls;
+    bool confidence_flag = true;
+    fsu::read_ball_bboxes(predicted_bboxes_frame_file_path, predicted_balls, confidence_flag);
+
+    // Average precision for each ball class
+    int num_classes = 4;
+    std::vector<double> aps;
+    for(size_t i = 1; i <= num_classes; ++i) {
+        // Extract true balls of the current class
+        std::vector<od::Ball> true_balls_class;
+        for(od::Ball true_ball : true_balls)
+            if(true_ball.ball_class == i)
+                true_balls_class.push_back(true_ball);
+
+        // Extract predicted balls of the current class
+        std::vector<od::Ball> predicted_balls_class;
+        for(od::Ball predicted_ball : predicted_balls)
+            if(predicted_ball.ball_class == i)
+                predicted_balls_class.push_back(predicted_ball);
+
+        // Best ball matches search
+        std::vector<bm::BallMatch> best_ball_matches;
+        bm::matches_search(true_balls_class, predicted_balls_class, best_ball_matches);
+
+        // Ball class average precision
+        aps.push_back(bm::average_precision(best_ball_matches, predicted_balls_class, true_balls_class.size()));
+
+        // Update video frame metrics with AP of current class
+        metrics_result += "Average Precision (AP) for class " + std::to_string(i) + ": " + std::to_string(aps[i-1]*100) + "%\n";
+    }
+
+    // Localization metric
+    double map = bm::localization_metric(aps, num_classes);
+
+    // Update video frame metrics result with mAP
+    metrics_result += "Mean Average Precision (mAP): " + std::to_string(map*100) + "%\n\n";
+}
+
+/* Evaluate segmentation metric */
+void bm::evaluate_segmentation_metric(const std::string true_mask_path, const std::string predicted_mask_path, std::string& metrics_result) {
+    // Read true mask
+    cv::Mat true_mask = cv::imread(true_mask_path, cv::IMREAD_GRAYSCALE);
+    // Safety check on true mask
+	if(true_mask.data == NULL) {
+		std::cout << "Error: The true mask cannot be read." << std::endl;
+		return;
+	}
+
+    // Read predicted mask
+    cv::Mat predicted_mask = cv::imread(predicted_mask_path, cv::IMREAD_GRAYSCALE);
+    // Safety check on predicted mask
+	if(predicted_mask.data == NULL) {
+		std::cout << "Error: The predicted mask cannot be read." << std::endl;
+		return;
+	}
+
+    // IoU for each ball billiard class
+    int num_classes = 6;
+    std::vector<double> ious;
+    for(size_t i = 0; i < num_classes; ++i) {
+        // Billiard class IoU
+        ious.push_back(bm::iou_class(true_mask, predicted_mask, i));
+
+        // Update video frame metrics with IoU of current class
+        metrics_result += "Intersection over Union (IoU) for class " + std::to_string(i) + ": " + std::to_string(ious[i]*100) + "%\n";
+    }
+
+    // Segmentation metric
+    double miou = bm::segmentation_metric(ious, num_classes);
+
+    // Update video frame metrics result with mIoU
+    metrics_result += "Mean Intersection over Union (mIoU): " + std::to_string(miou*100) + "%\n\n";
+}
+
 /* Ball matches search */
 void bm::matches_search(const std::vector<od::Ball>& true_balls, const std::vector<od::Ball>& predicted_balls, std::vector<bm::BallMatch>& best_ball_matches) {
     // For each true bounding box associate predicted bounding box according to IoU
@@ -180,84 +261,4 @@ double bm::iou_class(cv::Mat& true_mask, cv::Mat& predicted_mask, int class_id) 
 double bm::segmentation_metric(std::vector<double> ious, const int num_classes) {
     // Compute average of given IoU
     return std::accumulate(ious.begin(), ious.end(), 0.0) / num_classes;
-}
-
-/* Evaluate localization metric */
-void bm::evaluate_localization_metric(const std::string true_bboxes_frame_file_path, const std::string predicted_bboxes_frame_file_path, std::string& metrics_result) {
-    // Read true bounding boxes
-    std::vector<od::Ball> true_balls;
-    fsu::read_ball_bboxes(true_bboxes_frame_file_path, true_balls);
-
-    // Read predicted bounding boxes
-    std::vector<od::Ball> predicted_balls;
-    bool confidence_flag = true;
-    fsu::read_ball_bboxes(predicted_bboxes_frame_file_path, predicted_balls, confidence_flag);
-
-    // Average precision for each ball class
-    int num_classes = 4;
-    std::vector<double> aps;
-    for(size_t i = 1; i <= num_classes; ++i) {
-        // Extract true balls of the current class
-        std::vector<od::Ball> true_balls_class;
-        for(od::Ball true_ball : true_balls)
-            if(true_ball.ball_class == i)
-                true_balls_class.push_back(true_ball);
-
-        // Extract predicted balls of the current class
-        std::vector<od::Ball> predicted_balls_class;
-        for(od::Ball predicted_ball : predicted_balls)
-            if(predicted_ball.ball_class == i)
-                predicted_balls_class.push_back(predicted_ball);
-
-        // Best ball matches search
-        std::vector<bm::BallMatch> best_ball_matches;
-        bm::matches_search(true_balls_class, predicted_balls_class, best_ball_matches);
-
-        // Ball class average precision
-        aps.push_back(bm::average_precision(best_ball_matches, predicted_balls_class, true_balls_class.size()));
-
-        // Update video frame metrics with AP of current class
-        metrics_result += "Average Precision (AP) for class " + std::to_string(i) + ": " + std::to_string(aps[i-1]*100) + "%\n";
-    }
-
-    // Localization metric
-    double map = bm::localization_metric(aps, num_classes);
-
-    // Update video frame metrics result with mAP
-    metrics_result += "Mean Average Precision (mAP): " + std::to_string(map*100) + "%\n\n";
-}
-
-void bm::evaluate_segmentation_metric(const std::string true_mask_path, const std::string predicted_mask_path, std::string& metrics_result) {
-    // Read true mask
-    cv::Mat true_mask = cv::imread(true_mask_path, cv::IMREAD_GRAYSCALE);
-    // Safety check on true mask
-	if(true_mask.data == NULL) {
-		std::cout << "Error: The true mask cannot be read." << std::endl;
-		return;
-	}
-
-    // Read predicted mask
-    cv::Mat predicted_mask = cv::imread(predicted_mask_path, cv::IMREAD_GRAYSCALE);
-    // Safety check on predicted mask
-	if(predicted_mask.data == NULL) {
-		std::cout << "Error: The predicted mask cannot be read." << std::endl;
-		return;
-	}
-
-    // IoU for each ball billiard class
-    int num_classes = 6;
-    std::vector<double> ious;
-    for(size_t i = 0; i < num_classes; ++i) {
-        // Billiard class IoU
-        ious.push_back(bm::iou_class(true_mask, predicted_mask, i));
-
-        // Update video frame metrics with IoU of current class
-        metrics_result += "Intersection over Union (IoU) for class " + std::to_string(i) + ": " + std::to_string(ious[i]*100) + "%\n";
-    }
-
-    // Segmentation metric
-    double miou = bm::segmentation_metric(ious, num_classes);
-
-    // Update video frame metrics result with mIoU
-    metrics_result += "Mean Intersection over Union (mIoU): " + std::to_string(miou*100) + "%\n\n";
 }
