@@ -32,5 +32,5 @@ For each video sub-directory `/gameX_clipY` included in `/dataset` is generated 
 - `/masks`: first and last frame with mask segmentation of the playing field and surrounding environment;
 - `/output`: first and last frame given by the union of edge detection and segmentation;
 - `/minimap`: first and last frame with 2D top-view visualization map;
-- `/metrics`: mAP and mIoU metrics measured on the first and last frame.
+- `/metrics`: mAP and mIoU metrics measured on the first and last frame;
 - Video with 2D-top-view visualization map.
