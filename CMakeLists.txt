@@ -62,19 +62,3 @@ system_edge_detection
 system_segmentation
 system_minimap
 system_billiard_metric)
-
-# TODO: remove code below
-#########################################################
-
-## Leonardo system executable
-# TODO: to remove
-add_executable(leonardo system/src/leonardo.cpp)
-target_link_libraries(leonardo
-${OpenCV_LIBS}
-system_video_utils
-system_filesystem_utils
-system_object_detection
-system_edge_detection
-system_segmentation
-system_minimap
-system_billiard_metric)

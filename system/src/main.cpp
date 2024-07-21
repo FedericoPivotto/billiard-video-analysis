@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
             // Save video frame
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[1]);
 
-            // Edge detection (Fabrizio)
+            // Edge detection
             std::vector<cv::Vec2f> borders;
             std::vector<cv::Point2f> corners;
             ed::edge_detection(video_frame_cv, borders, corners);
@@ -94,8 +94,6 @@ int main(int argc, char** argv) {
             ed::draw_borders(edge_video_frame_cv, borders, corners);
             fsu::save_video_frame(video_frames, k, edge_video_frame_cv, video_result_subdirs[3]);
 
-            // TODO: Object detection (Federico)
-
             // Distortion check
             bool is_distorted;
             mm::check_perspective_distortion(borders, is_distorted);
@@ -105,7 +103,7 @@ int main(int argc, char** argv) {
             // Save object detection
             fsu::save_video_frame(video_frames, k, object_video_frame_cv, video_result_subdirs[4]);
 
-            // Segmentation (Leonardo)
+            // Segmentation
             sg::segmentation(video_frames, k, video_result_subdirs[0], corners, video_frame_cv);
             // Save segmentation
             fsu::save_video_frame(video_frames, k, video_frame_cv, video_result_subdirs[5]);
