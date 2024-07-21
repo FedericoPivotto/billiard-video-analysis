@@ -4,10 +4,7 @@
 #define OBJECT_DETECTION_H
 
 /* Libraries required in this source file */
-
-// utility: std::pair
 #include <utility>
-// highgui: cv::Mat
 #include <opencv2/highgui.hpp>
 
 /* Object detection namespace */

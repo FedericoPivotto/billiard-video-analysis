@@ -4,10 +4,7 @@
 #define SEGMENTATION_H
 
 /* Libraries required in this source file */
-
-// highgui: cv::Mat
 #include <opencv2/highgui.hpp>
-// object_detection: od::Ball
 #include <object_detection.h>
 
 /* Segmentation namespace */

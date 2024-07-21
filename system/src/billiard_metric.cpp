@@ -3,16 +3,10 @@
 #include <billiard_metric.h>
 
 /* Librarires required in this source file and not already included in billiard_metric.h */
-
-// iostream: std::cout
 #include <iostream>
-// numeric: std::accumulate
 #include <numeric>
-// algorithm: std::max_element
 #include <algorithm>
-// imgproc: cv::threshold
 #include <opencv2/imgproc.hpp>
-// filesystem_utils: fsu::read_ball_bboxes()
 #include <filesystem_utils.h>
 
 /* Ball match class */

@@ -3,14 +3,9 @@
 #include <object_detection.h>
 
 /* Librarires required in this source file and not already included in object_detection.h */
-
-// imgproc: cv::cvtColor(), color space conversion codes
 #include <opencv2/imgproc.hpp>
-// filesystem_utils: fsu::create_bboxes_frame_file()
 #include <filesystem_utils.h>
-// edge_detection: ed::sort_corners()
 #include <edge_detection.h>
-// segmentation: ball color constans
 #include <segmentation.h>
 
 /* Static id definition */

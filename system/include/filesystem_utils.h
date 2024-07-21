@@ -4,21 +4,13 @@
 #define FILESYSTEM_UTILS_H
 
 /* Libraries required in this source file */
-
-// iostream: std::string
 #include <iostream>
-// vector: std::vector
 #include <vector>
-// highgui: cv::Mat
 #include <opencv2/highgui.hpp>
-// fstream: std::ofstream
 #include <fstream>
-// filesystem: std::filesystem
 #include <filesystem>
 
 /* User-defined libraries required in this source file */
-
-// Object detection library
 #include <object_detection.h>
 
 /* Filesystem utils namespace */

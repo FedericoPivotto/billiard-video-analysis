@@ -2,9 +2,7 @@
 
 #include <filesystem_utils.h>
 
-/* Librarires required in this source file and not already included in video_utils.h */
-
-// string: std::getline()
+/* Librarires required in this source file and not already included in filesystem_utils.h */
 #include <string>
 
 /* Create video result directory */

@@ -3,16 +3,10 @@
 #include <segmentation.h>
 
 /* Librarires required in this source file and not already included in segmentation.h */
-
-// imgproc: cv::circle
 #include <opencv2/imgproc.hpp>
-// filesystem_utils: fsu::get_bboxes_frame_file_path(), fsu::read_ball_bboxes()
 #include <filesystem_utils.h>
-// edge_detection: ed::sort_corners()
 #include <edge_detection.h>
-// algorithm: std::find()
 #include <algorithm>
-// minimap: mm::FIELD_BGR
 #include <minimap.h>
 
 /* Field segmentation */

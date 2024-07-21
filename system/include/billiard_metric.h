@@ -4,8 +4,6 @@
 #define BILLIARD_METRIC_H
 
 /* Libraries required in this source file */
-
-// object_detection: od::Ball
 #include <object_detection.h>
 
 /* Billiard metric namespace */
