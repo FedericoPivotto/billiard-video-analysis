@@ -52,6 +52,9 @@ int main(int argc, char** argv) {
         if(video_frames.empty())
             continue;
 
+        // Print video analyzing
+        std::cout << "Analyzing " << video_paths[i] << std::endl;
+
         // First and last video frame indexes if exists
         std::vector<size_t> frame_indexes = {video_frames.size()-1};
         if(video_frames.size() > 1)

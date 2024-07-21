@@ -43,7 +43,7 @@ namespace od {
     bool operator==(const Ball& ball1, const Ball& ball2);
 
     // Object detection function declaration
-    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path = "", const bool test_flag = false);
+    void object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path = "");
     
     // Object detection auxiliary functions
     void points_float_to_int(const std::vector<cv::Point2f> float_points, std::vector<cv::Point>& points);

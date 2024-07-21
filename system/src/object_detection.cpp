@@ -72,7 +72,7 @@ bool od::operator==(const Ball& ball1, const Ball& ball2) {
 }
 
 /* Balls detection and classification given a video frame */
-void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path, const bool test_flag) {
+void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_frame, const std::string bboxes_video_path, const std::vector<cv::Point2f> corners_float, const bool is_distorted, cv::Mat& video_frame, const std::string test_bboxes_video_path) {
     // Sorted float corners
     std::vector<cv::Point2f> corners(corners_float);
     bd::sort_corners(corners);
@@ -140,36 +140,12 @@ void od::object_detection(const std::vector<cv::Mat>& video_frames, const int n_
         od::Ball ball_bbox(center.x - radius, center.y - radius, 2*radius, 2*radius);
         ball_bboxes.push_back(ball_bbox);
     }
-
-    // In case of test, read ball bboxes from dataset
-    // TODO: to remove
-    if(test_flag) {
-        // Read true frame bboxes text file
-        std::vector<od::Ball> test_ball_bboxes;
-        std::string test_bboxes_frame_file_path;
-        fsu::get_bboxes_frame_file_path(video_frames, n_frame, test_bboxes_video_path, test_bboxes_frame_file_path);
-
-        // Read ball bounding box from frame bboxes text file
-        bool confidence_flag = ! test_flag;
-        fsu::read_ball_bboxes(test_bboxes_frame_file_path, test_ball_bboxes, confidence_flag);
-
-        for(od::Ball& ball : test_ball_bboxes) {
-            ball.ball_class = 6;
-        }
-
-        // Replace detected ball bboxes with dataset ones
-        ball_bboxes = test_ball_bboxes;
-    }
     
     // Create frame bboxes text file
     std::string bboxes_frame_file_path;
     fsu::create_bboxes_frame_file(video_frames, n_frame, bboxes_video_path, bboxes_frame_file_path);
     std::ofstream bboxes_frame_file(bboxes_frame_file_path);
-
-    // TODO: print to remove
-    if(bboxes_frame_file.is_open())
-        std::cout << bboxes_frame_file_path << std::endl;
-
+    
     // Compute magnitude on grayscale frame
     std::vector<double> gradient_counts, white_ratios, black_ratios;
     od::compute_gradient_balls(video_frames[n_frame], ball_bboxes, gradient_counts);
