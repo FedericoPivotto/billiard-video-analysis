@@ -25,11 +25,9 @@ void sg::segmentation(const std::vector<cv::Mat>& video_frames, const int n_fram
     // Color table pixels within the table borders
     sg::field_segmentation(corners, video_frame);
     
-    // Scan each ball bounding box
-    for(od::Ball ball_bbox : ball_bboxes) {
-        // Color balls according to class
+    // Color balls according to class
+    for(od::Ball ball_bbox : ball_bboxes) 
         sg::ball_segmentation(ball_bbox, video_frame);
-    }
 }
 
 /* Table, balls and background mask segmentation */
@@ -55,7 +53,7 @@ void sg::segmentation_mask(const std::vector<cv::Mat>& video_frames, const int n
     }
 }
 
-/* Field segmentation */
+/* Playing field segmentation */
 void sg::field_segmentation(const std::vector<cv::Point2f>& corners, cv::Mat& frame, const cv::Scalar field_color) {
     // Sorted float corners
     std::vector<cv::Point2f> sorted_corners(corners);

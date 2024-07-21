@@ -13,7 +13,8 @@
 
 /* Ball match class */
 bm::BallMatch::BallMatch(const od::Ball true_ball, const od::Ball predicted_ball) : true_ball(true_ball), predicted_ball(predicted_ball) {
-    set_iou(); set_state();
+    set_iou();
+    set_state();
 }
 
 /* Set IoU of true and predicted bounding boxes */
