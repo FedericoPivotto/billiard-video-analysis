@@ -3,7 +3,7 @@
 #ifndef OBJECT_DETECTION_H
 #define OBJECT_DETECTION_H
 
-/* Libraries required in this source file */
+/* Libraries required */
 #include <utility>
 #include <opencv2/highgui.hpp>
 

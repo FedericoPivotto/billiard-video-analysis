@@ -3,14 +3,14 @@
 #ifndef FILESYSTEM_UTILS_H
 #define FILESYSTEM_UTILS_H
 
-/* Libraries required in this source file */
+/* Libraries required */
 #include <iostream>
 #include <vector>
 #include <opencv2/highgui.hpp>
 #include <fstream>
 #include <filesystem>
 
-/* User-defined libraries required in this source file */
+/* User-defined libraries required */
 #include <object_detection.h>
 
 /* Filesystem utils namespace */

@@ -2,7 +2,7 @@
 
 #include <filesystem_utils.h>
 
-/* Librarires required in this source file and not already included in filesystem_utils.h */
+/* Librarires required and not yet included in filesystem_utils.h */
 #include <string>
 
 /* Create video result directory */

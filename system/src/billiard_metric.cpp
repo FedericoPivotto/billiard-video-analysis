@@ -2,11 +2,13 @@
 
 #include <billiard_metric.h>
 
-/* Librarires required in this source file and not already included in billiard_metric.h */
+/* Librarires required and not yet included in billiard_metric.h */
 #include <iostream>
 #include <numeric>
 #include <algorithm>
 #include <opencv2/imgproc.hpp>
+
+/* User-defined librarires required and not yet included in billiard_metric.h */
 #include <filesystem_utils.h>
 
 /* Ball match class */

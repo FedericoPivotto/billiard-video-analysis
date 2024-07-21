@@ -2,9 +2,11 @@
 
 #include <object_detection.h>
 
-/* Librarires required in this source file and not already included in object_detection.h */
+/* Librarires required and not yet included in object_detection.h */
 #include <opencv2/imgproc.hpp>
 #include <filesystem_utils.h>
+
+/* User-defined librarires required and not yet included in object_detection.h */
 #include <edge_detection.h>
 #include <segmentation.h>
 

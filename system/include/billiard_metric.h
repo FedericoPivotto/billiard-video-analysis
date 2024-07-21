@@ -3,7 +3,7 @@
 #ifndef BILLIARD_METRIC_H
 #define BILLIARD_METRIC_H
 
-/* Libraries required in this source file */
+/* User-defined libraries required */
 #include <object_detection.h>
 
 /* Billiard metric namespace */
